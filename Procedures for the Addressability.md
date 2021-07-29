@@ -1,8 +1,6 @@
-<![endif]-->
 
 ## Working Group Procedures Applicable to the Addressability Working Group and Privacy & Rearc Commit Group
 
-<![endif]-->
 
 ## Effective May 20, 2021
 
