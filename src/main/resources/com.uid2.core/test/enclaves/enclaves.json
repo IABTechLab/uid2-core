@@ -1,0 +1,14 @@
+[
+  {
+    "name": "debug-aws-nitro",
+    "protocol": "aws-nitro",
+    "identifier": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "created": 1620693995
+  },
+  {
+    "name": "debug-gcp-vmid",
+    "protocol": "gcp-vmid",
+    "identifier": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "created": 1620693995
+  }
+]

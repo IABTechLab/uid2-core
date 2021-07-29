@@ -1,0 +1,9 @@
+{
+    "aws_region": "<aws_region_for_s3_bucket>",
+    "core_s3_bucket": "<s3_bucket_for_stores>",
+    "aws_access_key_id": "<your_aws_key_here>",
+    "aws_secret_access_key": "<your_aws_secret_here>",
+    "clients_metadata_path": "uid2/clients/metadata.json",
+    "keys_metadata_path": "uid2/keys/metadata.json",
+    "salts_metadata_path": "uid2/salts/metadata.json"
+}

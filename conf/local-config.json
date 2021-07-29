@@ -1,0 +1,12 @@
+{
+    "enable_test_endpoints": true,
+    "storage_mock": true,
+    "clients_metadata_path": "/com.uid2.core/test/clients/metadata.json",
+    "keys_metadata_path": "/com.uid2.core/test/keys/metadata.json",
+    "keys_acl_metadata_path": "/com.uid2.core/test/keys_acl/metadata.json",
+    "salts_metadata_path": "/com.uid2.core/test/salts/metadata.json",
+    "operators_metadata_path": "/com.uid2.core/test/operators/metadata.json",
+    "enclaves_metadata_path": "/com.uid2.core/test/enclaves/metadata.json",
+    "att_token_enc_key": "<key-for-attestation-token>",
+    "att_token_enc_salt": "<salt-for-attestation-token>"
+}
