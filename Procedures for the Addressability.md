@@ -84,17 +84,17 @@ Any action or decision properly brought before the AWG and PRCG, respectively, w
 
 The following requirements shall apply to the AWG and PRCG voting process, respectively:
 
-<![if !supportLists]>1) <![endif]>A “Notice of Vote” must be distributed to Qualified AWG Participants or Qualified PRCG Participants, as applicable, at least five (5) business days before the vote, unless unanimously waived by Qualified AWG Participants or Qualified PRCG Participants, as applicable;
+1). A “Notice of Vote” must be distributed to Qualified AWG Participants or Qualified PRCG Participants, as applicable, at least five (5) business days before the vote, unless unanimously waived by Qualified AWG Participants or Qualified PRCG Participants, as applicable;
 
-<![if !supportLists]>2) <![endif]>Such Notice of Vote must be on the written agenda provided by Tech Lab in advance of a meeting, unless all Qualified participants are present at the meeting and waive such requirement;
+2). Such Notice of Vote must be on the written agenda provided by Tech Lab in advance of a meeting, unless all Qualified participants are present at the meeting and waive such requirement;
 
-<![if !supportLists]>3) <![endif]>In order to cast a vote, Qualified participants must be present at the meeting during which the topic subject to the vote is discussed and debated;
+3 ). In order to cast a vote, Qualified participants must be present at the meeting during which the topic subject to the vote is discussed and debated;
 
-<![if !supportLists]>4) <![endif]>The manner of voting shall be a public vote at the meeting unless any Qualified participant requests that the vote be conducted via email, in which case the email votes shall be cast within three (3) business days following the meeting;
+4). The manner of voting shall be a public vote at the meeting unless any Qualified participant requests that the vote be conducted via email, in which case the email votes shall be cast within three (3) business days following the meeting;
 
-<![if !supportLists]>5) <![endif]>Prior to any vote, any Qualified participant may adjourn the vote for a period not to exceed three (3) business days by providing written notice to Tech Lab prior to the meeting or by providing oral notice at the meeting; _provided_, _however_, that any vote may postponed only one (1) time; and
+5). Prior to any vote, any Qualified participant may adjourn the vote for a period not to exceed three (3) business days by providing written notice to Tech Lab prior to the meeting or by providing oral notice at the meeting; _provided_, _however_, that any vote may postponed only one (1) time; and
 
-<![if !supportLists]>6) <![endif]>A Qualified participant is barred from revoking its vote after being cast.
+6). A Qualified participant is barred from revoking its vote after being cast.
 
 #### 5. Appeals
 
