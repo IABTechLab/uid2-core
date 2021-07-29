@@ -1,6 +1,6 @@
 # UID2 Core
 
-UID2 Project and its components are managed by the IAB Tech Lab Addressability Working Group and Privacy & Rearc Commit Group. Please review the governance guidelines here
+UID2 Project and its components are managed by the IAB Tech Lab Addressability Working Group and Privacy & Rearc Commit Group. Please review the governance guidelines [here](Software Development and Release Procedures.md)
 
 ## Prerequisite
 
