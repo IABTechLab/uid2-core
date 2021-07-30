@@ -62,9 +62,11 @@ public class ClientKeyTool {
     private final ICloudStorage clientKeyCloudStorage;
     private final ObjectWriter jsonWriter;
     private final ObjectWriter onelineJsonWriter;
+    private final String clientKeyPrefix;
 
     ClientKeyTool(JsonObject config) throws Exception {
         this.config = config;
+        this.clientKeyPrefix = config.getString("client_key_prefix");
         this.clientKeyCloudStorage = CloudUtils.createStorage(config.getString("core_s3_bucket"), config);
         String metadataPath = config.getString("clients_metadata_path");
         this.clientKeyProvider = new RotatingClientKeyProvider(clientKeyCloudStorage, metadataPath);
@@ -237,6 +239,7 @@ public class ClientKeyTool {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         String key = Utils.toBase64String(bytes);
+        if (this.clientKeyPrefix != null) key = this.clientKeyPrefix + key;
 
         // add new client to array
         Instant created = Instant.now();
