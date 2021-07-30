@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
+import com.uid2.shared.auth.ClientKey;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.cloud.CloudUtils;
@@ -124,6 +125,8 @@ public class OperatorKeyTool {
         supportedCommands.add("list");
         supportedCommands.add("add");
         supportedCommands.add("del");
+        supportedCommands.add("disable");
+        supportedCommands.add("enable");
         supportedCommands.add("rollback");
 
         String command = cli.getArgumentValue("command");
@@ -139,6 +142,12 @@ public class OperatorKeyTool {
             if (name != null) runDelByName(name);
             else if (key != null) runDelByKey(key);
             else System.err.println("Command del needs either -name or -key provided");
+        } else if ("disable".equals(command)) {
+            String name = cli.getOptionValue("name");
+            runDisableEnableByName(name, true);
+        } else if ("enable".equals(command)) {
+            String name = cli.getOptionValue("name");
+            runDisableEnableByName(name, false);
         } else if ("list".equals(command)) {
             runList();
         } else if ("rollback".equals(command)) {
@@ -203,7 +212,7 @@ public class OperatorKeyTool {
 
         // add new operator to array
         Instant created = Instant.now();
-        OperatorKey newOperator = new OperatorKey(key, name, name, attestationProtocol, created.getEpochSecond());
+        OperatorKey newOperator = new OperatorKey(key, name, name, attestationProtocol, created.getEpochSecond(), false);
         operators.add(newOperator);
 
         Path newMetadataFile = Files.createTempFile("operators-metadata", ".json");
@@ -359,13 +368,32 @@ public class OperatorKeyTool {
         this.uploadAfterDelete(existingOperator.get(), operators);
     }
 
+    private void runDisableEnableByName(String name, boolean disable) throws Exception {
+        Optional<OperatorKey> existingKey = this.operatorKeyProvider.getAll()
+                .stream().filter(c -> c.getName().equals(name))
+                .findFirst();
+        if (!existingKey.isPresent()) {
+            throw new IllegalArgumentException("name: " + name + " not found");
+        }
+
+        OperatorKey c = existingKey.get();
+        System.out.format("name: %s, current disabled: %s, new disabled: %s\n", c.getName(), c.isDisabled(), disable);
+
+        if (c.isDisabled() == disable) {
+            System.out.format("No need to update");
+            return;
+        }
+
+        this.uploadAfterUpdate(this.operatorKeyProvider.getAll());
+    }
+
     private void runList() {
         Collection<OperatorKey> collection = this.operatorKeyProvider.getAll();
         for (OperatorKey c : collection) {
             if (this.isVerbose) {
-                System.out.format("name: %s, key: %s, protocol: %s\n", c.getName(), c.getKey(), c.getProtocol());
+                System.out.format("name: %s, disabled: %s, key: %s, protocol: %s\n", c.getName(), c.isDisabled(), c.getKey(), c.getProtocol());
             } else {
-                System.out.format("name: %s, protocol: %s\n", c.getName(), c.getProtocol());
+                System.out.format("name: %s, disabled: %s, protocol: %s\n", c.getName(), c.isDisabled(), c.getProtocol());
             }
         }
         System.out.println("Total " + collection.size() + " operator keys in the config");
@@ -405,6 +433,20 @@ public class OperatorKeyTool {
         }
 
         System.out.println("Verification passed, uploading...");
+        final ICloudStorage uploadStorage;
+        if (this.isYes) {
+            System.out.println("WARNING: uploading to cloud storage, which is potentially DESTRUCTIVE");
+            uploadStorage = this.operatorKeyCloudStorage;
+        } else {
+            System.out.println("WARNING: uploading to dry-run mock storage, specify -yes to do actual upload");
+            uploadStorage = new DryRunStorageMock(this.isVerbose);
+        }
+
+        this.bumpUpVersionAndUpload(uploadStorage, this.operatorKeyProvider, operators);
+        System.out.println("New config uploaded");
+    }
+
+    private void uploadAfterUpdate(Collection<OperatorKey> operators) throws Exception {
         final ICloudStorage uploadStorage;
         if (this.isYes) {
             System.out.println("WARNING: uploading to cloud storage, which is potentially DESTRUCTIVE");
