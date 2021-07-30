@@ -124,6 +124,8 @@ public class ClientKeyTool {
         supportedCommands.add("list");
         supportedCommands.add("add");
         supportedCommands.add("del");
+        supportedCommands.add("disable");
+        supportedCommands.add("enable");
         supportedCommands.add("update");
         supportedCommands.add("rollback");
 
@@ -143,6 +145,14 @@ public class ClientKeyTool {
             if (name != null) runDelByName(name);
             else if (key != null) runDelByKey(key);
             else System.err.println("Command del needs either -name or -key provided");
+        } else if ("disable".equals(command)) {
+            String name = cli.getOptionValue("name");
+            checkOptionExistence(name, command, "name");
+            runDisableEnableByName(name, true);
+        } else if ("enable".equals(command)) {
+            String name = cli.getOptionValue("name");
+            checkOptionExistence(name, command, "name");
+            runDisableEnableByName(name, false);
         } else if ("update".equals(command)) {
             String name = cli.getOptionValue("name");
             checkOptionExistence(name, command, "name");
@@ -435,6 +445,25 @@ public class ClientKeyTool {
         this.uploadAfterUpdate(this.clientKeyProvider.getAll());
     }
 
+    private void runDisableEnableByName(String name, boolean disable) throws Exception {
+        Optional<ClientKey> existingClient = this.clientKeyProvider.getAll()
+                .stream().filter(c -> c.getName().equals(name))
+                .findFirst();
+        if (!existingClient.isPresent()) {
+            throw new IllegalArgumentException("name: " + name + " not found");
+        }
+
+        ClientKey c = existingClient.get();
+        System.out.format("name: %s, current disabled: %s, new disabled: %s\n", c.getName(), c.isDisabled(), disable);
+
+        if (c.isDisabled() == disable) {
+            System.out.format("No need to update");
+            return;
+        }
+
+        this.uploadAfterUpdate(this.clientKeyProvider.getAll());
+    }
+
     private String getRolesSpec(Set<Role> roles) {
         return String.join(",", roles.stream().map(r -> r.toString()).collect(Collectors.toList()));
     }
@@ -444,9 +473,9 @@ public class ClientKeyTool {
         for (ClientKey c : collection) {
             String roles = getRolesSpec(c.getRoles());
             if (this.isVerbose) {
-                System.out.format("name: %s, siteId: %d, key: %s, roles: %s\n", c.getName(), c.getSiteId(), c.getKey(), roles);
+                System.out.format("name: %s, siteId: %d, disabled: %s, key: %s, roles: %s\n", c.getName(), c.getSiteId(), c.isDisabled(), c.getKey(), roles);
             } else {
-                System.out.format("name: %s, siteId: %d, roles: %s\n", c.getName(), c.getSiteId(), roles);
+                System.out.format("name: %s, siteId: %d, disabled: %s, roles: %s\n", c.getName(), c.getSiteId(), c.isDisabled(), roles);
             }
         }
         System.out.println("Total " + collection.size() + " client keys in the config");
