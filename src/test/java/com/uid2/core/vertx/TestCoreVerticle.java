@@ -93,7 +93,7 @@ public class TestCoreVerticle {
   }
 
   private void fakeAuth(Role role) {
-    OperatorKey clientKey = new OperatorKey("test-key", "", "", attestationProtocol, 0);
+    OperatorKey clientKey = new OperatorKey("test-key", "", "", attestationProtocol, 0, false);
     when(authProvider.get(any())).thenReturn(clientKey);
   }
 
