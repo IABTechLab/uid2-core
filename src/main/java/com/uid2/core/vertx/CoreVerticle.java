@@ -81,6 +81,7 @@ public class CoreVerticle extends AbstractVerticle {
 
     private final IAttestationTokenService attestationTokenService;
     private final IClientMetadataProvider clientMetadataProvider;
+    private final IOperatorMetadataProvider operatorMetadataProvider;
     private final IKeyMetadataProvider keyMetadataProvider;
     private final IKeyAclMetadataProvider keyAclMetadataProvider;
     private final ISaltMetadataProvider saltMetadataProvider;
@@ -102,6 +103,7 @@ public class CoreVerticle extends AbstractVerticle {
         this.auth = new AuthMiddleware(authProvider);
 
         this.clientMetadataProvider = new ClientMetadataProvider(cloudStorage);
+        this.operatorMetadataProvider = new OperatorMetadataProvider(cloudStorage);
         this.keyMetadataProvider = new KeyMetadataProvider(cloudStorage);
         this.keyAclMetadataProvider = new KeyAclMetadataProvider(cloudStorage);
         this.saltMetadataProvider = new SaltMetadataProvider(cloudStorage);
@@ -149,6 +151,7 @@ public class CoreVerticle extends AbstractVerticle {
         router.get("/key/acl/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeyAclRefresh), Role.OPERATOR));
         router.get("/salt/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleSaltRefresh), Role.OPERATOR));
         router.get("/clients/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleClientRefresh), Role.OPERATOR));
+        router.get("/operators/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleOperatorRefresh), Role.OPERATOR));
         router.get("/ops/healthcheck").handler(this::handleHealthCheck);
 
         if (Optional.ofNullable(ConfigStore.Global.getBoolean("enable_test_endpoints")).orElse(false)) {
@@ -283,6 +286,16 @@ public class CoreVerticle extends AbstractVerticle {
         } catch (Exception e) {
             logger.warn("exception in handleClientRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing client refresh");
+        }
+    }
+
+    private void handleOperatorRefresh(RoutingContext rc) {
+        try {
+            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(operatorMetadataProvider.getMetadata());
+        } catch (Exception e) {
+            logger.warn("exception in handleOperatorRefresh: " + e.getMessage(), e);
+            Error("error", 500, rc, "error processing operator refresh");
         }
     }
 
