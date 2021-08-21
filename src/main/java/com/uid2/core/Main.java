@@ -34,8 +34,6 @@ import com.uid2.shared.Utils;
 import com.uid2.shared.attest.AttestationTokenService;
 import com.uid2.shared.attest.IAttestationTokenService;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
-import com.uid2.shared.auth.MultisourceAuthProvider;
-import com.uid2.shared.auth.RotatingClientKeyProvider;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.EmbeddedResourceStorage;
@@ -123,16 +121,10 @@ public class Main {
                 cloudStorage.setPreSignedUrlExpiry(expiryInSeconds);
             }
 
-            RotatingStoreVerticle clientRotatingStore = null;
             RotatingStoreVerticle enclaveRotatingVerticle = null;
             RotatingStoreVerticle operatorRotatingVerticle = null;
             CoreVerticle coreVerticle = null;
             try {
-                // IClientKeyProvider clientKeyProvider = new TestClientKeyProvider();
-                String clientMetadataPath = SecretStore.Global.get(Const.Config.ClientsMetadataPathProp);
-                RotatingClientKeyProvider clientKeyProvider = new RotatingClientKeyProvider(cloudStorage, clientMetadataPath);
-                clientRotatingStore = new RotatingStoreVerticle("clients", 10000, clientKeyProvider);
-
                 String operatorMetadataPath = SecretStore.Global.get(Const.Config.OperatorsMetadataPathProp);
                 RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorMetadataPath);
                 operatorRotatingVerticle = new RotatingStoreVerticle("operators", 60000, operatorKeyProvider);
@@ -140,8 +132,6 @@ public class Main {
                 String enclaveMetadataPath = SecretStore.Global.get(EnclaveIdentifierProvider.ENCLAVES_METADATA_PATH);
                 EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
                 enclaveRotatingVerticle = new RotatingStoreVerticle("enclaves", 60000, enclaveIdProvider);
-
-                MultisourceAuthProvider authProvider = new MultisourceAuthProvider(operatorKeyProvider, clientKeyProvider);
 
                 AttestationService attestationService = new AttestationService()
                     .with("azure-sgx", new AzureAttestationProvider(
@@ -168,13 +158,12 @@ public class Main {
                         SecretStore.Global.get(Constants.AttestationEncryptionSaltName)
                 );
 
-                coreVerticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdProvider);
+                coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider);
             } catch (Exception e) {
                 System.out.println("failed to initialize core verticle: " + e.getMessage());
                 System.exit(-1);
             }
 
-            vertx.deployVerticle(clientRotatingStore);
             vertx.deployVerticle(enclaveRotatingVerticle);
             vertx.deployVerticle(operatorRotatingVerticle);
             vertx.deployVerticle(coreVerticle);
