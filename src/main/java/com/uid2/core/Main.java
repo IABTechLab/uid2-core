@@ -42,6 +42,7 @@ import com.uid2.shared.jmx.AdminApi;
 import com.uid2.shared.secure.AzureAttestationProvider;
 import com.uid2.shared.secure.GcpVmidAttestationProvider;
 import com.uid2.shared.secure.NitroAttestationProvider;
+import com.uid2.shared.secure.TrustedAttestationProvider;
 import com.uid2.shared.secure.nitro.InMemoryAWSCertificateStore;
 import com.uid2.shared.vertx.RotatingStoreVerticle;
 import com.uid2.shared.vertx.VertxUtils;
@@ -134,6 +135,7 @@ public class Main {
                 enclaveRotatingVerticle = new RotatingStoreVerticle("enclaves", 60000, enclaveIdProvider);
 
                 AttestationService attestationService = new AttestationService()
+                    .with("trusted", new TrustedAttestationProvider())
                     .with("azure-sgx", new AzureAttestationProvider(
                         ConfigStore.Global.getOrDefault("maa_server_base_url", "https://sharedeus.eus.attest.azure.net"),
                         WebClient.create(vertx)))

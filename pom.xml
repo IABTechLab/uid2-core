@@ -23,6 +23,8 @@
 
     <vertx.verticle>com.uid2.core.vertx.CoreVerticle</vertx.verticle>
     <launcher.class>io.vertx.core.Launcher</launcher.class>
+
+    <image.version>${project.version}</image.version>
   </properties>
 
   <dependencyManagement>
@@ -205,6 +207,22 @@
             <goals>
               <goal>single</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>properties-maven-plugin</artifactId>
+        <version>1.0.0</version>
+        <executions>
+          <execution>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>write-project-properties</goal>
+            </goals>
+            <configuration>
+              <outputFile>${project.build.outputDirectory}/${project.artifactId}.properties</outputFile>
+            </configuration>
           </execution>
         </executions>
       </plugin>
