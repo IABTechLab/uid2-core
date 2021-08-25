@@ -9,6 +9,7 @@
     "salts_metadata_path": null,
     "operators_metadata_path": null,
     "enclaves_metadata_path": null,
+    "partners_metadata_path": null,
     "att_token_enc_key": null,
     "att_token_enc_salt": null
 }

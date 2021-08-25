@@ -7,6 +7,7 @@
     "salts_metadata_path": "/com.uid2.core/test/salts/metadata.json",
     "operators_metadata_path": "/com.uid2.core/test/operators/metadata.json",
     "enclaves_metadata_path": "/com.uid2.core/test/enclaves/metadata.json",
+    "partners_metadata_path": "/com.uid2.core/test/partners/metadata.json",
     "att_token_enc_key": "<key-for-attestation-token>",
     "att_token_enc_salt": "<salt-for-attestation-token>"
 }
