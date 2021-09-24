@@ -240,46 +240,9 @@
               <mainClass>com.uid2.core.Main</mainClass>
             </configuration>
           </execution>
-          <execution>
-            <id>clientTool</id>
-            <goals>
-              <goal>java</goal>
-            </goals>
-            <configuration>
-              <mainClass>com.uid2.core.tool.ClientKeyTool</mainClass>
-            </configuration>
-          </execution>
-          <execution>
-            <id>enclaveIdTool</id>
-            <goals>
-              <goal>java</goal>
-            </goals>
-            <configuration>
-              <mainClass>com.uid2.core.tool.EnclaveIdTool</mainClass>
-            </configuration>
-          </execution>
-          <execution>
-            <id>encryptionKeyTool</id>
-            <goals>
-              <goal>java</goal>
-            </goals>
-            <configuration>
-              <mainClass>com.uid2.core.tool.EncryptionKeyTool</mainClass>
-            </configuration>
-          </execution>
-          <execution>
-            <id>operatorTool</id>
-            <goals>
-              <goal>java</goal>
-            </goals>
-            <configuration>
-              <mainClass>com.uid2.core.tool.OperatorKeyTool</mainClass>
-            </configuration>
-          </execution>
         </executions>
       </plugin>
     </plugins>
   </build>
-
 
 </project>
