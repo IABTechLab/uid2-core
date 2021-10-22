@@ -23,6 +23,8 @@
 
     <vertx.verticle>com.uid2.core.vertx.CoreVerticle</vertx.verticle>
     <launcher.class>io.vertx.core.Launcher</launcher.class>
+
+    <image.version>${project.version}</image.version>
   </properties>
 
   <dependencyManagement>
@@ -210,6 +212,22 @@
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
+        <artifactId>properties-maven-plugin</artifactId>
+        <version>1.0.0</version>
+        <executions>
+          <execution>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>write-project-properties</goal>
+            </goals>
+            <configuration>
+              <outputFile>${project.build.outputDirectory}/${project.artifactId}.properties</outputFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>${exec-maven-plugin.version}</version>
         <executions>
@@ -222,46 +240,9 @@
               <mainClass>com.uid2.core.Main</mainClass>
             </configuration>
           </execution>
-          <execution>
-            <id>clientTool</id>
-            <goals>
-              <goal>java</goal>
-            </goals>
-            <configuration>
-              <mainClass>com.uid2.core.tool.ClientKeyTool</mainClass>
-            </configuration>
-          </execution>
-          <execution>
-            <id>enclaveIdTool</id>
-            <goals>
-              <goal>java</goal>
-            </goals>
-            <configuration>
-              <mainClass>com.uid2.core.tool.EnclaveIdTool</mainClass>
-            </configuration>
-          </execution>
-          <execution>
-            <id>encryptionKeyTool</id>
-            <goals>
-              <goal>java</goal>
-            </goals>
-            <configuration>
-              <mainClass>com.uid2.core.tool.EncryptionKeyTool</mainClass>
-            </configuration>
-          </execution>
-          <execution>
-            <id>operatorTool</id>
-            <goals>
-              <goal>java</goal>
-            </goals>
-            <configuration>
-              <mainClass>com.uid2.core.tool.OperatorKeyTool</mainClass>
-            </configuration>
-          </execution>
         </executions>
       </plugin>
     </plugins>
   </build>
-
 
 </project>

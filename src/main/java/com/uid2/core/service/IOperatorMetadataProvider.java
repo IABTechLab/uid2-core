@@ -23,12 +23,6 @@
 
 package com.uid2.core.service;
 
-import com.uid2.core.model.EnclaveIdentifier;
-
-import java.util.Collection;
-
-public interface IEnclaveIdentifierProvider {
-    Collection<EnclaveIdentifier> getAll();
-    void addListener(IOperatorChangeHandler handler) throws Exception;
-    void removeListener(IOperatorChangeHandler handler);
+public interface IOperatorMetadataProvider {
+    String getMetadata() throws Exception;
 }

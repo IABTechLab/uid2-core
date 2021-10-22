@@ -24,13 +24,9 @@
 package com.uid2.core.vertx;
 
 import com.uid2.core.service.AttestationService;
-import com.uid2.core.service.IEnclaveIdentifierProvider;
 import com.uid2.shared.Const;
 import com.uid2.shared.attest.IAttestationTokenService;
-import com.uid2.shared.auth.ClientKey;
-import com.uid2.shared.auth.IAuthProvider;
-import com.uid2.shared.auth.OperatorKey;
-import com.uid2.shared.auth.Role;
+import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.secure.AttestationException;
 import com.uid2.shared.secure.AttestationFailure;
@@ -93,7 +89,7 @@ public class TestCoreVerticle {
   }
 
   private void fakeAuth(Role role) {
-    OperatorKey clientKey = new OperatorKey("test-key", "", "", attestationProtocol, 0);
+    OperatorKey clientKey = new OperatorKey("test-key", "", "", attestationProtocol, 0, false);
     when(authProvider.get(any())).thenReturn(clientKey);
   }
 

@@ -23,7 +23,8 @@
 
 package com.uid2.core.service;
 
-import com.uid2.core.model.EnclaveIdentifier;
+import com.uid2.shared.auth.IOperatorChangeHandler;
+import com.uid2.shared.model.EnclaveIdentifier;
 import com.uid2.shared.secure.AttestationException;
 import com.uid2.shared.secure.AttestationResult;
 import com.uid2.shared.secure.IAttestationProvider;
