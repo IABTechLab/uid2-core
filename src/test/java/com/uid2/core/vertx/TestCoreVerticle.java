@@ -64,7 +64,7 @@ public class TestCoreVerticle {
   @Mock
   private ICloudStorage cloudStorage;
   @Mock
-  private IAuthProvider authProvider;
+  private IAuthorizableProvider authProvider;
   @Mock
   private IAttestationProvider attestationProvider;
   @Mock
