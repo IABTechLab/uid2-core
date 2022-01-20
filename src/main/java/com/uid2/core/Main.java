@@ -70,7 +70,7 @@ public class Main {
         final String vertxConfigPath = System.getProperty(Const.Config.VERTX_CONFIG_PATH_PROP);
         if (vertxConfigPath != null) {
             System.out.format("Running CUSTOM CONFIG mode, config: %s\n", vertxConfigPath);
-        } else if (!Utils.isProductionEnvionment()) {
+        } else if (!Utils.isProductionEnvironment()) {
             System.out.format("Running LOCAL DEBUG mode, config: %s\n", Const.Config.LOCAL_CONFIG_PATH);
             System.setProperty(Const.Config.VERTX_CONFIG_PATH_PROP, Const.Config.LOCAL_CONFIG_PATH);
         } else {
@@ -216,7 +216,7 @@ public class Main {
      */
 
     private static VertxOptions getVertxOptions(MicrometerMetricsOptions metricOptions) {
-        final int threadBlockedCheckInterval = Utils.isProductionEnvionment()
+        final int threadBlockedCheckInterval = Utils.isProductionEnvironment()
             ? 60 * 1000
             : 3600 * 1000;
 
