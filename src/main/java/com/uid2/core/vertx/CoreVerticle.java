@@ -75,7 +75,7 @@ public class CoreVerticle extends AbstractVerticle {
     private final AuthMiddleware auth;
     private final AttestationService attestationService;
     private final AttestationMiddleware attestationMiddleware;
-    private final IAuthProvider authProvider;
+    private final IAuthorizableProvider authProvider;
     private final IEnclaveIdentifierProvider enclaveIdentifierProvider;
     private final Logger logger = LoggerFactory.getLogger(CoreVerticle.class);
 
@@ -86,7 +86,7 @@ public class CoreVerticle extends AbstractVerticle {
     private final IKeyAclMetadataProvider keyAclMetadataProvider;
     private final ISaltMetadataProvider saltMetadataProvider;
 
-    public CoreVerticle(ICloudStorage cloudStorage, IAuthProvider authProvider, AttestationService attestationService,
+    public CoreVerticle(ICloudStorage cloudStorage, IAuthorizableProvider authProvider, AttestationService attestationService,
                         IAttestationTokenService attestationTokenService, IEnclaveIdentifierProvider enclaveIdentifierProvider) throws Exception
     {
         this.healthComponent.setHealthStatus(false, "not started");
