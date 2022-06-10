@@ -56,30 +56,27 @@ public class AttestationService implements IOperatorChangeHandler {
                        String base64EncodedRequest,
                        String base64EncodedPublicKey,
                        Handler<AsyncResult<AttestationResult>> handler)
-        throws AttestationService.NotFound
-    {
+            throws AttestationService.NotFound {
         this.get(protocol)
-            .attest(
-                Base64.getDecoder().decode(base64EncodedRequest),
-                Base64.getDecoder().decode(base64EncodedPublicKey),
-                handler);
+                .attest(
+                        Base64.getDecoder().decode(base64EncodedRequest),
+                        Base64.getDecoder().decode(base64EncodedPublicKey),
+                        handler);
     }
 
     public void registerEnclave(String protocol, String identifier)
-        throws AttestationException, AttestationService.NotFound
-    {
+            throws AttestationException, AttestationService.NotFound {
         this.get(protocol).registerEnclave(identifier);
     }
 
     public void unregisterEnclave(String protocol, String identifier)
-        throws AttestationException, AttestationService.NotFound
-    {
+            throws AttestationException, AttestationService.NotFound {
         this.get(protocol).unregisterEnclave(identifier);
     }
 
     public List<String> listEnclaves() {
         List<String> res = new ArrayList<>();
-        for(String key : this.protocols.keySet()) {
+        for (String key : this.protocols.keySet()) {
             res.addAll(this.protocols.get(key).getEnclaveAllowlist());
         }
         return res;
@@ -87,7 +84,7 @@ public class AttestationService implements IOperatorChangeHandler {
 
     private IAttestationProvider get(String name) throws AttestationService.NotFound {
         IAttestationProvider handle = this.protocols.get(name);
-        if(handle != null) return handle;
+        if (handle != null) return handle;
         throw new AttestationService.NotFound(name);
     }
 
@@ -99,9 +96,17 @@ public class AttestationService implements IOperatorChangeHandler {
         Set<EnclaveIdentifier> itemsToRemove = oldSet;
         itemsToRemove.removeAll(newSet);
 
-        for(EnclaveIdentifier id : itemsToAdd) {
+        for (EnclaveIdentifier id : itemsToAdd) {
             try {
                 registerEnclave(id.getProtocol(), id.getIdentifier());
+            } catch (Exception e) {
+                LOGGER.warn("exception while processing enclave profile: " + e.getMessage());
+            }
+        }
+
+        for (EnclaveIdentifier id : itemsToRemove) {
+            try {
+                unregisterEnclave(id.getProtocol(), id.getIdentifier());
             } catch (Exception e) {
                 LOGGER.warn("exception while processing enclave profile: " + e.getMessage());
             }
