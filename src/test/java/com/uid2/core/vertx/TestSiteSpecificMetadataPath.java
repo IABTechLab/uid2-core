@@ -7,11 +7,8 @@ import com.uid2.shared.attest.IAttestationTokenService;
 import com.uid2.shared.auth.IAuthorizableProvider;
 import com.uid2.shared.auth.IEnclaveIdentifierProvider;
 import com.uid2.shared.auth.OperatorKey;
-import com.uid2.shared.auth.Role;
 import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.shared.cloud.ICloudStorage;
-import com.uid2.shared.secure.AttestationException;
-import com.uid2.shared.secure.AttestationFailure;
 import com.uid2.shared.secure.AttestationResult;
 import com.uid2.shared.secure.IAttestationProvider;
 import io.vertx.core.AsyncResult;
@@ -30,15 +27,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import javax.crypto.Cipher;
 import java.io.*;
 import java.net.URL;
-import java.nio.file.Paths;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.SecureRandom;
-import java.util.Base64;
 import java.util.concurrent.Callable;
 
 import static com.uid2.shared.Utils.readToEndAsString;
@@ -65,7 +55,9 @@ public class TestSiteSpecificMetadataPath {
 
   private AttestationService attestationService;
 
-  private static final String attestationProtocol = "test-attestation-protocol";
+  // we need trusted to skip the attestation procedure or otherwise the core encpoint call made in this file will
+  // fail at the attestation handler
+  private static final String attestationProtocol = "trusted";
 
   @BeforeEach
   void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
@@ -195,6 +187,5 @@ public class TestSiteSpecificMetadataPath {
   {
     return readToEndAsString(TestSiteSpecificMetadataPath.class.getResourceAsStream(filePath));
   }
-
 
 }
