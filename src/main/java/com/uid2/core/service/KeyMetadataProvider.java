@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import static com.uid2.shared.Utils.getMetadataPathName;
+
 public class KeyMetadataProvider implements IKeyMetadataProvider {
 
     public static final String KeysMetadataPathName = "keys_metadata_path";
@@ -21,8 +23,9 @@ public class KeyMetadataProvider implements IKeyMetadataProvider {
     }
 
     @Override
-    public String getMetadata() throws Exception {
-        String original = readToEndAsString(metadataStreamProvider.download(SecretStore.Global.get(KeysMetadataPathName)));
+    public String getMetadata(boolean isPublicOperator, int siteId) throws Exception {
+        String pathname = getMetadataPathName(isPublicOperator, siteId, SecretStore.Global.get(KeysMetadataPathName));
+        String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonObject obj = main.getJsonObject("keys");
         String location = obj.getString("location");

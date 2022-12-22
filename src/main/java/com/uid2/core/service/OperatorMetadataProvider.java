@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import static com.uid2.shared.Utils.getMetadataPathName;
+
 public class OperatorMetadataProvider implements IOperatorMetadataProvider {
 
     public static final String OperatorsMetadataPathName = "operators_metadata_path";
@@ -17,8 +19,9 @@ public class OperatorMetadataProvider implements IOperatorMetadataProvider {
     private final ICloudStorage downloadUrlGenerator;
 
     @Override
-    public String getMetadata() throws Exception {
-        String original = readToEndAsString(metadataStreamProvider.download(SecretStore.Global.get(OperatorsMetadataPathName)));
+    public String getMetadata(boolean isPublicOperator, int siteId) throws Exception {
+        String pathname = getMetadataPathName(isPublicOperator, siteId, SecretStore.Global.get(OperatorsMetadataPathName));
+        String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonObject obj = main.getJsonObject("operators");
         String location = obj.getString("location");

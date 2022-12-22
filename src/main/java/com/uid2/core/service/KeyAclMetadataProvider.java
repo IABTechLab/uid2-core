@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import static com.uid2.shared.Utils.getMetadataPathName;
+
 public class KeyAclMetadataProvider implements IKeyAclMetadataProvider {
 
     private final ICloudStorage metadataStreamProvider;
@@ -20,8 +22,9 @@ public class KeyAclMetadataProvider implements IKeyAclMetadataProvider {
     }
 
     @Override
-    public String getMetadata() throws Exception {
-        String original = readToEndAsString(metadataStreamProvider.download(SecretStore.Global.get(Const.Config.KeysAclMetadataPathProp)));
+    public String getMetadata(boolean isPublicOperator, int siteId) throws Exception {
+        String pathname = getMetadataPathName(isPublicOperator, siteId, SecretStore.Global.get(Const.Config.KeysAclMetadataPathProp));
+        String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonObject obj = main.getJsonObject("keys_acl");
         String location = obj.getString("location");
