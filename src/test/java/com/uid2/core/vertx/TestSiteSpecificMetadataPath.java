@@ -82,19 +82,6 @@ public class TestSiteSpecificMetadataPath {
     client.getAbs(getUrlForEndpoint(endpoint)).sendBuffer(Buffer.buffer(body), handler);
   }
 
-  private void addAttestationProvider(String protocol) {
-    attestationService.with(protocol, attestationProvider);
-  }
-
-  private void onHandleAttestationRequest(Callable<Future<AttestationResult>> f) {
-    doAnswer(i -> {
-      Handler<AsyncResult<AttestationResult>> handler = i.getArgument(2);
-      handler.handle(f.call());
-      return null;
-    }).when(attestationProvider).attest(any(), any(), any());
-
-  }
-
   private static String makeAttestationRequestJson(String attestationRequest, String publicKey) {
     JsonObject json = new JsonObject();
     if (attestationRequest != null) {
@@ -160,8 +147,7 @@ public class TestSiteSpecificMetadataPath {
     when(cloudStorage.preSignUrl(any())).thenAnswer(i -> new URL(i.getArgument(0)));
 
     fakeAuth(isPublicOperator, siteId);
-    setupAttestation();
-    get(vertx, endPoint, makeAttestationRequestJson("xxx", "yyy"), ar -> {
+    get(vertx, endPoint, "", ar -> {
       assertTrue(ar.succeeded());
       HttpResponse response = ar.result();
       assertEquals(200, response.statusCode());
@@ -170,17 +156,6 @@ public class TestSiteSpecificMetadataPath {
       assertEquals(resultLocation, isPublicOperator?finalPublicDataLocation:finalPrivateDataLocation);
       testContext.completeNow();
     });
-  }
-
-
-  void setupAttestation()
-  {
-    addAttestationProvider(attestationProtocol);
-    onHandleAttestationRequest(() -> {
-      byte[] resultPublicKey = null;
-      return Future.succeededFuture(new AttestationResult(resultPublicKey));
-    });
-    when(attestationTokenService.createToken(any(), any(), any(), any())).thenReturn("test-attestion-token");
   }
 
   String openFile(String filePath) throws IOException
