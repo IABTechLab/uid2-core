@@ -134,10 +134,6 @@ public class CoreVerticle extends AbstractVerticle {
         router.get("/partners/refresh").handler(auth.handle(attestationMiddleware.handle(this::handlePartnerRefresh), Role.OPERATOR));
         router.get("/ops/healthcheck").handler(this::handleHealthCheck);
 
-        if (Optional.ofNullable(ConfigStore.Global.getBoolean("enable_test_endpoints")).orElse(false)) {
-            router.route("/attest/get_token").handler(auth.handle(this::handleTestGetAttestationToken, Role.OPERATOR));
-        }
-
         return router;
     }
 
@@ -178,7 +174,7 @@ public class CoreVerticle extends AbstractVerticle {
         String request = json.getString("attestation_request");
         String clientPublicKey = json.getString("public_key", "");
 
-        if(request == null || request.isEmpty()) {
+        if (request == null || request.isEmpty()) {
             logger.debug("no attestation_request attached");
             Error("no attestation_request attached", 400, rc, null);
             return;
@@ -288,118 +284,6 @@ public class CoreVerticle extends AbstractVerticle {
             Error("error", 500, rc, "error processing partner refresh");
         }
     }
-
-    private void handleEnclaveChange(RoutingContext rc, boolean isUnregister) {
-        class Result {
-            JsonObject make(String name, String failReason) {
-                JsonObject o = new JsonObject();
-                o.put("name", name);
-                o.put("status", (failReason == null || failReason.isEmpty()) ? "success" : "failed");
-                if(failReason != null && !failReason.isEmpty()) o.put("reason", failReason);
-                return o;
-            }
-        }
-
-        try {
-            JsonObject main = rc.getBodyAsJson();
-
-            if(!main.containsKey("enclaves")) {
-                logger.info("enclave register has been called without .enclaves key");
-                Error("error", 400, rc, "no .enclaves key in json payload");
-                return;
-            }
-
-            Object enclavesObj = main.getValue("enclaves");
-            if(!(enclavesObj instanceof JsonArray)) {
-                logger.info("enclave register has been called without .enclaves key");
-                Error("error", 400, rc, ".enclaves needs to be an array");
-                return;
-            }
-
-            JsonArray res = new JsonArray();
-            JsonArray enclaves = (JsonArray) enclavesObj;
-            for (int i=0;i<enclaves.size();i++) {
-                Result result = new Result();
-                JsonObject item = enclaves.getJsonObject(i);
-                String name = item.getString("name", "__item_" + String.valueOf(i));
-                String proto = item.getString("protocol", null);
-                String identifier = item.getString("identifier", null);
-                if(proto == null) {
-                    res.add(result.make(name, "no protocol provided"));
-                    continue;
-                } else if (identifier == null) {
-                    res.add(result.make(name, "no identifier provided"));
-                    continue;
-                }
-
-                try {
-                    if(isUnregister) {
-                        this.attestationService.unregisterEnclave(proto, identifier);
-                    } else {
-                        this.attestationService.registerEnclave(proto, identifier);
-                    }
-                } catch (AttestationService.NotFound notFound) {
-                    res.add(result.make(name, "unknown protocol: " + proto));
-                    continue;
-                } catch (AttestationException ex) {
-                    res.add(result.make(name, "bad identifier"));
-                    continue;
-                }
-                res.add(result.make(name, null));
-            }
-
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .end(res.toString());
-        } catch (Exception e) {
-            logger.warn("exception in handleEnclaveRegister: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing enclave register");
-        }
-    }
-
-    private void handleEnclaveRegister(RoutingContext rc) {
-        handleEnclaveChange(rc, false);
-    }
-
-    private void handleEnclaveUnregister(RoutingContext rc) {
-        handleEnclaveChange(rc, true);
-    }
-
-    //region test endpoints
-    private void handleTestGetAttestationToken(RoutingContext rc) {
-        HttpMethod method = rc.request().method();
-        if (method != HttpMethod.GET && method != HttpMethod.POST) {
-            rc.response().setStatusCode(400).end();
-        }
-
-        try {
-            JsonObject responseObj = new JsonObject();
-            String attestationToken = attestationTokenService.createToken(
-                AuthMiddleware.getAuthToken(rc),
-                Instant.now().plus(1, ChronoUnit.DAYS),
-                SecretStore.Global.get(Constants.AttestationEncryptionKeyName),
-                SecretStore.Global.get(Constants.AttestationEncryptionSaltName));
-            responseObj.put("attestation_token", attestationToken);
-            Success(rc, responseObj);
-        } catch (Exception e) {
-            logger.warn("exception in handleTestGetAttestationToken: {}", e.getMessage());
-            Error("error", 500, rc, "error generating attestation token");
-        }
-    }
-
-    private void handleTestListEnclaves(RoutingContext rc) {
-        HttpMethod method = rc.request().method();
-        if (method != HttpMethod.GET && method != HttpMethod.POST) {
-            rc.response().setStatusCode(400).end();
-        }
-        try {
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .end(new JsonArray(attestationService.listEnclaves()).toString());
-        } catch (Exception e) {
-            logger.warn("exception in handleTestListEnclaves: {}", e.getMessage());
-            Error("error", 500, rc, "error getting enclave lists");
-        }
-    }
-    //endregion test endpoints
 
     public static void Success(RoutingContext rc, Object body) {
         final JsonObject json = new JsonObject(new HashMap<String, Object>() {

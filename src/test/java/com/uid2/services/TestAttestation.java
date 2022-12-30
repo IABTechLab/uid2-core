@@ -1,19 +1,22 @@
 package com.uid2.services;
 
-import com.uid2.shared.secure.AttestationFailure;
-import com.uid2.shared.secure.AttestationResult;
-import com.uid2.shared.secure.ICertificateProvider;
-import com.uid2.shared.secure.NitroAttestationProvider;
+import com.uid2.shared.model.EnclaveIdentifier;
+import com.uid2.shared.secure.*;
 import com.uid2.shared.secure.nitro.InMemoryAWSCertificateStore;
 import com.uid2.core.service.AttestationService;
 import com.uid2.shared.attest.AttestationToken;
 import com.uid2.shared.attest.AttestationTokenService;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -141,5 +144,67 @@ public class TestAttestation {
         });*/
     }
 
+    @Test
+    public void testEnclaveIdChange() throws Exception {
+        PlaintextAttestationProvider activeEnclaves = new PlaintextAttestationProvider();
+        AttestationService enclaveManager = new AttestationService().with("plaintext", activeEnclaves);
+        Set<EnclaveIdentifier> initialEnclaves = new HashSet<>();
+        EnclaveIdentifier e1 = new EnclaveIdentifier("enclave1", "plaintext", "enclave1_id", 10000);
+        EnclaveIdentifier e2 = new EnclaveIdentifier("enclave2", "plaintext", "enclave2_id", 10001);
+        EnclaveIdentifier e3 = new EnclaveIdentifier("enclave3", "plaintext", "enclave3_id", 10002);
+        initialEnclaves.add(e1);
+        initialEnclaves.add(e2);
+        initialEnclaves.add(e3);
+
+        // initial 3 enclaves
+        enclaveManager.handle(initialEnclaves);
+        assertTrue(activeEnclaves.hasEnclave("enclave1_id"));
+        assertTrue(activeEnclaves.hasEnclave("enclave2_id"));
+        assertTrue(activeEnclaves.hasEnclave("enclave3_id"));
+
+        // insert new enclave
+        EnclaveIdentifier e4 = new EnclaveIdentifier("enclave3", "plaintext", "enclave4_id", 10003);
+        Set<EnclaveIdentifier> enclaveInsertion = new HashSet<>();
+        enclaveInsertion.add(e1);
+        enclaveInsertion.add(e2);
+        enclaveInsertion.add(e3);
+        enclaveInsertion.add(e4);
+        enclaveManager.handle(enclaveInsertion);
+        assertTrue(activeEnclaves.hasEnclave("enclave1_id"));
+        assertTrue(activeEnclaves.hasEnclave("enclave2_id"));
+        assertTrue(activeEnclaves.hasEnclave("enclave3_id"));
+        assertTrue(activeEnclaves.hasEnclave("enclave4_id"));
+
+        // remove existing enclave
+        Set<EnclaveIdentifier> enclaveRemoval = new HashSet<>();
+        enclaveRemoval.add(e1);
+        enclaveRemoval.add(e4);
+        enclaveManager.handle(enclaveRemoval);
+        assertTrue(activeEnclaves.hasEnclave("enclave1_id"));
+        assertFalse(activeEnclaves.hasEnclave("enclave2_id"));
+        assertFalse(activeEnclaves.hasEnclave("enclave3_id"));
+        assertTrue(activeEnclaves.hasEnclave("enclave4_id"));
+    }
+
     private static final String nitroAttestationRequest = "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";
+
+    class PlaintextAttestationProvider implements IAttestationProvider {
+        private Set<String> enclaves = new HashSet<>();
+        @Override
+        public void attest(byte[] bytes, byte[] bytes1, Handler<AsyncResult<AttestationResult>> handler) { }
+
+        @Override
+        public void registerEnclave(String s) throws AttestationException { enclaves.add(s); }
+
+        @Override
+        public void unregisterEnclave(String s) throws AttestationException { enclaves.remove(s);  }
+
+        @Override
+        public Collection<String> getEnclaveAllowlist() { return enclaves; }
+
+        public boolean hasEnclave(String name) {
+            return enclaves.contains(name);
+        }
+    }
+
 }
