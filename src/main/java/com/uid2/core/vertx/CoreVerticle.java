@@ -4,10 +4,10 @@ import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.Constants;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.*;
+import com.uid2.core.util.OperatorInfo;
 import com.uid2.shared.Const;
-import com.uid2.shared.OperatorInfo;
+
 import com.uid2.shared.Utils;
-import com.uid2.shared.attest.AttestationTokenService;
 import com.uid2.shared.attest.IAttestationTokenService;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.ICloudStorage;
@@ -16,7 +16,6 @@ import com.uid2.shared.health.HealthManager;
 import com.uid2.shared.middleware.AttestationMiddleware;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.secure.*;
-import com.uid2.shared.secure.nitro.InMemoryAWSCertificateStore;
 import com.uid2.shared.vertx.RequestCapturingHandler;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -30,7 +29,6 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
 
@@ -45,8 +43,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Optional;
-
-import static com.uid2.shared.middleware.AuthMiddleware.API_CLIENT_PROP;
 
 public class CoreVerticle extends AbstractVerticle {
 
@@ -246,7 +242,7 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .end(keyMetadataProvider.getMetadata(info.isPublicOperator, info.siteId));
+                .end(keyMetadataProvider.getMetadata(info));
         } catch (Exception e) {
             logger.warn("exception in handleKeyRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing key refresh");
@@ -257,7 +253,7 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(keyAclMetadataProvider.getMetadata(info.isPublicOperator, info.siteId));
+                    .end(keyAclMetadataProvider.getMetadata(info));
         } catch (Exception e) {
             logger.warn("exception in handleKeyAclRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing key acl refresh");
@@ -268,7 +264,7 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .end(clientMetadataProvider.getMetadata(info.isPublicOperator, info.siteId));
+                .end(clientMetadataProvider.getMetadata(info));
         } catch (Exception e) {
             logger.warn("exception in handleClientRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing client refresh");
@@ -279,7 +275,7 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(operatorMetadataProvider.getMetadata(info.isPublicOperator, info.siteId));
+                    .end(operatorMetadataProvider.getMetadata(info));
         } catch (Exception e) {
             logger.warn("exception in handleOperatorRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing operator refresh");

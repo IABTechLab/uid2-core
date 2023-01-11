@@ -7,12 +7,11 @@ import com.uid2.shared.attest.IAttestationTokenService;
 import com.uid2.shared.auth.IAuthorizableProvider;
 import com.uid2.shared.auth.IEnclaveIdentifierProvider;
 import com.uid2.shared.auth.OperatorKey;
+import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.shared.cloud.ICloudStorage;
-import com.uid2.shared.secure.AttestationResult;
 import com.uid2.shared.secure.IAttestationProvider;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -29,7 +28,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import java.io.*;
 import java.net.URL;
-import java.util.concurrent.Callable;
+import java.util.HashSet;
 
 import static com.uid2.shared.Utils.readToEndAsString;
 import static org.junit.jupiter.api.Assertions.*;
@@ -72,8 +71,8 @@ public class TestSiteSpecificMetadataPath {
     return String.format("http://127.0.0.1:%d/%s", Const.Port.ServicePortForCore, endpoint);
   }
 
-  private void fakeAuth(boolean isPublicOperator, int siteId) {
-    OperatorKey clientKey = new OperatorKey("test-key", "", "", attestationProtocol, 0, false, siteId, isPublicOperator);
+  private void fakeAuth(OperatorType operatorType, int siteId) {
+    OperatorKey clientKey = new OperatorKey("test-key", "", "", attestationProtocol, 0, false, siteId, new HashSet<>(), operatorType);
     when(authProvider.get(any())).thenReturn(clientKey);
   }
 
@@ -100,43 +99,45 @@ public class TestSiteSpecificMetadataPath {
 
   @Test
   void publicOperatorGetsGlobalKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
-    genericSiteSpecificTest(vertx, testContext, true, 99, "keys", "keys","key/refresh");
+    genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "keys", "keys","key/refresh");
   }
 
   @Test
   void privateOperatorGetsSiteSpecificKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
   {
-    genericSiteSpecificTest(vertx, testContext, false, 108, "keys", "keys","key/refresh");
+    genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "keys", "keys","key/refresh");
   }
 
   @Test
   void publicOperatorGetsGlobalClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
-    genericSiteSpecificTest(vertx, testContext, true, 99, "clients", "client_keys","clients/refresh");
+    genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "clients", "client_keys","clients/refresh");
   }
 
   @Test
   void privateOperatorGetsSiteSpecificClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
   {
-    genericSiteSpecificTest(vertx, testContext, false, 108, "clients", "client_keys", "clients/refresh");
+    genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "clients", "client_keys", "clients/refresh");
   }
 
   @Test
   void publicOperatorGetsGlobalKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
-    genericSiteSpecificTest(vertx, testContext, true, 99, "keys_acl", "keys_acl","/key/acl/refresh");
+    genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "keys_acl", "keys_acl","/key/acl/refresh");
   }
 
   @Test
   void privateOperatorGetsSiteSpecificKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
   {
-    genericSiteSpecificTest(vertx, testContext, false, 108, "keys_acl", "keys_acl", "/key/acl/refresh");
+    genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "keys_acl", "keys_acl", "/key/acl/refresh");
   }
 
-  void genericSiteSpecificTest(Vertx vertx, VertxTestContext testContext, boolean isPublicOperator, int siteId, String dataType, String jsonObjectContainingLocation, String endPoint) throws CloudStorageException, IOException
+  void genericSiteSpecificTest(Vertx vertx, VertxTestContext testContext, OperatorType operatorType, int siteId, String dataType, String jsonObjectContainingLocation, String endPoint) throws CloudStorageException, IOException
   {
-    String privateSiteMetaDataURL = "sites/"+ siteId+ "/com.uid2.core/testSiteSpecificMetadata/"+dataType+"/metadata.json";
+    //example: /com.uid2.core/testSiteSpecificMetadata/keys/site/108/metadata.json
+    String privateSiteMetaDataURL = "/com.uid2.core/testSiteSpecificMetadata/"+dataType+"/site/"+ siteId+ "/metadata.json";
+
     String publicSiteMetaData =  "/com.uid2.core/testSiteSpecificMetadata/"+dataType+"/metadata.json";
 
-    String privateMetaDataContent = openFile("/com.uid2.core/testSiteSpecificMetadata/"+dataType+"/sites/"+ siteId+ "/metadata.json");
+    String privateMetaDataContent = openFile("/com.uid2.core/testSiteSpecificMetadata/"+dataType+"/site/"+ siteId+ "/metadata.json");
     String publicMetaDataContent = openFile(publicSiteMetaData);
 
     String finalPrivateDataLocation = ((JsonObject) Json.decodeValue(privateMetaDataContent)).getJsonObject(jsonObjectContainingLocation).getString("location");
@@ -146,14 +147,14 @@ public class TestSiteSpecificMetadataPath {
     when(cloudStorage.download(eq(publicSiteMetaData))).thenReturn(new StringBufferInputStream(publicMetaDataContent));
     when(cloudStorage.preSignUrl(any())).thenAnswer(i -> new URL(i.getArgument(0)));
 
-    fakeAuth(isPublicOperator, siteId);
+    fakeAuth(operatorType, siteId);
     get(vertx, endPoint, "", ar -> {
       assertTrue(ar.succeeded());
       HttpResponse response = ar.result();
       assertEquals(200, response.statusCode());
       JsonObject json = response.bodyAsJsonObject();
       String resultLocation = json.getJsonObject(jsonObjectContainingLocation).getString("location");
-      assertEquals(resultLocation, isPublicOperator?finalPublicDataLocation:finalPrivateDataLocation);
+      assertEquals(resultLocation, operatorType==OperatorType.PUBLIC?finalPublicDataLocation:finalPrivateDataLocation);
       testContext.completeNow();
     });
   }

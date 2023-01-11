@@ -1,6 +1,8 @@
 package com.uid2.core.service;
 
 import com.uid2.core.model.SecretStore;
+import com.uid2.core.util.OperatorInfo;
+import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.cloud.ICloudStorage;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
@@ -9,7 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import static com.uid2.shared.Utils.getMetadataPathName;
+import static com.uid2.core.util.MetadataHelper.getMetadataPathName;
 
 public class OperatorMetadataProvider implements IOperatorMetadataProvider {
 
@@ -19,8 +21,8 @@ public class OperatorMetadataProvider implements IOperatorMetadataProvider {
     private final ICloudStorage downloadUrlGenerator;
 
     @Override
-    public String getMetadata(boolean isPublicOperator, int siteId) throws Exception {
-        String pathname = getMetadataPathName(isPublicOperator, siteId, SecretStore.Global.get(OperatorsMetadataPathName));
+    public String getMetadata(OperatorInfo info) throws Exception {
+        String pathname = getMetadataPathName(info.getOperatorType(), info.getSiteId(), SecretStore.Global.get(OperatorsMetadataPathName));
         String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonObject obj = main.getJsonObject("operators");

@@ -32,6 +32,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.concurrent.Callable;
 
 import static org.mockito.Mockito.*;
@@ -66,7 +67,7 @@ public class TestCoreVerticle {
   }
 
   private void fakeAuth(Role role) {
-    OperatorKey clientKey = new OperatorKey("test-key", "", "", attestationProtocol, 0, false, 88, false);
+    OperatorKey clientKey = new OperatorKey("test-key", "", "", attestationProtocol, 0, false, 88, new HashSet<>(), OperatorType.PRIVATE);
     when(authProvider.get(any())).thenReturn(clientKey);
   }
 
