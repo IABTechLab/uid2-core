@@ -187,7 +187,7 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             attestationService.attest(protocol, request, clientPublicKey, ar -> {
                 if (!ar.succeeded()) {
-                    logger.info("attestation failure: {}", ar.cause());
+                    logger.warn("attestation failure: ", ar.cause());
                     Error("attestation failure", 500, rc, null);
                     return;
                 }
@@ -219,6 +219,8 @@ public class CoreVerticle extends AbstractVerticle {
                     }
                 }
 
+                // TODO: log requester identifier
+                logger.info("attestation successful");
                 responseObj.put("attestation_token", attestationToken);
                 Success(rc, responseObj);
             });
