@@ -6,7 +6,6 @@ import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.*;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
-import com.uid2.shared.attest.AttestationTokenService;
 import com.uid2.shared.attest.IAttestationTokenService;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.ICloudStorage;
@@ -15,7 +14,6 @@ import com.uid2.shared.health.HealthManager;
 import com.uid2.shared.middleware.AttestationMiddleware;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.secure.*;
-import com.uid2.shared.secure.nitro.InMemoryAWSCertificateStore;
 import com.uid2.shared.vertx.RequestCapturingHandler;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -29,7 +27,6 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
 
@@ -187,7 +184,7 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             attestationService.attest(protocol, request, clientPublicKey, ar -> {
                 if (!ar.succeeded()) {
-                    logger.info("attestation failure: {}", ar.cause());
+                    logger.warn("attestation failure: ", ar.cause());
                     Error("attestation failure", 500, rc, null);
                     return;
                 }
@@ -219,6 +216,8 @@ public class CoreVerticle extends AbstractVerticle {
                     }
                 }
 
+                // TODO: log requester identifier
+                logger.info("attestation successful");
                 responseObj.put("attestation_token", attestationToken);
                 Success(rc, responseObj);
             });
