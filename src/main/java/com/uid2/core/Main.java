@@ -21,6 +21,8 @@ import com.uid2.shared.secure.GcpVmidAttestationProvider;
 import com.uid2.shared.secure.NitroAttestationProvider;
 import com.uid2.shared.secure.TrustedAttestationProvider;
 import com.uid2.shared.secure.nitro.InMemoryAWSCertificateStore;
+import com.uid2.shared.store.CloudPath;
+import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.vertx.RotatingStoreVerticle;
 import com.uid2.shared.vertx.VertxUtils;
 import io.micrometer.core.instrument.Gauge;
@@ -103,8 +105,9 @@ public class Main {
             RotatingStoreVerticle operatorRotatingVerticle = null;
             CoreVerticle coreVerticle = null;
             try {
-                String operatorMetadataPath = SecretStore.Global.get(Const.Config.OperatorsMetadataPathProp);
-                RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorMetadataPath);
+                CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
+                GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
+                RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
                 operatorRotatingVerticle = new RotatingStoreVerticle("operators", 60000, operatorKeyProvider);
 
                 String enclaveMetadataPath = SecretStore.Global.get(EnclaveIdentifierProvider.ENCLAVES_METADATA_PATH);
