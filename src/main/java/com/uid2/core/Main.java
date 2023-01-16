@@ -105,7 +105,7 @@ public class Main {
             RotatingStoreVerticle operatorRotatingVerticle = null;
             CoreVerticle coreVerticle = null;
             try {
-                CloudPath operatorMetadataPath = new CloudPath(SecretStore.Global.get(Const.Config.OperatorsMetadataPathProp));
+                CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
                 GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
                 RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
                 operatorRotatingVerticle = new RotatingStoreVerticle("operators", 60000, operatorKeyProvider);
