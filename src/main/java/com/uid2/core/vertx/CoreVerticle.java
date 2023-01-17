@@ -1,5 +1,6 @@
 package com.uid2.core.vertx;
 
+import com.uid2.core.handler.AttestationFailureHandler;
 import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.Constants;
 import com.uid2.core.model.SecretStore;
@@ -38,9 +39,7 @@ import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Optional;
+import java.util.*;
 
 public class CoreVerticle extends AbstractVerticle {
 
@@ -122,7 +121,9 @@ public class CoreVerticle extends AbstractVerticle {
                 .allowedHeader("Access-Control-Allow-Headers")
                 .allowedHeader("Content-Type"));
 
-        router.post("/attest").handler(auth.handle(this::handleAttestAsync, Role.OPERATOR));
+        router.post("/attest")
+                .handler(new AttestationFailureHandler())
+                .handler(auth.handle(this::handleAttestAsync, Role.OPERATOR));
         router.get("/key/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeyRefresh), Role.OPERATOR));
         router.get("/key/acl/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeyAclRefresh), Role.OPERATOR));
         router.get("/salt/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleSaltRefresh), Role.OPERATOR));
@@ -154,11 +155,6 @@ public class CoreVerticle extends AbstractVerticle {
     private void handleAttestAsync(RoutingContext rc) {
         String token = AuthMiddleware.getAuthToken(rc);
         IAuthorizable profile = authProvider.get(token);
-        if(!(profile instanceof OperatorKey)) {
-            logger.error("received a call to attestation endpoint with client key (expect operator key): contact " + profile.getContact());
-            Error("received a call to attestation endpoint with client key (expect operator key): contact " + profile.getContact(), 400, rc, null);
-            return;
-        }
 
         OperatorKey operator = (OperatorKey) profile;
         String protocol = operator.getProtocol();
@@ -167,23 +163,25 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             json = rc.getBodyAsJson();
         } catch (DecodeException e) {
-            logger.debug("json decode error");
+            setAttestationFailureReason(rc, AttestationFailureReason.REQUEST_BODY_IS_NOT_VALID_JSON);
             Error("request body is not a valid json", 400, rc, null);
             return;
         }
 
-        String request = json.getString("attestation_request");
-        String clientPublicKey = json.getString("public_key", "");
+        String request = json == null ? null : json.getString("attestation_request");
 
         if(request == null || request.isEmpty()) {
-            logger.debug("no attestation_request attached");
+            setAttestationFailureReason(rc, AttestationFailureReason.NO_ATTESTATION_REQUEST_ATTACHED);
             Error("no attestation_request attached", 400, rc, null);
             return;
         }
 
+        String clientPublicKey = json.getString("public_key", "");
+
         try {
             attestationService.attest(protocol, request, clientPublicKey, ar -> {
                 if (!ar.succeeded()) {
+                    setAttestationFailureReason(rc, AttestationFailureReason.ATTESTATION_FAILURE, Collections.singletonMap("cause", ar.cause().getMessage()));
                     logger.warn("attestation failure: ", ar.cause());
                     Error("attestation failure", 500, rc, null);
                     return;
@@ -191,6 +189,7 @@ public class CoreVerticle extends AbstractVerticle {
 
                 final AttestationResult result = ar.result();
                 if (!result.isSuccess()) {
+                    setAttestationFailureReason(rc, AttestationFailureReason.ATTESTATION_FAILURE, Collections.singletonMap("reason", result.getReason()));
                     Error(result.getReason(), 401, rc, null);
                     return;
                 }
@@ -210,6 +209,7 @@ public class CoreVerticle extends AbstractVerticle {
                         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
                         attestationToken = Base64.getEncoder().encodeToString(cipher.doFinal(attestationToken.getBytes(StandardCharsets.UTF_8)));
                     } catch (Exception e) {
+                        setAttestationFailureReason(rc, AttestationFailureReason.RESPONSE_ENCRYPTION_EXCEPTION, Collections.singletonMap("exception", e.getMessage()));
                         logger.warn("attestation failure: exception while encrypting response - {}", e);
                         Error("attestation failure", 500, rc, null);
                         return;
@@ -222,10 +222,18 @@ public class CoreVerticle extends AbstractVerticle {
                 Success(rc, responseObj);
             });
         } catch (AttestationService.NotFound e) {
-            logger.info("attestation failure, invalid protocol: {}", protocol);
+            setAttestationFailureReason(rc, AttestationFailureReason.INVALID_PROTOCOL);
             Error("protocol not found", 500, rc, null);
-            return;
         }
+    }
+
+    private static void setAttestationFailureReason(RoutingContext context, AttestationFailureReason reason) {
+        setAttestationFailureReason(context, reason, null);
+    }
+
+    private static void setAttestationFailureReason(RoutingContext context, AttestationFailureReason reason, Map<String, Object> data) {
+        context.put(com.uid2.core.Const.RoutingContextData.ATTESTATION_FAILURE_REASON_PROP, reason);
+        context.put(com.uid2.core.Const.RoutingContextData.ATTESTATION_FAILURE_DATA_PROP, data);
     }
 
     private void handleSaltRefresh(RoutingContext rc) {
