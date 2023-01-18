@@ -27,20 +27,23 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import java.io.*;
+
+import java.io.IOException;
+import java.io.StringBufferInputStream;
 import java.net.URL;
 import java.util.HashSet;
 
 import static com.uid2.shared.Utils.readToEndAsString;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
- * UID2-576 Make sure that private operator only gets site-specific client keys/keys/keys_acl data
- * while public operators will get the unfiltered global data set
+ * UID2-576 test if the provide_private_site_data config isn't set or set to false,
+ * we still provide global scope metadata file instead of private operator caller's private site data
  */
 @ExtendWith(VertxExtension.class)
-public class TestSiteSpecificMetadataPath {
+public class TestSiteSpecificMetadataPathDisabled {
 
   @Mock
   private ICloudStorage cloudStorage;
@@ -63,7 +66,7 @@ public class TestSiteSpecificMetadataPath {
   void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
     attestationService = new AttestationService();
     SecretStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testSiteSpecificMetadata/test-secrets.json"))));
-    ConfigStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testSiteSpecificMetadata/test-configs-provide-private-site-data.json"))));
+    ConfigStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testSiteSpecificMetadata/test-configs-stop-providing-private-site-data.json"))));
     MockitoAnnotations.initMocks(this);
     CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider);
     vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
@@ -101,38 +104,38 @@ public class TestSiteSpecificMetadataPath {
 
   @Test
   void publicOperatorGetsGlobalKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
-    genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "keys", "keys","key/refresh");
+    genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "keys", "keys","key/refresh", false);
   }
 
   @Test
-  void privateOperatorGetsSiteSpecificKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
+  void privateOperatorGetsGlobalKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
   {
-    genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "keys", "keys","key/refresh");
+    genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "keys", "keys","key/refresh", true);
   }
 
   @Test
   void publicOperatorGetsGlobalClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
-    genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "clients", "client_keys","clients/refresh");
+    genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "clients", "client_keys","clients/refresh", true);
   }
 
   @Test
-  void privateOperatorGetsSiteSpecificClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
+  void privateOperatorGetsGlobalClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
   {
-    genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "clients", "client_keys", "clients/refresh");
+    genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "clients", "client_keys", "clients/refresh", true);
   }
 
   @Test
   void publicOperatorGetsGlobalKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
-    genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "keys_acl", "keys_acl","/key/acl/refresh");
+    genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "keys_acl", "keys_acl","/key/acl/refresh", true);
   }
 
   @Test
-  void privateOperatorGetsSiteSpecificKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
+  void privateOperatorGetsGlobalKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
   {
-    genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "keys_acl", "keys_acl", "/key/acl/refresh");
+    genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "keys_acl", "keys_acl", "/key/acl/refresh", true);
   }
 
-  void genericSiteSpecificTest(Vertx vertx, VertxTestContext testContext, OperatorType operatorType, int siteId, String dataType, String jsonObjectContainingLocation, String endPoint) throws CloudStorageException, IOException
+  void genericSiteSpecificTest(Vertx vertx, VertxTestContext testContext, OperatorType operatorType, int siteId, String dataType, String jsonObjectContainingLocation, String endPoint, boolean stopProvidingPrivateSiteData) throws CloudStorageException, IOException
   {
     //example: /com.uid2.core/testSiteSpecificMetadata/keys/site/108/metadata.json
     String privateSiteMetaDataURL = "/com.uid2.core/testSiteSpecificMetadata/"+dataType+"/site/"+ siteId+ "/metadata.json";
@@ -156,14 +159,14 @@ public class TestSiteSpecificMetadataPath {
       assertEquals(200, response.statusCode());
       JsonObject json = response.bodyAsJsonObject();
       String resultLocation = json.getJsonObject(jsonObjectContainingLocation).getString("location");
-      assertEquals(resultLocation, operatorType==OperatorType.PUBLIC?finalPublicDataLocation:finalPrivateDataLocation);
+      assertEquals(resultLocation, operatorType==OperatorType.PUBLIC || stopProvidingPrivateSiteData?finalPublicDataLocation:finalPrivateDataLocation);
       testContext.completeNow();
     });
   }
 
   String openFile(String filePath) throws IOException
   {
-    return readToEndAsString(TestSiteSpecificMetadataPath.class.getResourceAsStream(filePath));
+    return readToEndAsString(TestSiteSpecificMetadataPathDisabled.class.getResourceAsStream(filePath));
   }
 
 }

@@ -1,10 +1,14 @@
 package com.uid2.core.util;
 
+import com.uid2.core.model.ConfigStore;
 import com.uid2.shared.auth.OperatorType;
+import com.uid2.shared.auth.Role;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
 import com.uid2.shared.store.scope.StoreScope;
+
+import java.util.Optional;
 
 public final class MetadataHelper {
 
@@ -18,7 +22,8 @@ public final class MetadataHelper {
     public static String getMetadataPathName(OperatorType operatorType, int siteId, String metadataPathName)
     {
         StoreScope store;
-        if(operatorType == OperatorType.PUBLIC)
+        Boolean providePrivateSiteData = ConfigStore.Global.getBoolean("provide_private_site_data");
+        if (operatorType == OperatorType.PUBLIC || (providePrivateSiteData == null || !providePrivateSiteData.booleanValue()))
         {
             store = new GlobalScope(new CloudPath(metadataPathName));
         }
