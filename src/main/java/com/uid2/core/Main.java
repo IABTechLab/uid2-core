@@ -13,7 +13,6 @@ import com.uid2.shared.attest.IAttestationTokenService;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.cloud.CloudUtils;
-import com.uid2.shared.cloud.EmbeddedResourceStorage;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.jmx.AdminApi;
 import com.uid2.shared.secure.AzureAttestationProvider;
@@ -90,16 +89,9 @@ public class Main {
             ConfigStore.Global.load(config);
             SecretStore.Global.load(config);
 
-            boolean useStorageMock = Optional.ofNullable(ConfigStore.Global.getBoolean("storage_mock")).orElse(false);
-            ICloudStorage cloudStorage = null;
-            if (useStorageMock) {
-                cloudStorage = new EmbeddedResourceStorage(Main.class).withUrlPrefix(ConfigStore.Global.getOrDefault("storage_mock_url_prefix", ""));
-            } else {
-                cloudStorage = CloudUtils.createStorage(SecretStore.Global.get(Const.Config.CoreS3BucketProp), config);
-
-                int expiryInSeconds = ConfigStore.Global.getInteger("pre_signed_url_expiry");
-                cloudStorage.setPreSignedUrlExpiry(expiryInSeconds);
-            }
+            ICloudStorage cloudStorage = CloudUtils.createStorage(SecretStore.Global.get(Const.Config.CoreS3BucketProp), config);
+            int expiryInSeconds = ConfigStore.Global.getInteger("pre_signed_url_expiry");
+            cloudStorage.setPreSignedUrlExpiry(expiryInSeconds);
 
             RotatingStoreVerticle enclaveRotatingVerticle = null;
             RotatingStoreVerticle operatorRotatingVerticle = null;
@@ -115,11 +107,11 @@ public class Main {
                 enclaveRotatingVerticle = new RotatingStoreVerticle("enclaves", 60000, enclaveIdProvider);
 
                 AttestationService attestationService = new AttestationService()
-                    .with("trusted", new TrustedAttestationProvider())
-                    .with("azure-sgx", new AzureAttestationProvider(
-                        ConfigStore.Global.getOrDefault("maa_server_base_url", "https://sharedeus.eus.attest.azure.net"),
-                        WebClient.create(vertx)))
-                    .with("aws-nitro", new NitroAttestationProvider(new InMemoryAWSCertificateStore()));
+                        .with("trusted", new TrustedAttestationProvider())
+                        .with("azure-sgx", new AzureAttestationProvider(
+                                ConfigStore.Global.getOrDefault("maa_server_base_url", "https://sharedeus.eus.attest.azure.net"),
+                                WebClient.create(vertx)))
+                        .with("aws-nitro", new NitroAttestationProvider(new InMemoryAWSCertificateStore()));
 
                 // try read GoogleCredentials
                 GoogleCredentials googleCredentials = CloudUtils.getGoogleCredentialsFromConfig(config);
@@ -132,7 +124,7 @@ public class Main {
 
                     // enable gcp-vmid attestation if requested
                     attestationService
-                        .with("gcp-vmid", new GcpVmidAttestationProvider(googleCredentials, enclaveParams));
+                            .with("gcp-vmid", new GcpVmidAttestationProvider(googleCredentials, enclaveParams));
                 }
 
                 IAttestationTokenService attestationTokenService = new AttestationTokenService(
@@ -161,10 +153,10 @@ public class Main {
 
             // see also https://micrometer.io/docs/registry/prometheus
             prometheusRegistry.config()
-                // providing common renaming for prometheus metric, e.g. "hello.world" to "hello_world"
-                .meterFilter(new PrometheusRenameFilter())
-                // adding common labels
-                .commonTags("application", "uid2-core");
+                    // providing common renaming for prometheus metric, e.g. "hello.world" to "hello_world"
+                    .meterFilter(new PrometheusRenameFilter())
+                    // adding common labels
+                    .commonTags("application", "uid2-core");
 
             // wire my monitoring system to global static state, see also https://micrometer.io/docs/concepts
             Metrics.addRegistry(prometheusRegistry);
@@ -173,10 +165,10 @@ public class Main {
         // retrieve image version (will unify when uid2-common is used)
         String version = Optional.ofNullable(System.getenv("IMAGE_VERSION")).orElse("unknown");
         Gauge appStatus = Gauge
-            .builder("app.status", () -> 1)
-            .description("application version and status")
-            .tags("version", version)
-            .register(Metrics.globalRegistry);
+                .builder("app.status", () -> 1)
+                .description("application version and status")
+                .tags("version", version)
+                .register(Metrics.globalRegistry);
     }
 
     /*
@@ -197,27 +189,27 @@ public class Main {
 
     private static VertxOptions getVertxOptions(MicrometerMetricsOptions metricOptions) {
         final int threadBlockedCheckInterval = Utils.isProductionEnvironment()
-            ? 60 * 1000
-            : 3600 * 1000;
+                ? 60 * 1000
+                : 3600 * 1000;
 
         return new VertxOptions()
-            .setMetricsOptions(metricOptions)
-            .setBlockedThreadCheckInterval(threadBlockedCheckInterval);
+                .setMetricsOptions(metricOptions)
+                .setBlockedThreadCheckInterval(threadBlockedCheckInterval);
     }
 
     private static MicrometerMetricsOptions getMetricOptions(VertxPrometheusOptions promOptions) {
         return new MicrometerMetricsOptions()
-            .setPrometheusOptions(promOptions)
-            .setLabels(EnumSet.of(Label.HTTP_METHOD, Label.HTTP_CODE, Label.HTTP_PATH))
-            .setJvmMetricsEnabled(true)
-            .setEnabled(true);
+                .setPrometheusOptions(promOptions)
+                .setLabels(EnumSet.of(Label.HTTP_METHOD, Label.HTTP_CODE, Label.HTTP_PATH))
+                .setJvmMetricsEnabled(true)
+                .setEnabled(true);
     }
 
     private static VertxPrometheusOptions getPrometheusOptions() {
         final int portOffset = Utils.getPortOffset();
         return new VertxPrometheusOptions()
-            .setStartEmbeddedServer(true)
-            .setEmbeddedServerOptions(new HttpServerOptions().setPort(Const.Port.PrometheusPortForCore + portOffset))
-            .setEnabled(true);
+                .setStartEmbeddedServer(true)
+                .setEmbeddedServerOptions(new HttpServerOptions().setPort(Const.Port.PrometheusPortForCore + portOffset))
+                .setEnabled(true);
     }
 }
