@@ -277,7 +277,7 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(operatorMetadataProvider.getMetadata(info));
+                    .end(operatorMetadataProvider.getMetadata());
         } catch (Exception e) {
             logger.warn("exception in handleOperatorRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing operator refresh");

@@ -21,9 +21,8 @@ public class OperatorMetadataProvider implements IOperatorMetadataProvider {
     private final ICloudStorage downloadUrlGenerator;
 
     @Override
-    public String getMetadata(OperatorInfo info) throws Exception {
-        String pathname = getMetadataPathName(info.getOperatorType(), info.getSiteId(), SecretStore.Global.get(OperatorsMetadataPathName));
-        String original = readToEndAsString(metadataStreamProvider.download(pathname));
+    public String getMetadata() throws Exception {
+        String original = readToEndAsString(metadataStreamProvider.download(SecretStore.Global.get(OperatorsMetadataPathName)));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonObject obj = main.getJsonObject("operators");
         String location = obj.getString("location");
