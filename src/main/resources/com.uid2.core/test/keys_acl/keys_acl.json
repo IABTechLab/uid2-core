@@ -1,0 +1,10 @@
+[
+  {
+    "site_id": 6,
+    "whitelist": [7]
+  },
+  {
+    "site_id": 8,
+    "blacklist": [6]
+  }
+]

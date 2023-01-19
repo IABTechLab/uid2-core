@@ -13,6 +13,7 @@ import com.uid2.shared.attest.IAttestationTokenService;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.cloud.CloudUtils;
+import com.uid2.shared.cloud.EmbeddedResourceStorage;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.jmx.AdminApi;
 import com.uid2.shared.secure.AzureAttestationProvider;
@@ -89,9 +90,16 @@ public class Main {
             ConfigStore.Global.load(config);
             SecretStore.Global.load(config);
 
-            ICloudStorage cloudStorage = CloudUtils.createStorage(SecretStore.Global.get(Const.Config.CoreS3BucketProp), config);
-            int expiryInSeconds = ConfigStore.Global.getInteger("pre_signed_url_expiry");
-            cloudStorage.setPreSignedUrlExpiry(expiryInSeconds);
+            boolean useStorageMock = Optional.ofNullable(ConfigStore.Global.getBoolean("storage_mock")).orElse(false);
+            ICloudStorage cloudStorage = null;
+            if (useStorageMock) {
+                cloudStorage = new EmbeddedResourceStorage(Main.class).withUrlPrefix(ConfigStore.Global.getOrDefault("storage_mock_url_prefix", ""));
+            } else {
+                cloudStorage = CloudUtils.createStorage(SecretStore.Global.get(Const.Config.CoreS3BucketProp), config);
+
+                int expiryInSeconds = ConfigStore.Global.getInteger("pre_signed_url_expiry");
+                cloudStorage.setPreSignedUrlExpiry(expiryInSeconds);
+            }
 
             RotatingStoreVerticle enclaveRotatingVerticle = null;
             RotatingStoreVerticle operatorRotatingVerticle = null;
