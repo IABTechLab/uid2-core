@@ -7,6 +7,7 @@ import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.middleware.AuthMiddleware;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
@@ -85,6 +86,7 @@ public class AttestationFailureHandler implements Handler<RoutingContext> {
             return originatingIpAddress.split(",")[0];
         }
 
-        return context.request().remoteAddress().host();
+        final SocketAddress remoteAddress = context.request().remoteAddress();
+        return remoteAddress == null ? null : remoteAddress.host();
     }
 }
