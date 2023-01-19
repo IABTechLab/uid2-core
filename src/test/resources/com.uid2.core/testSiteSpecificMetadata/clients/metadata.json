@@ -2,6 +2,6 @@
   "version" : 1,
   "generated" : 1617149276,
   "client_keys" : {
-    "location": "https://uidapi.com/com.uid2.core/testSiteSpecificMetadata/clients/clients.json"
+    "location": "testSiteSpecificMetadata/clients/clients.json"
   }
 }

@@ -3,6 +3,6 @@
   "generated": 1609459200,
   "system_key_id": 3,
   "client_keys": {
-    "location": "https://uidapi.com/com.uid2.core/testSiteSpecificMetadata/clients/site/99/keys.json"
+    "location": "testSiteSpecificMetadata/clients/site/99/keys.json"
   }
 }
