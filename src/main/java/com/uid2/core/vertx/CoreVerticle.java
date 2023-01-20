@@ -4,7 +4,9 @@ import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.Constants;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.*;
+import com.uid2.core.util.OperatorInfo;
 import com.uid2.shared.Const;
+
 import com.uid2.shared.Utils;
 import com.uid2.shared.attest.IAttestationTokenService;
 import com.uid2.shared.auth.*;
@@ -240,8 +242,9 @@ public class CoreVerticle extends AbstractVerticle {
 
     private void handleKeyRefresh(RoutingContext rc) {
         try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .end(keyMetadataProvider.getMetadata());
+                .end(keyMetadataProvider.getMetadata(info));
         } catch (Exception e) {
             logger.warn("exception in handleKeyRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing key refresh");
@@ -250,8 +253,9 @@ public class CoreVerticle extends AbstractVerticle {
 
     private void handleKeyAclRefresh(RoutingContext rc) {
         try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(keyAclMetadataProvider.getMetadata());
+                    .end(keyAclMetadataProvider.getMetadata(info));
         } catch (Exception e) {
             logger.warn("exception in handleKeyAclRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing key acl refresh");
@@ -260,8 +264,9 @@ public class CoreVerticle extends AbstractVerticle {
 
     private void handleClientRefresh(RoutingContext rc) {
         try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .end(clientMetadataProvider.getMetadata());
+                .end(clientMetadataProvider.getMetadata(info));
         } catch (Exception e) {
             logger.warn("exception in handleClientRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing client refresh");
@@ -270,6 +275,7 @@ public class CoreVerticle extends AbstractVerticle {
 
     private void handleOperatorRefresh(RoutingContext rc) {
         try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(operatorMetadataProvider.getMetadata());
         } catch (Exception e) {
@@ -280,6 +286,7 @@ public class CoreVerticle extends AbstractVerticle {
 
     private void handlePartnerRefresh(RoutingContext rc) {
         try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(partnerMetadataProvider.getMetadata());
         } catch (Exception e) {

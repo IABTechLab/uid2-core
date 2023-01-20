@@ -1,6 +1,8 @@
 package com.uid2.core.service;
 
 import com.uid2.core.model.SecretStore;
+import com.uid2.core.util.OperatorInfo;
+import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.cloud.ICloudStorage;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
@@ -8,6 +10,8 @@ import io.vertx.core.json.JsonObject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+
+import static com.uid2.core.util.MetadataHelper.getMetadataPathName;
 
 public class ClientMetadataProvider implements IClientMetadataProvider {
 
@@ -17,8 +21,9 @@ public class ClientMetadataProvider implements IClientMetadataProvider {
     private final ICloudStorage downloadUrlGenerator;
 
     @Override
-    public String getMetadata() throws Exception {
-        String original = readToEndAsString(metadataStreamProvider.download(SecretStore.Global.get(ClientsMetadataPathName)));
+    public String getMetadata(OperatorInfo info) throws Exception {
+        String pathname = getMetadataPathName(info.getOperatorType(), info.getSiteId(), SecretStore.Global.get(ClientsMetadataPathName));
+        String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonObject obj = main.getJsonObject("client_keys");
         String location = obj.getString("location");

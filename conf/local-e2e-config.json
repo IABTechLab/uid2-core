@@ -16,5 +16,6 @@
     "enclaves_metadata_path": "enclaves/metadata.json",
     "partners_metadata_path": "partners/metadata.json",
     "att_token_enc_key": "<key-for-attestation-token>",
-    "att_token_enc_salt": "<salt-for-attestation-token>"
+    "att_token_enc_salt": "<salt-for-attestation-token>",
+    "provide_private_site_data": true
 }
