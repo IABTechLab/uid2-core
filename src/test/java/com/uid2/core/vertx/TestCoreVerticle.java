@@ -191,7 +191,7 @@ public class TestCoreVerticle {
       byte[] resultPublicKey = null;
       return Future.succeededFuture(new AttestationResult(resultPublicKey));
     });
-    when(attestationTokenService.createToken(any(), any(), any(), any())).thenReturn("test-attestion-token");
+    when(attestationTokenService.createToken(any(), any())).thenReturn("test-attestion-token");
     post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy"), ar -> {
       assertTrue(ar.succeeded());
       HttpResponse response = ar.result();
@@ -215,7 +215,7 @@ public class TestCoreVerticle {
     onHandleAttestationRequest(() -> {
       return Future.succeededFuture(new AttestationResult(publicKey));
     });
-    when(attestationTokenService.createToken(any(), any(), any(), any())).thenReturn("test-attestion-token");
+    when(attestationTokenService.createToken(any(), any())).thenReturn("test-attestion-token");
     post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy"), ar -> {
       assertTrue(ar.succeeded());
       HttpResponse response = ar.result();
@@ -249,7 +249,7 @@ public class TestCoreVerticle {
     onHandleAttestationRequest(() -> {
       return Future.succeededFuture(new AttestationResult(publicKey));
     });
-    when(attestationTokenService.createToken(any(), any(), any(), any())).thenReturn("test-attestion-token");
+    when(attestationTokenService.createToken(any(), any())).thenReturn("test-attestion-token");
     post(vertx, "attest", makeAttestationRequestJson("xxx", null), ar -> {
       assertTrue(ar.succeeded());
       HttpResponse response = ar.result();

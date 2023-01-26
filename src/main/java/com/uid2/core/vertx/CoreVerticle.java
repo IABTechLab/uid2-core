@@ -199,9 +199,7 @@ public class CoreVerticle extends AbstractVerticle {
                 JsonObject responseObj = new JsonObject();
                 String attestationToken = attestationTokenService.createToken(
                         token,
-                        Instant.now().plus(1, ChronoUnit.DAYS),
-                        SecretStore.Global.get(Constants.AttestationEncryptionKeyName),
-                        SecretStore.Global.get(Constants.AttestationEncryptionSaltName));
+                        Instant.now().plus(1, ChronoUnit.DAYS));
 
                 if(result.getPublicKey() != null) {
                     try {
@@ -389,9 +387,7 @@ public class CoreVerticle extends AbstractVerticle {
             JsonObject responseObj = new JsonObject();
             String attestationToken = attestationTokenService.createToken(
                 AuthMiddleware.getAuthToken(rc),
-                Instant.now().plus(1, ChronoUnit.DAYS),
-                SecretStore.Global.get(Constants.AttestationEncryptionKeyName),
-                SecretStore.Global.get(Constants.AttestationEncryptionSaltName));
+                Instant.now().plus(1, ChronoUnit.DAYS));
             responseObj.put("attestation_token", attestationToken);
             Success(rc, responseObj);
         } catch (Exception e) {

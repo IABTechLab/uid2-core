@@ -29,9 +29,7 @@ public class TestAttestation {
         AttestationTokenService tokenService = new AttestationTokenService(encryptionKey, encryptionSalt);
         String encryptedTokenString = tokenService.createToken(
             userToken,
-            Instant.now().plusSeconds(86400),
-            encryptionKey,
-            encryptionSalt);
+            Instant.now().plusSeconds(86400));
 
         AttestationToken token = AttestationToken.fromEncrypted(
             encryptedTokenString,
@@ -52,9 +50,7 @@ public class TestAttestation {
         AttestationTokenService tokenService = new AttestationTokenService(encryptionKey, encryptionSalt);
         String encryptedTokenString = tokenService.createToken(
             userToken,
-            Instant.now().minusSeconds(60),
-            encryptionKey,
-            encryptionSalt);
+            Instant.now().minusSeconds(60));
 
         AttestationToken token = AttestationToken.fromEncrypted(
             encryptedTokenString,
