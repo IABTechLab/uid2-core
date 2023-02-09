@@ -197,9 +197,7 @@ public class CoreVerticle extends AbstractVerticle {
                 }
 
                 JsonObject responseObj = new JsonObject();
-                String attestationToken = attestationTokenService.createToken(
-                        token,
-                        Instant.now().plus(1, ChronoUnit.DAYS));
+                String attestationToken = attestationTokenService.createToken(token);
 
                 if(result.getPublicKey() != null) {
                     try {
