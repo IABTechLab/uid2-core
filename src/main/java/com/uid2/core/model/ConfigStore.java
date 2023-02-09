@@ -41,6 +41,14 @@ public class ConfigStore {
         }
     }
 
+    public long getLongOrDefault(String key, long defaultValue) {
+        try {
+            return ((Long) secrets.get(key)).longValue();
+        } catch (NullPointerException e) {
+            return defaultValue;
+        }
+    }
+
     public String getPrintable(String key) { return get(key); }
 
     public String getOrDefault(String key, String defaultValue) {

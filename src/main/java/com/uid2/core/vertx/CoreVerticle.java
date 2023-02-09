@@ -197,9 +197,7 @@ public class CoreVerticle extends AbstractVerticle {
                 }
 
                 JsonObject responseObj = new JsonObject();
-                String attestationToken = attestationTokenService.createToken(
-                        token,
-                        Instant.now().plus(1, ChronoUnit.DAYS));
+                String attestationToken = attestationTokenService.createToken(token);
 
                 if(result.getPublicKey() != null) {
                     try {
@@ -386,8 +384,7 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             JsonObject responseObj = new JsonObject();
             String attestationToken = attestationTokenService.createToken(
-                AuthMiddleware.getAuthToken(rc),
-                Instant.now().plus(1, ChronoUnit.DAYS));
+                AuthMiddleware.getAuthToken(rc));
             responseObj.put("attestation_token", attestationToken);
             Success(rc, responseObj);
         } catch (Exception e) {
