@@ -30,14 +30,18 @@ public class AttestationFailureHandler implements Handler<RoutingContext> {
     }
 
     private void logAttestationFailure(RoutingContext context) {
-        final AttestationFailureReason attestationFailureReason = context.get(Const.RoutingContextData.ATTESTATION_FAILURE_REASON_PROP);
-        final String attestationFailureDataJson = getAttestationFailureDataJson(context);
-
-        final String operatorKeyHash = getOperatorKeyHash(context);
-
         final IAuthorizable profile = AuthMiddleware.getAuthClient(context);
 
         final OperatorKey operatorKey = profile instanceof OperatorKey ? (OperatorKey) profile : null;
+
+        if (operatorKey == null) {
+            return;
+        }
+
+        final AttestationFailureReason attestationFailureReason = context.get(Const.RoutingContextData.ATTESTATION_FAILURE_REASON_PROP);
+        final String attestationFailureDataJson = getAttestationFailureDataJson(context);
+
+        final String operatorKeyHash = DigestUtils.sha256Hex(operatorKey.getKey());
 
         final String originatingIpAddress = getOriginatingIpAddress(context);
 
@@ -46,20 +50,12 @@ public class AttestationFailureHandler implements Handler<RoutingContext> {
                 attestationFailureReason,
                 attestationFailureDataJson,
                 operatorKeyHash,
-                operatorKey == null ? null : operatorKey.getName(),
-                operatorKey == null ? null : operatorKey.getSiteId(),
-                operatorKey == null ? null : operatorKey.getProtocol(),
-                operatorKey == null ? null : operatorKey.getOperatorType(),
+                operatorKey.getName(),
+                operatorKey.getSiteId(),
+                operatorKey.getProtocol(),
+                operatorKey.getOperatorType(),
                 originatingIpAddress,
                 context.failure());
-    }
-
-    private static String getOperatorKeyHash(RoutingContext context) {
-        // Take the operator key directly from the header, because
-        // we won't have it in the context if authentication failed.
-        final String authToken = AuthMiddleware.getAuthToken(context);
-
-        return authToken == null ? null : DigestUtils.sha256Hex(authToken);
     }
 
     private static String getAttestationFailureDataJson(RoutingContext context) {
