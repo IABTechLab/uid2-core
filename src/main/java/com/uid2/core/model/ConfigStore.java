@@ -15,6 +15,7 @@ import java.util.Map;
 
 public class ConfigStore {
     public static final ConfigStore GLOBAL = new ConfigStore();
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigStore.class);
 
     private Map<String, Object> secrets = new HashMap<>();

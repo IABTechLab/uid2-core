@@ -11,11 +11,11 @@ public final class MetadataUtil {
     private MetadataUtil() {
     }
 
-    //can make this as a config in admin/core service config
-    public static final String SiteSpecificDataSubDirPath = "sites/";
+    // Can make this as a config in admin/core service config
+    private static final String SITE_SPECIFIC_DATA_SUB_DIR_PATH = "sites/";
 
     public static String getSiteSpecificMetadataPathName(int siteId, String metadataPathName) {
-        return SiteSpecificDataSubDirPath + siteId + metadataPathName;
+        return SITE_SPECIFIC_DATA_SUB_DIR_PATH + siteId + metadataPathName;
     }
 
     public static String getMetadataPathName(OperatorType operatorType, int siteId, String metadataPathName)
@@ -24,7 +24,7 @@ public final class MetadataUtil {
         Boolean providePrivateSiteData = ConfigStore.GLOBAL.getBoolean("provide_private_site_data");
         if (operatorType == OperatorType.PUBLIC || (providePrivateSiteData == null || !providePrivateSiteData)) {
             store = new GlobalScope(new CloudPath(metadataPathName));
-        } else { //PRIVATE
+        } else { // PRIVATE
             store = new SiteScope(new CloudPath(metadataPathName), siteId);
         }
         return store.getMetadataPath().toString();
