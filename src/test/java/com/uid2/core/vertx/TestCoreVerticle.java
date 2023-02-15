@@ -55,7 +55,7 @@ public class TestCoreVerticle {
   private static final String attestationProtocol = "test-attestation-protocol";
 
   @BeforeEach
-  void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
+  public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
     attestationService = new AttestationService();
     MockitoAnnotations.initMocks(this);
     CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider);
@@ -101,12 +101,12 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void verticleDeployed(Vertx vertx, VertxTestContext testContext) {
+  public void verticleDeployed(Vertx vertx, VertxTestContext testContext) {
     testContext.completeNow();
   }
 
   @Test
-  void attestInvalidRequestBody(Vertx vertx, VertxTestContext testContext) {
+  public void attestInvalidRequestBody(Vertx vertx, VertxTestContext testContext) {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     post(vertx, "attest", "blah", ar -> {
@@ -118,7 +118,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestNoAttestationRequestInBody(Vertx vertx, VertxTestContext testContext) {
+  public void attestNoAttestationRequestInBody(Vertx vertx, VertxTestContext testContext) {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     post(vertx, "attest", "{\"blah\": \"xxx\"}", ar -> {
@@ -130,7 +130,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestEmptyAttestationRequestInBody(Vertx vertx, VertxTestContext testContext) {
+  public void attestEmptyAttestationRequestInBody(Vertx vertx, VertxTestContext testContext) {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     post(vertx, "attest", makeAttestationRequestJson("", "yyy"), ar -> {
@@ -142,7 +142,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestUnknownAttestationProtocol(Vertx vertx, VertxTestContext testContext) {
+  public void attestUnknownAttestationProtocol(Vertx vertx, VertxTestContext testContext) {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider("bogus-protocol");
     post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy"), ar -> {
@@ -154,7 +154,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestFailureWithAnException(Vertx vertx, VertxTestContext testContext) {
+  public void attestFailureWithAnException(Vertx vertx, VertxTestContext testContext) {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     onHandleAttestationRequest(() -> {
@@ -169,7 +169,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestFailureWithResult(Vertx vertx, VertxTestContext testContext) {
+  public void attestFailureWithResult(Vertx vertx, VertxTestContext testContext) {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     onHandleAttestationRequest(() -> {
@@ -184,7 +184,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestSuccessNoEncryption(Vertx vertx, VertxTestContext testContext) {
+  public void attestSuccessNoEncryption(Vertx vertx, VertxTestContext testContext) {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     onHandleAttestationRequest(() -> {
@@ -204,7 +204,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestSuccessWithEncryption(Vertx vertx, VertxTestContext testContext) throws Throwable {
+  public void attestSuccessWithEncryption(Vertx vertx, VertxTestContext testContext) throws Throwable {
     KeyPairGenerator gen = KeyPairGenerator.getInstance(Const.Name.AsymetricEncryptionKeyClass);
     gen.initialize(2048, new SecureRandom());
     KeyPair keyPair = gen.generateKeyPair();
@@ -238,7 +238,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestSuccessWithEncryptionNoPublicKeyOnRequest(Vertx vertx, VertxTestContext testContext) throws Throwable {
+  public void attestSuccessWithEncryptionNoPublicKeyOnRequest(Vertx vertx, VertxTestContext testContext) throws Throwable {
     KeyPairGenerator gen = KeyPairGenerator.getInstance(Const.Name.AsymetricEncryptionKeyClass);
     gen.initialize(2048, new SecureRandom());
     KeyPair keyPair = gen.generateKeyPair();

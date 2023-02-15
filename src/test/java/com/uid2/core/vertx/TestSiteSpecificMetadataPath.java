@@ -60,7 +60,7 @@ public class TestSiteSpecificMetadataPath {
   private static final String attestationProtocol = "trusted";
 
   @BeforeEach
-  void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
+  public void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
     attestationService = new AttestationService();
     SecretStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testSiteSpecificMetadata/test-secrets.json"))));
     ConfigStore.GLOBAL.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testSiteSpecificMetadata/test-configs-provide-private-site-data.json"))));
@@ -95,39 +95,39 @@ public class TestSiteSpecificMetadataPath {
   }
 
   @Test
-  void verticleDeployed(Vertx vertx, VertxTestContext testContext) {
+  public void verticleDeployed(Vertx vertx, VertxTestContext testContext) {
     testContext.completeNow();
   }
 
   @Test
-  void publicOperatorGetsGlobalKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
+  public void publicOperatorGetsGlobalKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "keys", "keys","key/refresh");
   }
 
   @Test
-  void privateOperatorGetsSiteSpecificKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
+  public void privateOperatorGetsSiteSpecificKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
   {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "keys", "keys","key/refresh");
   }
 
   @Test
-  void publicOperatorGetsGlobalClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
+  public void publicOperatorGetsGlobalClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "clients", "client_keys","clients/refresh");
   }
 
   @Test
-  void privateOperatorGetsSiteSpecificClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
+  public void privateOperatorGetsSiteSpecificClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
   {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "clients", "client_keys", "clients/refresh");
   }
 
   @Test
-  void publicOperatorGetsGlobalKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
+  public void publicOperatorGetsGlobalKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "keys_acl", "keys_acl","/key/acl/refresh");
   }
 
   @Test
-  void privateOperatorGetsSiteSpecificKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
+  public void privateOperatorGetsSiteSpecificKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
   {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "keys_acl", "keys_acl", "/key/acl/refresh");
   }
