@@ -14,10 +14,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ConfigStore {
-
-    public static final ConfigStore Global = new ConfigStore();
-
-    private static final Logger logger = LoggerFactory.getLogger(ConfigStore.class);
+    public static final ConfigStore GLOBAL = new ConfigStore();
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigStore.class);
 
     private Map<String, Object> secrets = new HashMap<>();
 
@@ -56,14 +54,14 @@ public class ConfigStore {
     }
 
     public void load(String configFilePath) throws IOException {
-        logger.info("loading " + this.getClass().getName() + " from " + configFilePath);
+        LOGGER.info("loading " + this.getClass().getName() + " from " + configFilePath);
         InputStream stream = new FileInputStream(configFilePath);
         JsonObject configJson = (JsonObject) Json.decodeValue(readToEndAsString(stream));
         deserialize(configJson);
     }
 
     public void load(JsonObject config) {
-        logger.info("loading " + this.getClass().getName() + " from JsonObject");
+        LOGGER.info("loading " + this.getClass().getName() + " from JsonObject");
         deserialize(config);
     }
 

@@ -2,8 +2,6 @@ package com.uid2.core.vertx;
 
 import com.uid2.core.handler.AttestationFailureHandler;
 import com.uid2.core.model.ConfigStore;
-import com.uid2.core.model.Constants;
-import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.*;
 import com.uid2.core.util.OperatorInfo;
 import com.uid2.shared.Const;
@@ -39,20 +37,17 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 public class CoreVerticle extends AbstractVerticle {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CoreVerticle.class);
 
-    private HealthComponent healthComponent = HealthManager.instance.registerComponent("http-server");
-
+    private final HealthComponent healthComponent = HealthManager.instance.registerComponent("http-server");
     private final AuthMiddleware auth;
     private final AttestationService attestationService;
     private final AttestationMiddleware attestationMiddleware;
     private final IAuthorizableProvider authProvider;
     private final IEnclaveIdentifierProvider enclaveIdentifierProvider;
-    private final Logger logger = LoggerFactory.getLogger(CoreVerticle.class);
 
     private final IAttestationTokenService attestationTokenService;
     private final IClientMetadataProvider clientMetadataProvider;
@@ -62,9 +57,12 @@ public class CoreVerticle extends AbstractVerticle {
     private final ISaltMetadataProvider saltMetadataProvider;
     private final IPartnerMetadataProvider partnerMetadataProvider;
 
-    public CoreVerticle(ICloudStorage cloudStorage, IAuthorizableProvider authProvider, AttestationService attestationService,
-                        IAttestationTokenService attestationTokenService, IEnclaveIdentifierProvider enclaveIdentifierProvider) throws Exception
-    {
+    public CoreVerticle(
+            ICloudStorage cloudStorage,
+            IAuthorizableProvider authProvider,
+            AttestationService attestationService,
+            IAttestationTokenService attestationTokenService,
+            IEnclaveIdentifierProvider enclaveIdentifierProvider) throws Exception {
         this.healthComponent.setHealthStatus(false, "not started");
 
         this.authProvider = authProvider;
@@ -95,16 +93,16 @@ public class CoreVerticle extends AbstractVerticle {
         final int portOffset = Utils.getPortOffset();
         final int port = Const.Port.ServicePortForCore + portOffset;
         vertx.createHttpServer()
-                .requestHandler(router::handle)
-                .listen(port, ar -> {
-                    if (ar.succeeded()) {
-                        this.healthComponent.setHealthStatus(true);
-                        startPromise.complete();
-                        System.out.println("HTTP server started on port " + port);
-                    } else {
-                        this.healthComponent.setHealthStatus(false, ar.cause().getMessage());
-                        startPromise.fail(ar.cause());
-                    }
+                .requestHandler(router)
+                .listen(port)
+                .onSuccess(server -> {
+                    this.healthComponent.setHealthStatus(true);
+                    startPromise.complete();
+                    LOGGER.info("Core verticle started on port: {}", server.actualPort());
+                })
+                .onFailure(e -> {
+                    this.healthComponent.setHealthStatus(false, e.getMessage());
+                    startPromise.fail(e);
                 });
     }
 
@@ -134,18 +132,18 @@ public class CoreVerticle extends AbstractVerticle {
         router.get("/partners/refresh").handler(auth.handle(attestationMiddleware.handle(this::handlePartnerRefresh), Role.OPERATOR));
         router.get("/ops/healthcheck").handler(this::handleHealthCheck);
 
-        if (Optional.ofNullable(ConfigStore.Global.getBoolean("enable_test_endpoints")).orElse(false)) {
+        if (Optional.ofNullable(ConfigStore.GLOBAL.getBoolean("enable_test_endpoints")).orElse(false)) {
             router.route("/attest/get_token").handler(auth.handle(this::handleTestGetAttestationToken, Role.OPERATOR));
         }
 
         return router;
     }
 
-    private void handleHealthCheck(RoutingContext rc) {
+    private void handleHealthCheck(RoutingContext ctx) {
         if (HealthManager.instance.isHealthy()) {
-            rc.response().end("OK");
+            ctx.response().end("OK");
         } else {
-            HttpServerResponse resp = rc.response();
+            HttpServerResponse resp = ctx.response();
             String reason = HealthManager.instance.reason();
             resp.setStatusCode(503);
             resp.setChunked(true);
@@ -154,8 +152,8 @@ public class CoreVerticle extends AbstractVerticle {
         }
     }
 
-    private void handleAttestAsync(RoutingContext rc) {
-        String token = AuthMiddleware.getAuthToken(rc);
+    private void handleAttestAsync(RoutingContext ctx) {
+        String token = AuthMiddleware.getAuthToken(ctx);
         IAuthorizable profile = authProvider.get(token);
 
         OperatorKey operator = (OperatorKey) profile;
@@ -163,18 +161,18 @@ public class CoreVerticle extends AbstractVerticle {
 
         JsonObject json;
         try {
-            json = rc.getBodyAsJson();
+            json = ctx.getBodyAsJson();
         } catch (DecodeException e) {
-            setAttestationFailureReason(rc, AttestationFailureReason.REQUEST_BODY_IS_NOT_VALID_JSON);
-            Error("request body is not a valid json", 400, rc, null);
+            setAttestationFailureReason(ctx, AttestationFailureReason.REQUEST_BODY_IS_NOT_VALID_JSON);
+            respondError("request body is not a valid json", 400, ctx, null);
             return;
         }
 
         String request = json == null ? null : json.getString("attestation_request");
 
         if(request == null || request.isEmpty()) {
-            setAttestationFailureReason(rc, AttestationFailureReason.NO_ATTESTATION_REQUEST_ATTACHED);
-            Error("no attestation_request attached", 400, rc, null);
+            setAttestationFailureReason(ctx, AttestationFailureReason.NO_ATTESTATION_REQUEST_ATTACHED);
+            respondError("no attestation_request attached", 400, ctx, null);
             return;
         }
 
@@ -183,16 +181,16 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             attestationService.attest(protocol, request, clientPublicKey, ar -> {
                 if (!ar.succeeded()) {
-                    setAttestationFailureReason(rc, AttestationFailureReason.ATTESTATION_FAILURE, Collections.singletonMap("cause", ar.cause().getMessage()));
-                    logger.warn("attestation failure: ", ar.cause());
-                    Error("attestation failure", 500, rc, null);
+                    setAttestationFailureReason(ctx, AttestationFailureReason.ATTESTATION_FAILURE, Collections.singletonMap("cause", ar.cause().getMessage()));
+                    LOGGER.warn("attestation failure: ", ar.cause());
+                    respondError("attestation failure", 500, ctx, null);
                     return;
                 }
 
                 final AttestationResult result = ar.result();
                 if (!result.isSuccess()) {
-                    setAttestationFailureReason(rc, AttestationFailureReason.ATTESTATION_FAILURE, Collections.singletonMap("reason", result.getReason()));
-                    Error(result.getReason(), 401, rc, null);
+                    setAttestationFailureReason(ctx, AttestationFailureReason.ATTESTATION_FAILURE, Collections.singletonMap("reason", result.getReason()));
+                    respondError(result.getReason(), 401, ctx, null);
                     return;
                 }
 
@@ -207,21 +205,21 @@ public class CoreVerticle extends AbstractVerticle {
                         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
                         attestationToken = Base64.getEncoder().encodeToString(cipher.doFinal(attestationToken.getBytes(StandardCharsets.UTF_8)));
                     } catch (Exception e) {
-                        setAttestationFailureReason(rc, AttestationFailureReason.RESPONSE_ENCRYPTION_EXCEPTION, Collections.singletonMap("exception", e.getMessage()));
-                        logger.warn("attestation failure: exception while encrypting response - {}", e);
-                        Error("attestation failure", 500, rc, null);
+                        setAttestationFailureReason(ctx, AttestationFailureReason.RESPONSE_ENCRYPTION_EXCEPTION, Collections.singletonMap("exception", e.getMessage()));
+                        LOGGER.warn("attestation failure: exception while encrypting response - " + e.getMessage(), e);
+                        respondError("attestation failure", 500, ctx, null);
                         return;
                     }
                 }
 
                 // TODO: log requester identifier
-                logger.info("attestation successful");
+                LOGGER.info("attestation successful");
                 responseObj.put("attestation_token", attestationToken);
-                Success(rc, responseObj);
+                respondSuccess(ctx, responseObj);
             });
         } catch (AttestationService.NotFound e) {
-            setAttestationFailureReason(rc, AttestationFailureReason.INVALID_PROTOCOL);
-            Error("protocol not found", 500, rc, null);
+            setAttestationFailureReason(ctx, AttestationFailureReason.INVALID_PROTOCOL);
+            respondError("protocol not found", 500, ctx, null);
         }
     }
 
@@ -234,72 +232,72 @@ public class CoreVerticle extends AbstractVerticle {
         context.put(com.uid2.core.Const.RoutingContextData.ATTESTATION_FAILURE_DATA_PROP, data);
     }
 
-    private void handleSaltRefresh(RoutingContext rc) {
+    private void handleSaltRefresh(RoutingContext ctx) {
         try {
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .end(saltMetadataProvider.getMetadata());
+            ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(saltMetadataProvider.getMetadata());
         } catch (Exception e) {
-            logger.warn("exception in handleSaltRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing salt refresh");
+            LOGGER.warn("exception in handleSaltRefresh: " + e.getMessage(), e);
+            respondError("error", 500, ctx, "error processing salt refresh");
         }
     }
 
-    private void handleKeyRefresh(RoutingContext rc) {
+    private void handleKeyRefresh(RoutingContext ctx) {
         try {
-            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .end(keyMetadataProvider.getMetadata(info));
+            OperatorInfo info = OperatorInfo.getOperatorInfo(ctx);
+            ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(keyMetadataProvider.getMetadata(info));
         } catch (Exception e) {
-            logger.warn("exception in handleKeyRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing key refresh");
+            LOGGER.warn("exception in handleKeyRefresh: " + e.getMessage(), e);
+            respondError("error", 500, ctx, "error processing key refresh");
         }
     }
 
-    private void handleKeyAclRefresh(RoutingContext rc) {
+    private void handleKeyAclRefresh(RoutingContext ctx) {
         try {
-            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+            OperatorInfo info = OperatorInfo.getOperatorInfo(ctx);
+            ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(keyAclMetadataProvider.getMetadata(info));
         } catch (Exception e) {
-            logger.warn("exception in handleKeyAclRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing key acl refresh");
+            LOGGER.warn("exception in handleKeyAclRefresh: " + e.getMessage(), e);
+            respondError("error", 500, ctx, "error processing key acl refresh");
         }
     }
 
-    private void handleClientRefresh(RoutingContext rc) {
+    private void handleClientRefresh(RoutingContext ctx) {
         try {
-            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .end(clientMetadataProvider.getMetadata(info));
+            OperatorInfo info = OperatorInfo.getOperatorInfo(ctx);
+            ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(clientMetadataProvider.getMetadata(info));
         } catch (Exception e) {
-            logger.warn("exception in handleClientRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing client refresh");
+            LOGGER.warn("exception in handleClientRefresh: " + e.getMessage(), e);
+            respondError("error", 500, ctx, "error processing client refresh");
         }
     }
 
-    private void handleOperatorRefresh(RoutingContext rc) {
+    private void handleOperatorRefresh(RoutingContext ctx) {
         try {
-            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+            OperatorInfo info = OperatorInfo.getOperatorInfo(ctx);
+            ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(operatorMetadataProvider.getMetadata());
         } catch (Exception e) {
-            logger.warn("exception in handleOperatorRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing operator refresh");
+            LOGGER.warn("exception in handleOperatorRefresh: " + e.getMessage(), e);
+            respondError("error", 500, ctx, "error processing operator refresh");
         }
     }
 
-    private void handlePartnerRefresh(RoutingContext rc) {
+    private void handlePartnerRefresh(RoutingContext ctx) {
         try {
-            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+            OperatorInfo info = OperatorInfo.getOperatorInfo(ctx);
+            ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(partnerMetadataProvider.getMetadata());
         } catch (Exception e) {
-            logger.warn("exception in handlePartnerRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing partner refresh");
+            LOGGER.warn("exception in handlePartnerRefresh: " + e.getMessage(), e);
+            respondError("error", 500, ctx, "error processing partner refresh");
         }
     }
 
-    private void handleEnclaveChange(RoutingContext rc, boolean isUnregister) {
+    private void handleEnclaveChange(RoutingContext ctx, boolean isUnregister) {
         class Result {
             JsonObject make(String name, String failReason) {
                 JsonObject o = new JsonObject();
@@ -311,18 +309,18 @@ public class CoreVerticle extends AbstractVerticle {
         }
 
         try {
-            JsonObject main = rc.getBodyAsJson();
+            JsonObject main = ctx.getBodyAsJson();
 
             if(!main.containsKey("enclaves")) {
-                logger.info("enclave register has been called without .enclaves key");
-                Error("error", 400, rc, "no .enclaves key in json payload");
+                LOGGER.info("enclave register has been called without .enclaves key");
+                respondError("error", 400, ctx, "no .enclaves key in json payload");
                 return;
             }
 
             Object enclavesObj = main.getValue("enclaves");
             if(!(enclavesObj instanceof JsonArray)) {
-                logger.info("enclave register has been called without .enclaves key");
-                Error("error", 400, rc, ".enclaves needs to be an array");
+                LOGGER.info("enclave register has been called without .enclaves key");
+                respondError("error", 400, ctx, ".enclaves needs to be an array");
                 return;
             }
 
@@ -358,68 +356,69 @@ public class CoreVerticle extends AbstractVerticle {
                 res.add(result.make(name, null));
             }
 
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .end(res.toString());
+            ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(res.toString());
         } catch (Exception e) {
-            logger.warn("exception in handleEnclaveRegister: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing enclave register");
+            LOGGER.warn("exception in handleEnclaveRegister: " + e.getMessage(), e);
+            respondError("error", 500, ctx, "error processing enclave register");
         }
     }
 
-    private void handleEnclaveRegister(RoutingContext rc) {
-        handleEnclaveChange(rc, false);
+    private void handleEnclaveRegister(RoutingContext ctx) {
+        handleEnclaveChange(ctx, false);
     }
 
-    private void handleEnclaveUnregister(RoutingContext rc) {
-        handleEnclaveChange(rc, true);
+    private void handleEnclaveUnregister(RoutingContext ctx) {
+        handleEnclaveChange(ctx, true);
     }
 
     //region test endpoints
-    private void handleTestGetAttestationToken(RoutingContext rc) {
-        HttpMethod method = rc.request().method();
+    private void handleTestGetAttestationToken(RoutingContext ctx) {
+        HttpMethod method = ctx.request().method();
         if (method != HttpMethod.GET && method != HttpMethod.POST) {
-            rc.response().setStatusCode(400).end();
+            ctx.response().setStatusCode(400).end();
         }
 
         try {
             JsonObject responseObj = new JsonObject();
             String attestationToken = attestationTokenService.createToken(
-                AuthMiddleware.getAuthToken(rc));
+                    AuthMiddleware.getAuthToken(ctx));
             responseObj.put("attestation_token", attestationToken);
-            Success(rc, responseObj);
+            respondSuccess(ctx, responseObj);
         } catch (Exception e) {
-            logger.warn("exception in handleTestGetAttestationToken: {}", e.getMessage());
-            Error("error", 500, rc, "error generating attestation token");
+            LOGGER.warn("exception in handleTestGetAttestationToken: {}", e.getMessage());
+            respondError("error", 500, ctx, "error generating attestation token");
         }
     }
 
-    private void handleTestListEnclaves(RoutingContext rc) {
-        HttpMethod method = rc.request().method();
+    private void handleTestListEnclaves(RoutingContext ctx) {
+        HttpMethod method = ctx.request().method();
         if (method != HttpMethod.GET && method != HttpMethod.POST) {
-            rc.response().setStatusCode(400).end();
+            ctx.response().setStatusCode(400).end();
         }
         try {
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .end(new JsonArray(attestationService.listEnclaves()).toString());
+            ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(new JsonArray(attestationService.listEnclaves()).toString());
         } catch (Exception e) {
-            logger.warn("exception in handleTestListEnclaves: {}", e.getMessage());
-            Error("error", 500, rc, "error getting enclave lists");
+            LOGGER.warn("exception in handleTestListEnclaves: {}", e.getMessage());
+            respondError("error", 500, ctx, "error getting enclave lists");
         }
     }
     //endregion test endpoints
 
-    public static void Success(RoutingContext rc, Object body) {
+    public static void respondSuccess(RoutingContext ctx, Object body) {
         final JsonObject json = new JsonObject(new HashMap<String, Object>() {
             {
                 put("status", "success");
                 put("body", body);
             }
         });
-        rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+        ctx.response()
+                .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
     }
 
-    public static void Error(String errorStatus, int statusCode, RoutingContext rc, String message) {
+    public static void respondError(String errorStatus, int statusCode, RoutingContext ctx, String message) {
         final JsonObject json = new JsonObject(new HashMap<String, Object>() {
             {
                 put("status", errorStatus);
@@ -428,8 +427,9 @@ public class CoreVerticle extends AbstractVerticle {
         if (message != null) {
             json.put("message", message);
         }
-        rc.response().setStatusCode(statusCode).putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+        ctx.response()
+                .setStatusCode(statusCode)
+                .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
-
     }
 }

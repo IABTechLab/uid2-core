@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 public class AttestationFailureHandler implements Handler<RoutingContext> {
-    private static final Logger LOG = LoggerFactory.getLogger(AttestationFailureHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AttestationFailureHandler.class);
 
     @Override
     public void handle(RoutingContext context) {
@@ -45,7 +45,7 @@ public class AttestationFailureHandler implements Handler<RoutingContext> {
 
         final String originatingIpAddress = getOriginatingIpAddress(context);
 
-        LOG.warn("Attestation failed. StatusCode={} Reason={} Data={} OperatorKeyHash={} OperatorKeyName={} SiteId={} Protocol={} OperatorType={} OriginatingIpAddress={}",
+        LOGGER.warn("Attestation failed. StatusCode={} Reason={} Data={} OperatorKeyHash={} OperatorKeyName={} SiteId={} Protocol={} OperatorType={} OriginatingIpAddress={}",
                 context.response().getStatusCode(),
                 attestationFailureReason,
                 attestationFailureDataJson,
@@ -68,7 +68,7 @@ public class AttestationFailureHandler implements Handler<RoutingContext> {
         try {
             return new JsonObject(attestationFailureData).toString();
         } catch (Exception e) {
-            LOG.error("Exception serializing attestation failure data", e);
+            LOGGER.error("Exception serializing attestation failure data", e);
             return "<Exception serializing data>";
         }
     }

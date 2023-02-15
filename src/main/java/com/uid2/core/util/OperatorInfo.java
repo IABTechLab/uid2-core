@@ -1,4 +1,5 @@
 package com.uid2.core.util;
+
 import com.uid2.shared.auth.IAuthorizable;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.OperatorType;
@@ -27,8 +28,8 @@ public class OperatorInfo {
         this.siteId = siteId;
     }
 
-    public static OperatorInfo getOperatorInfo(RoutingContext rc) throws Exception {
-        IAuthorizable profile = (IAuthorizable)  rc.data().get(API_CLIENT_PROP);
+    public static OperatorInfo getOperatorInfo(RoutingContext ctx) throws Exception {
+        IAuthorizable profile = (IAuthorizable) ctx.data().get(API_CLIENT_PROP);
         if (profile instanceof OperatorKey) {
             OperatorKey operatorKey = (OperatorKey) profile;
             return new OperatorInfo(operatorKey.getOperatorType(), operatorKey.getSiteId());

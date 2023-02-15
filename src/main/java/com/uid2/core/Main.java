@@ -87,17 +87,17 @@ public class Main {
             }
 
             JsonObject config = ar.result();
-            ConfigStore.Global.load(config);
+            ConfigStore.GLOBAL.load(config);
             SecretStore.Global.load(config);
 
-            boolean useStorageMock = Optional.ofNullable(ConfigStore.Global.getBoolean("storage_mock")).orElse(false);
+            boolean useStorageMock = Optional.ofNullable(ConfigStore.GLOBAL.getBoolean("storage_mock")).orElse(false);
             ICloudStorage cloudStorage = null;
             if (useStorageMock) {
-                cloudStorage = new EmbeddedResourceStorage(Main.class).withUrlPrefix(ConfigStore.Global.getOrDefault("storage_mock_url_prefix", ""));
+                cloudStorage = new EmbeddedResourceStorage(Main.class).withUrlPrefix(ConfigStore.GLOBAL.getOrDefault("storage_mock_url_prefix", ""));
             } else {
                 cloudStorage = CloudUtils.createStorage(SecretStore.Global.get(Const.Config.CoreS3BucketProp), config);
 
-                int expiryInSeconds = ConfigStore.Global.getInteger("pre_signed_url_expiry");
+                int expiryInSeconds = ConfigStore.GLOBAL.getInteger("pre_signed_url_expiry");
                 cloudStorage.setPreSignedUrlExpiry(expiryInSeconds);
             }
 
@@ -117,7 +117,7 @@ public class Main {
                 AttestationService attestationService = new AttestationService()
                         .with("trusted", new TrustedAttestationProvider())
                         .with("azure-sgx", new AzureAttestationProvider(
-                                ConfigStore.Global.getOrDefault("maa_server_base_url", "https://sharedeus.eus.attest.azure.net"),
+                                ConfigStore.GLOBAL.getOrDefault("maa_server_base_url", "https://sharedeus.eus.attest.azure.net"),
                                 WebClient.create(vertx)))
                         .with("aws-nitro", new NitroAttestationProvider(new InMemoryAWSCertificateStore()));
 

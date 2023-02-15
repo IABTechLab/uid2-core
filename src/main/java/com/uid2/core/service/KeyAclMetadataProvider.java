@@ -3,7 +3,6 @@ package com.uid2.core.service;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.util.OperatorInfo;
 import com.uid2.shared.Const;
-import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.cloud.ICloudStorage;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
@@ -12,7 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import static com.uid2.core.util.MetadataHelper.getMetadataPathName;
+import static com.uid2.core.util.MetadataUtil.getMetadataPathName;
 
 public class KeyAclMetadataProvider implements IKeyAclMetadataProvider {
 
