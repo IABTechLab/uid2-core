@@ -18,8 +18,7 @@ public final class MetadataUtil {
         return SITE_SPECIFIC_DATA_SUB_DIR_PATH + siteId + metadataPathName;
     }
 
-    public static String getMetadataPathName(OperatorType operatorType, int siteId, String metadataPathName)
-    {
+    public static String getMetadataPathName(OperatorType operatorType, int siteId, String metadataPathName) {
         StoreScope store;
         Boolean providePrivateSiteData = ConfigStore.GLOBAL.getBoolean("provide_private_site_data");
         if (operatorType == OperatorType.PUBLIC || (providePrivateSiteData == null || !providePrivateSiteData)) {

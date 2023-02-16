@@ -13,7 +13,6 @@ import java.io.InputStreamReader;
 import static com.uid2.core.util.MetadataUtil.getMetadataPathName;
 
 public class KeyMetadataProvider implements IKeyMetadataProvider {
-
     public static final String KeysMetadataPathName = "keys_metadata_path";
 
     private final ICloudStorage metadataStreamProvider;

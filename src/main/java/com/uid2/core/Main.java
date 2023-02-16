@@ -44,7 +44,6 @@ import java.lang.management.ManagementFactory;
 import java.util.*;
 
 public class Main {
-
     public static void main(String[] args) {
         final String vertxConfigPath = System.getProperty(Const.Config.VERTX_CONFIG_PATH_PROP);
         if (vertxConfigPath != null) {

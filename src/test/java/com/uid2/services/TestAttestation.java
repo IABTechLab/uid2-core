@@ -18,10 +18,8 @@ import java.util.Base64;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TestAttestation {
-
     @Test
-    public void testGenerateAttestationToken()
-    {
+    public void testGenerateAttestationToken() {
         final String userToken = "example-user-token";
         final String encryptionKey = "enc-key";
         final String encryptionSalt = "enc-salt";
@@ -39,8 +37,7 @@ public class TestAttestation {
     }
 
     @Test
-    public void testExpiredAttestationToken()
-    {
+    public void testExpiredAttestationToken() {
         final String userToken = "example-user-token";
         final String encryptionKey = "enc-key";
         final String encryptionSalt = "enc-salt";
@@ -60,8 +57,7 @@ public class TestAttestation {
     }
 
     @Test
-    public void testNitroAttestation() throws Exception
-    {
+    public void testNitroAttestation() throws Exception {
         final String identifierString = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         final String protocol = "aws-nitro";
         final ICertificateProvider certStore = new InMemoryAWSCertificateStore();

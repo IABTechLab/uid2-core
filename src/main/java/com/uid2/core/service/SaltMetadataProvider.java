@@ -11,7 +11,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 public class SaltMetadataProvider implements ISaltMetadataProvider {
-
     public static final String SaltsMetadataPathName = "salts_metadata_path";
 
     private final ICloudStorage metadataStreamProvider;

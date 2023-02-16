@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 public class OperatorMetadataProvider implements IOperatorMetadataProvider {
-
     public static final String OperatorsMetadataPathName = "operators_metadata_path";
 
     private final ICloudStorage metadataStreamProvider;

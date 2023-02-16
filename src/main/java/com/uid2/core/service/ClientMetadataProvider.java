@@ -13,7 +13,6 @@ import java.io.InputStreamReader;
 import static com.uid2.core.util.MetadataUtil.getMetadataPathName;
 
 public class ClientMetadataProvider implements IClientMetadataProvider {
-
     public static final String ClientsMetadataPathName = "clients_metadata_path";
 
     private final ICloudStorage metadataStreamProvider;

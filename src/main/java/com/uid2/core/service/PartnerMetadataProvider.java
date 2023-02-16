@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 public class PartnerMetadataProvider implements IPartnerMetadataProvider {
-
     public static final String PartnersMetadataPathName = "partners_metadata_path";
 
     private final ICloudStorage metadataStreamProvider;

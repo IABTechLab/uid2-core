@@ -14,7 +14,6 @@ import java.io.InputStreamReader;
 import static com.uid2.core.util.MetadataUtil.getMetadataPathName;
 
 public class KeyAclMetadataProvider implements IKeyAclMetadataProvider {
-
     private final ICloudStorage metadataStreamProvider;
     private final ICloudStorage downloadUrlGenerator;
 

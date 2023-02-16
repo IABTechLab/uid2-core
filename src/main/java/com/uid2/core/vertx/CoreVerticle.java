@@ -57,12 +57,11 @@ public class CoreVerticle extends AbstractVerticle {
     private final ISaltMetadataProvider saltMetadataProvider;
     private final IPartnerMetadataProvider partnerMetadataProvider;
 
-    public CoreVerticle(
-            ICloudStorage cloudStorage,
-            IAuthorizableProvider authProvider,
-            AttestationService attestationService,
-            IAttestationTokenService attestationTokenService,
-            IEnclaveIdentifierProvider enclaveIdentifierProvider) throws Exception {
+    public CoreVerticle(ICloudStorage cloudStorage,
+                        IAuthorizableProvider authProvider,
+                        AttestationService attestationService,
+                        IAttestationTokenService attestationTokenService,
+                        IEnclaveIdentifierProvider enclaveIdentifierProvider) throws Exception {
         this.healthComponent.setHealthStatus(false, "not started");
 
         this.authProvider = authProvider;

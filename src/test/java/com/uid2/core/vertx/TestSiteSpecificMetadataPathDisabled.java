@@ -44,7 +44,6 @@ import static org.mockito.Mockito.*;
  */
 @ExtendWith(VertxExtension.class)
 public class TestSiteSpecificMetadataPathDisabled {
-
   @Mock
   private ICloudStorage cloudStorage;
   @Mock
@@ -108,8 +107,7 @@ public class TestSiteSpecificMetadataPathDisabled {
   }
 
   @Test
-  public void privateOperatorGetsGlobalKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
-  {
+  public void privateOperatorGetsGlobalKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "keys", "keys","key/refresh", true);
   }
 
@@ -119,8 +117,7 @@ public class TestSiteSpecificMetadataPathDisabled {
   }
 
   @Test
-  public void privateOperatorGetsGlobalClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
-  {
+  public void privateOperatorGetsGlobalClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "clients", "client_keys", "clients/refresh", true);
   }
 
@@ -130,13 +127,11 @@ public class TestSiteSpecificMetadataPathDisabled {
   }
 
   @Test
-  public void privateOperatorGetsGlobalKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
-  {
+  public void privateOperatorGetsGlobalKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "keys_acl", "keys_acl", "/key/acl/refresh", true);
   }
 
-  void genericSiteSpecificTest(Vertx vertx, VertxTestContext testContext, OperatorType operatorType, int siteId, String dataType, String jsonObjectContainingLocation, String endPoint, boolean stopProvidingPrivateSiteData) throws CloudStorageException, IOException
-  {
+  private void genericSiteSpecificTest(Vertx vertx, VertxTestContext testContext, OperatorType operatorType, int siteId, String dataType, String jsonObjectContainingLocation, String endPoint, boolean stopProvidingPrivateSiteData) throws CloudStorageException, IOException {
     //example: /com.uid2.core/testSiteSpecificMetadata/keys/site/108/metadata.json
     String privateSiteMetaDataURL = "/com.uid2.core/testSiteSpecificMetadata/"+dataType+"/site/"+ siteId+ "/metadata.json";
 
@@ -164,9 +159,7 @@ public class TestSiteSpecificMetadataPathDisabled {
     });
   }
 
-  String openFile(String filePath) throws IOException
-  {
+  private String openFile(String filePath) throws IOException {
     return readToEndAsString(TestSiteSpecificMetadataPathDisabled.class.getResourceAsStream(filePath));
   }
-
 }
