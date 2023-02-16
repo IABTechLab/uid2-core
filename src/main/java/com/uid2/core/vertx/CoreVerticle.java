@@ -348,7 +348,7 @@ public class CoreVerticle extends AbstractVerticle {
                 } catch (AttestationService.NotFound notFound) {
                     res.add(result.make(name, "unknown protocol: " + proto));
                     continue;
-                } catch (AttestationException ex) {
+                } catch (AttestationException e) {
                     res.add(result.make(name, "bad identifier"));
                     continue;
                 }
