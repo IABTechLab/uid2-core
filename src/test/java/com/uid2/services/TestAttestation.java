@@ -45,7 +45,7 @@ public class TestAttestation {
         final String encryptionKey = "enc-key";
         final String encryptionSalt = "enc-salt";
 
-        AttestationTokenService tokenService = new AttestationTokenService(encryptionKey, encryptionSalt);
+        AttestationTokenService tokenService = new AttestationTokenService(encryptionKey, encryptionSalt, 1000);
         String encryptedTokenString = tokenService.createToken(
             userToken,
             Instant.now().minusSeconds(60));
