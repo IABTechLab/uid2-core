@@ -44,7 +44,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 public class CoreVerticle extends AbstractVerticle {
-
     private HealthComponent healthComponent = HealthManager.instance.registerComponent("http-server");
 
     private final AuthMiddleware auth;
@@ -63,8 +62,7 @@ public class CoreVerticle extends AbstractVerticle {
     private final IPartnerMetadataProvider partnerMetadataProvider;
 
     public CoreVerticle(ICloudStorage cloudStorage, IAuthorizableProvider authProvider, AttestationService attestationService,
-                        IAttestationTokenService attestationTokenService, IEnclaveIdentifierProvider enclaveIdentifierProvider) throws Exception
-    {
+                        IAttestationTokenService attestationTokenService, IEnclaveIdentifierProvider enclaveIdentifierProvider) throws Exception {
         this.healthComponent.setHealthStatus(false, "not started");
 
         this.authProvider = authProvider;
@@ -95,7 +93,7 @@ public class CoreVerticle extends AbstractVerticle {
         final int portOffset = Utils.getPortOffset();
         final int port = Const.Port.ServicePortForCore + portOffset;
         vertx.createHttpServer()
-                .requestHandler(router::handle)
+                .requestHandler(router)
                 .listen(port, ar -> {
                     if (ar.succeeded()) {
                         this.healthComponent.setHealthStatus(true);
@@ -113,7 +111,8 @@ public class CoreVerticle extends AbstractVerticle {
 
         router.route().handler(BodyHandler.create());
         router.route().handler(new RequestCapturingHandler());
-        router.route().handler(CorsHandler.create(".*.")
+        router.route().handler(CorsHandler.create()
+                .addRelativeOrigin(".*.")
                 .allowedMethod(HttpMethod.GET)
                 .allowedMethod(HttpMethod.POST)
                 .allowedMethod(HttpMethod.OPTIONS)
@@ -163,7 +162,7 @@ public class CoreVerticle extends AbstractVerticle {
 
         JsonObject json;
         try {
-            json = rc.getBodyAsJson();
+            json = rc.body().asJsonObject();
         } catch (DecodeException e) {
             setAttestationFailureReason(rc, AttestationFailureReason.REQUEST_BODY_IS_NOT_VALID_JSON);
             Error("request body is not a valid json", 400, rc, null);
@@ -311,7 +310,7 @@ public class CoreVerticle extends AbstractVerticle {
         }
 
         try {
-            JsonObject main = rc.getBodyAsJson();
+            JsonObject main = rc.body().asJsonObject();
 
             if(!main.containsKey("enclaves")) {
                 logger.info("enclave register has been called without .enclaves key");
@@ -430,6 +429,5 @@ public class CoreVerticle extends AbstractVerticle {
         }
         rc.response().setStatusCode(statusCode).putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
-
     }
 }
