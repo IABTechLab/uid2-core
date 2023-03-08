@@ -1,9 +1,8 @@
 package com.uid2.core.vertx;
 
 import com.uid2.core.handler.AttestationFailureHandler;
+import com.uid2.core.handler.GenericFailureHandler;
 import com.uid2.core.model.ConfigStore;
-import com.uid2.core.model.Constants;
-import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.*;
 import com.uid2.core.util.OperatorInfo;
 import com.uid2.shared.Const;
@@ -39,19 +38,17 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 public class CoreVerticle extends AbstractVerticle {
-    private HealthComponent healthComponent = HealthManager.instance.registerComponent("http-server");
+    private final static Logger logger = LoggerFactory.getLogger(CoreVerticle.class);
 
+    private final HealthComponent healthComponent = HealthManager.instance.registerComponent("http-server");
     private final AuthMiddleware auth;
     private final AttestationService attestationService;
     private final AttestationMiddleware attestationMiddleware;
     private final IAuthorizableProvider authProvider;
     private final IEnclaveIdentifierProvider enclaveIdentifierProvider;
-    private final Logger logger = LoggerFactory.getLogger(CoreVerticle.class);
 
     private final IAttestationTokenService attestationTokenService;
     private final IClientMetadataProvider clientMetadataProvider;
@@ -121,6 +118,7 @@ public class CoreVerticle extends AbstractVerticle {
                 .allowedHeader("Access-Control-Allow-Origin")
                 .allowedHeader("Access-Control-Allow-Headers")
                 .allowedHeader("Content-Type"));
+        router.route().failureHandler(new GenericFailureHandler());
 
         router.post("/attest")
                 .handler(new AttestationFailureHandler())
@@ -207,7 +205,7 @@ public class CoreVerticle extends AbstractVerticle {
                         attestationToken = Base64.getEncoder().encodeToString(cipher.doFinal(attestationToken.getBytes(StandardCharsets.UTF_8)));
                     } catch (Exception e) {
                         setAttestationFailureReason(rc, AttestationFailureReason.RESPONSE_ENCRYPTION_EXCEPTION, Collections.singletonMap("exception", e.getMessage()));
-                        logger.warn("attestation failure: exception while encrypting response - {}", e);
+                        logger.warn("attestation failure: exception while encrypting response", e);
                         Error("attestation failure", 500, rc, null);
                         return;
                     }
@@ -236,7 +234,7 @@ public class CoreVerticle extends AbstractVerticle {
     private void handleSaltRefresh(RoutingContext rc) {
         try {
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .end(saltMetadataProvider.getMetadata());
+                    .end(saltMetadataProvider.getMetadata());
         } catch (Exception e) {
             logger.warn("exception in handleSaltRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing salt refresh");
@@ -247,7 +245,7 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .end(keyMetadataProvider.getMetadata(info));
+                    .end(keyMetadataProvider.getMetadata(info));
         } catch (Exception e) {
             logger.warn("exception in handleKeyRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing key refresh");
@@ -269,7 +267,7 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .end(clientMetadataProvider.getMetadata(info));
+                    .end(clientMetadataProvider.getMetadata(info));
         } catch (Exception e) {
             logger.warn("exception in handleClientRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing client refresh");
@@ -358,7 +356,7 @@ public class CoreVerticle extends AbstractVerticle {
             }
 
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .end(res.toString());
+                    .end(res.toString());
         } catch (Exception e) {
             logger.warn("exception in handleEnclaveRegister: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing enclave register");
@@ -383,7 +381,7 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             JsonObject responseObj = new JsonObject();
             String attestationToken = attestationTokenService.createToken(
-                AuthMiddleware.getAuthToken(rc));
+                    AuthMiddleware.getAuthToken(rc));
             responseObj.put("attestation_token", attestationToken);
             Success(rc, responseObj);
         } catch (Exception e) {
@@ -399,7 +397,7 @@ public class CoreVerticle extends AbstractVerticle {
         }
         try {
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .end(new JsonArray(attestationService.listEnclaves()).toString());
+                    .end(new JsonArray(attestationService.listEnclaves()).toString());
         } catch (Exception e) {
             logger.warn("exception in handleTestListEnclaves: {}", e.getMessage());
             Error("error", 500, rc, "error getting enclave lists");
