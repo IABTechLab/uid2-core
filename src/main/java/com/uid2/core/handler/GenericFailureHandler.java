@@ -15,12 +15,13 @@ public class GenericFailureHandler implements Handler<RoutingContext> {
         // Status code will be 500 for the RuntimeException
         int statusCode = ctx.statusCode();
         HttpServerResponse response = ctx.response();
+        String url = ctx.normalizedPath();
         Throwable t = ctx.failure();
 
         if (t != null) {
-            LOGGER.error(t.getMessage());
+            LOGGER.error("URL: [{}] - Error: ", url, t);
         } else {
-            LOGGER.error("Error - Response code [{}]", statusCode);
+            LOGGER.error("URL: [{}] - Error: Response code [{}]", url, statusCode);
         }
 
         response.setStatusCode(statusCode).end(EnglishReasonPhraseCatalog.INSTANCE.getReason(statusCode, null));
