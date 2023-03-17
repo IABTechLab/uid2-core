@@ -37,6 +37,7 @@ import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.micrometer.Label;
+import io.vertx.micrometer.MetricsDomain;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import io.vertx.micrometer.backends.BackendRegistries;
@@ -173,6 +174,10 @@ public class Main {
                             return actualPath;
                         }
                     }))
+                    // Don't record metrics for 404s.
+                    .meterFilter(MeterFilter.deny(id ->
+                        id.getName().startsWith(MetricsDomain.HTTP_SERVER.getPrefix()) &&
+                        Objects.equals(id.getTag(Label.HTTP_CODE.toString()), "404")))
                     // adding common labels
                     .commonTags("application", "uid2-core");
 
