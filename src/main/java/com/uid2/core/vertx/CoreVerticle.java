@@ -91,17 +91,17 @@ public class CoreVerticle extends AbstractVerticle {
         final int port = Const.Port.ServicePortForCore + portOffset;
         vertx.createHttpServer()
                 .requestHandler(router)
-                .exceptionHandler(t -> logger.error("Error in CoreVerticle", t))
-                .listen(port, ar -> {
-                    if (ar.succeeded()) {
+                .exceptionHandler(error -> logger.error("Error in CoreVerticle", error))
+                .listen(port, result -> {
+                    if (result.succeeded()) {
                         this.healthComponent.setHealthStatus(true);
                         startPromise.complete();
                     } else {
-                        this.healthComponent.setHealthStatus(false, ar.cause().getMessage());
-                        startPromise.fail(ar.cause());
+                        this.healthComponent.setHealthStatus(false, result.cause().getMessage());
+                        startPromise.fail(result.cause());
                     }
 
-                    logger.info("CoreVerticle instance started on HTTP port: [{}]", port);
+                    logger.info("CoreVerticle instance started on HTTP port: {}", port);
                 });
     }
 
