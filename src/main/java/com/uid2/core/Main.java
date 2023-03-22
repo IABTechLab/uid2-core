@@ -27,14 +27,17 @@ import com.uid2.shared.vertx.RotatingStoreVerticle;
 import com.uid2.shared.vertx.VertxUtils;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.micrometer.prometheus.PrometheusRenameFilter;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.micrometer.Label;
+import io.vertx.micrometer.MetricsDomain;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import io.vertx.micrometer.backends.BackendRegistries;
@@ -164,6 +167,17 @@ public class Main {
             prometheusRegistry.config()
                     // providing common renaming for prometheus metric, e.g. "hello.world" to "hello_world"
                     .meterFilter(new PrometheusRenameFilter())
+                    .meterFilter(MeterFilter.replaceTagValues(Label.HTTP_PATH.toString(), actualPath -> {
+                        try {
+                            return HttpUtils.normalizePath(actualPath).split("\\?")[0];
+                        } catch (IllegalArgumentException e) {
+                            return actualPath;
+                        }
+                    }))
+                    // Don't record metrics for 404s.
+                    .meterFilter(MeterFilter.deny(id ->
+                        id.getName().startsWith(MetricsDomain.HTTP_SERVER.getPrefix()) &&
+                        Objects.equals(id.getTag(Label.HTTP_CODE.toString()), "404")))
                     // adding common labels
                     .commonTags("application", "uid2-core");
 
