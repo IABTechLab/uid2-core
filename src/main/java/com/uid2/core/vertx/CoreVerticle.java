@@ -91,7 +91,6 @@ public class CoreVerticle extends AbstractVerticle {
         final int port = Const.Port.ServicePortForCore + portOffset;
         vertx.createHttpServer()
                 .requestHandler(router)
-                .exceptionHandler(error -> logger.error("Error in CoreVerticle", error))
                 .listen(port, result -> {
                     if (result.succeeded()) {
                         this.healthComponent.setHealthStatus(true);
