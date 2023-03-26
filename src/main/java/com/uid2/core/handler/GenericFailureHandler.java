@@ -1,6 +1,7 @@
 package com.uid2.core.handler;
 
 import io.vertx.core.Handler;
+import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.http.impl.EnglishReasonPhraseCatalog;
@@ -19,11 +20,16 @@ public class GenericFailureHandler implements Handler<RoutingContext> {
         Throwable t = ctx.failure();
 
         if (t != null) {
-            LOGGER.error("URL: [{}] - Error: ", url, t);
-        } else {
-            LOGGER.error("URL: [{}] - Error: Response code [{}]", url, statusCode);
+            if (statusCode >= 500 && statusCode < 600) { // 5xx is server error, so error
+                LOGGER.error("URL: [{}] - Error response code: [{}] - Error:", url, statusCode, t);
+            } else if (statusCode >= 400 && statusCode < 500) { // 4xx is user error, so just warn
+                LOGGER.warn("URL: [{}] - Error response code: [{}] - Error:", url, statusCode, t);
+            }
         }
 
-        response.setStatusCode(statusCode).end(EnglishReasonPhraseCatalog.INSTANCE.getReason(statusCode, null));
+        if (!response.ended() && !response.closed()) {
+            response.setStatusCode(statusCode)
+                    .end(EnglishReasonPhraseCatalog.INSTANCE.getReason(statusCode, null));
+        }
     }
 }
