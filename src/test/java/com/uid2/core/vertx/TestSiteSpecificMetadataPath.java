@@ -5,10 +5,7 @@ import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.AttestationService;
 import com.uid2.shared.Const;
 import com.uid2.shared.attest.IAttestationTokenService;
-import com.uid2.shared.auth.IAuthorizableProvider;
-import com.uid2.shared.auth.IEnclaveIdentifierProvider;
-import com.uid2.shared.auth.OperatorKey;
-import com.uid2.shared.auth.OperatorType;
+import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.secure.IAttestationProvider;
@@ -73,7 +70,7 @@ public class TestSiteSpecificMetadataPath {
     return String.format("http://127.0.0.1:%d/%s", Const.Port.ServicePortForCore, endpoint);
   }
 
-  private void fakeAuth(OperatorType operatorType, int siteId) {
+  private void fakeAuth(OperatorType operatorType, int siteId) throws InvalidRoleException {
     OperatorKey clientKey = new OperatorKey("test-key", "", "", attestationProtocol, 0, false, siteId, new HashSet<>(), operatorType);
     when(authProvider.get(any())).thenReturn(clientKey);
   }
@@ -100,40 +97,36 @@ public class TestSiteSpecificMetadataPath {
   }
 
   @Test
-  void publicOperatorGetsGlobalKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
+  void publicOperatorGetsGlobalKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException, InvalidRoleException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "keys", "keys","key/refresh");
   }
 
   @Test
-  void privateOperatorGetsSiteSpecificKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
-  {
+  void privateOperatorGetsSiteSpecificKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException, InvalidRoleException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "keys", "keys","key/refresh");
   }
 
   @Test
-  void publicOperatorGetsGlobalClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
+  void publicOperatorGetsGlobalClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException, InvalidRoleException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "clients", "client_keys","clients/refresh");
   }
 
   @Test
-  void privateOperatorGetsSiteSpecificClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
-  {
+  void privateOperatorGetsSiteSpecificClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException, InvalidRoleException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "clients", "client_keys", "clients/refresh");
   }
 
   @Test
-  void publicOperatorGetsGlobalKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
+  void publicOperatorGetsGlobalKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException, InvalidRoleException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "keys_acl", "keys_acl","/key/acl/refresh");
   }
 
   @Test
-  void privateOperatorGetsSiteSpecificKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException
-  {
+  void privateOperatorGetsSiteSpecificKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException, InvalidRoleException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "keys_acl", "keys_acl", "/key/acl/refresh");
   }
 
-  void genericSiteSpecificTest(Vertx vertx, VertxTestContext testContext, OperatorType operatorType, int siteId, String dataType, String jsonObjectContainingLocation, String endPoint) throws CloudStorageException, IOException
-  {
+  void genericSiteSpecificTest(Vertx vertx, VertxTestContext testContext, OperatorType operatorType, int siteId, String dataType, String jsonObjectContainingLocation, String endPoint) throws CloudStorageException, IOException, InvalidRoleException {
     //example: /com.uid2.core/testSiteSpecificMetadata/keys/site/108/metadata.json
     String privateSiteMetaDataURL = "/com.uid2.core/testSiteSpecificMetadata/"+dataType+"/site/"+ siteId+ "/metadata.json";
 

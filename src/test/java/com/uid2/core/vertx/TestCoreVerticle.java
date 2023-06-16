@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -66,7 +65,7 @@ public class TestCoreVerticle {
     return String.format("http://127.0.0.1:%d/%s", Const.Port.ServicePortForCore, endpoint);
   }
 
-  private void fakeAuth(Role role) {
+  private void fakeAuth(Role role) throws InvalidRoleException {
     OperatorKey clientKey = new OperatorKey("test-key", "", "", attestationProtocol, 0, false, 88, new HashSet<>(), OperatorType.PRIVATE);
     when(authProvider.get(any())).thenReturn(clientKey);
   }
@@ -106,7 +105,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestInvalidRequestBody(Vertx vertx, VertxTestContext testContext) {
+  void attestInvalidRequestBody(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     post(vertx, "attest", "blah", ar -> {
@@ -118,7 +117,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestNoAttestationRequestInBody(Vertx vertx, VertxTestContext testContext) {
+  void attestNoAttestationRequestInBody(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     post(vertx, "attest", "{\"blah\": \"xxx\"}", ar -> {
@@ -130,7 +129,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestEmptyAttestationRequestInBody(Vertx vertx, VertxTestContext testContext) {
+  void attestEmptyAttestationRequestInBody(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     post(vertx, "attest", makeAttestationRequestJson("", "yyy"), ar -> {
@@ -142,7 +141,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestUnknownAttestationProtocol(Vertx vertx, VertxTestContext testContext) {
+  void attestUnknownAttestationProtocol(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider("bogus-protocol");
     post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy"), ar -> {
@@ -154,7 +153,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestFailureWithAnException(Vertx vertx, VertxTestContext testContext) {
+  void attestFailureWithAnException(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     onHandleAttestationRequest(() -> {
@@ -169,7 +168,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestFailureWithResult(Vertx vertx, VertxTestContext testContext) {
+  void attestFailureWithResult(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     onHandleAttestationRequest(() -> {
@@ -184,7 +183,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestSuccessNoEncryption(Vertx vertx, VertxTestContext testContext) {
+  void attestSuccessNoEncryption(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     onHandleAttestationRequest(() -> {
