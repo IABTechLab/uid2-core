@@ -73,7 +73,7 @@ public class TestSiteSpecificMetadataPathDisabled {
     return String.format("http://127.0.0.1:%d/%s", Const.Port.ServicePortForCore, endpoint);
   }
 
-  private void fakeAuth(OperatorType operatorType, int siteId) throws InvalidRoleException {
+  private void fakeAuth(OperatorType operatorType, int siteId) {
     OperatorKey clientKey = new OperatorKey("test-key", "", "", attestationProtocol, 0, false, siteId, new HashSet<>(), operatorType);
     when(authProvider.get(any())).thenReturn(clientKey);
   }
@@ -100,36 +100,36 @@ public class TestSiteSpecificMetadataPathDisabled {
   }
 
   @Test
-  void publicOperatorGetsGlobalKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException, InvalidRoleException {
+  void publicOperatorGetsGlobalKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "keys", "keys","key/refresh", false);
   }
 
   @Test
-  void privateOperatorGetsGlobalKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException, InvalidRoleException {
+  void privateOperatorGetsGlobalKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "keys", "keys","key/refresh", true);
   }
 
   @Test
-  void publicOperatorGetsGlobalClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException, InvalidRoleException {
+  void publicOperatorGetsGlobalClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "clients", "client_keys","clients/refresh", true);
   }
 
   @Test
-  void privateOperatorGetsGlobalClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException, InvalidRoleException {
+  void privateOperatorGetsGlobalClientKeys(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "clients", "client_keys", "clients/refresh", true);
   }
 
   @Test
-  void publicOperatorGetsGlobalKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException, InvalidRoleException {
+  void publicOperatorGetsGlobalKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PUBLIC, 99, "keys_acl", "keys_acl","/key/acl/refresh", true);
   }
 
   @Test
-  void privateOperatorGetsGlobalKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException, InvalidRoleException {
+  void privateOperatorGetsGlobalKeysACL(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
     genericSiteSpecificTest(vertx, testContext, OperatorType.PRIVATE, 108, "keys_acl", "keys_acl", "/key/acl/refresh", true);
   }
 
-  void genericSiteSpecificTest(Vertx vertx, VertxTestContext testContext, OperatorType operatorType, int siteId, String dataType, String jsonObjectContainingLocation, String endPoint, boolean stopProvidingPrivateSiteData) throws CloudStorageException, IOException, InvalidRoleException {
+  void genericSiteSpecificTest(Vertx vertx, VertxTestContext testContext, OperatorType operatorType, int siteId, String dataType, String jsonObjectContainingLocation, String endPoint, boolean stopProvidingPrivateSiteData) throws CloudStorageException, IOException {
     //example: /com.uid2.core/testSiteSpecificMetadata/keys/site/108/metadata.json
     String privateSiteMetaDataURL = "/com.uid2.core/testSiteSpecificMetadata/"+dataType+"/site/"+ siteId+ "/metadata.json";
 
