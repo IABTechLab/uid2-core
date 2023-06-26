@@ -65,7 +65,7 @@ public class TestCoreVerticle {
     return String.format("http://127.0.0.1:%d/%s", Const.Port.ServicePortForCore, endpoint);
   }
 
-  private void fakeAuth(Role role) throws InvalidRoleException {
+  private void fakeAuth(Role role) {
     OperatorKey clientKey = new OperatorKey("test-key", "", "", attestationProtocol, 0, false, 88, new HashSet<>(), OperatorType.PRIVATE);
     when(authProvider.get(any())).thenReturn(clientKey);
   }
@@ -105,7 +105,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestInvalidRequestBody(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
+  void attestInvalidRequestBody(Vertx vertx, VertxTestContext testContext) {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     post(vertx, "attest", "blah", ar -> {
@@ -117,7 +117,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestNoAttestationRequestInBody(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
+  void attestNoAttestationRequestInBody(Vertx vertx, VertxTestContext testContext) {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     post(vertx, "attest", "{\"blah\": \"xxx\"}", ar -> {
@@ -129,7 +129,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestEmptyAttestationRequestInBody(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
+  void attestEmptyAttestationRequestInBody(Vertx vertx, VertxTestContext testContext) {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     post(vertx, "attest", makeAttestationRequestJson("", "yyy"), ar -> {
@@ -141,7 +141,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestUnknownAttestationProtocol(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
+  void attestUnknownAttestationProtocol(Vertx vertx, VertxTestContext testContext) {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider("bogus-protocol");
     post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy"), ar -> {
@@ -153,7 +153,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestFailureWithAnException(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
+  void attestFailureWithAnException(Vertx vertx, VertxTestContext testContext) {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     onHandleAttestationRequest(() -> {
@@ -168,7 +168,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestFailureWithResult(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
+  void attestFailureWithResult(Vertx vertx, VertxTestContext testContext) {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     onHandleAttestationRequest(() -> {
@@ -183,7 +183,7 @@ public class TestCoreVerticle {
   }
 
   @Test
-  void attestSuccessNoEncryption(Vertx vertx, VertxTestContext testContext) throws InvalidRoleException {
+  void attestSuccessNoEncryption(Vertx vertx, VertxTestContext testContext) {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     onHandleAttestationRequest(() -> {
