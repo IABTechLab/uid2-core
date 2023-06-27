@@ -9,6 +9,7 @@ import io.vertx.core.json.JsonObject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import static com.uid2.core.util.MetadataHelper.readToEndAsString;
 
 public class SaltMetadataProvider implements ISaltMetadataProvider {
 
@@ -37,15 +38,5 @@ public class SaltMetadataProvider implements ISaltMetadataProvider {
             obj.put("location", downloadUrlGenerator.preSignUrl(location).toString());
         }
         return main.encode();
-    }
-
-    private static String readToEndAsString(InputStream stream) throws IOException {
-        final InputStreamReader reader = new InputStreamReader(stream);
-        final char[] buff = new char[1024];
-        final StringBuilder sb = new StringBuilder();
-        for (int count; (count = reader.read(buff, 0, buff.length)) > 0;) {
-            sb.append(buff, 0, count);
-        }
-        return sb.toString();
     }
 }
