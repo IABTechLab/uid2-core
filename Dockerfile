@@ -16,6 +16,9 @@ COPY ./target/${JAR_NAME}-${JAR_VERSION}-sources.jar /app
 COPY ./conf/default-config.json /app/conf/
 COPY ./conf/*.xml /app/conf/
 
+RUN adduser -D uid2-core && mkdir -p /app && chmod 705 -R /app && mkdir -p /app/file-uploads && chmod 777 -R /app/file-uploads
+USER uid2-core
+
 CMD java \
     -Djava.security.egd=file:/dev/./urandom \
     -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.SLF4JLogDelegateFactory \
