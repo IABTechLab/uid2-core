@@ -40,6 +40,13 @@ public class ConfigStore {
             return null;
         }
     }
+    public Integer getIntegerOrDefault(String key, Integer defaultValue) {
+        try {
+            return (Integer) secrets.get(key);
+        } catch (NullPointerException e) {
+            return defaultValue;
+        }
+    }
 
     public long getLongOrDefault(String key, long defaultValue) {
         try {

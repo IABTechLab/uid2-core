@@ -141,7 +141,7 @@ public class Main {
                 IAttestationTokenService attestationTokenService = new AttestationTokenService(
                         SecretStore.Global.get(Constants.AttestationEncryptionKeyName),
                         SecretStore.Global.get(Constants.AttestationEncryptionSaltName),
-                        SecretStore.Global.getLongOrDefault(Constants.AttestationTokenLifetimeInSeconds, 7200)
+                        SecretStore.Global.getIntegerOrDefault(Constants.AttestationTokenLifetimeInSeconds, 7200)
                 );
 
                 coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider);
