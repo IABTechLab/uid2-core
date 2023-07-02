@@ -123,7 +123,7 @@ public class CoreVerticle extends AbstractVerticle {
 
         router.post("/attest")
                 .handler(new AttestationFailureHandler())
-                .handler(auth.handle(this::handleAttestAsync, Role.OPERATOR));
+                .handler(auth.handle(this::handleAttestAsync, Role.OPERATOR, Role.OPTOUT_SERVICE));
         router.get("/key/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeyRefresh), Role.OPERATOR));
         router.get("/key/acl/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeyAclRefresh), Role.OPERATOR));
         router.get("/salt/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleSaltRefresh), Role.OPERATOR));
