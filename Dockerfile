@@ -1,4 +1,4 @@
-FROM eclipse-temurin@sha256:d19c17f59e768549cd3d26f577be73b5e26e652dd66210d91a6738a355aa1dfe
+FROM eclipse-temurin@sha256:1a6531a7239bea3739d89d8833b03c7732f51e08ecbb78bbc40ef98287c1212d
 
 WORKDIR /app
 EXPOSE 8088
@@ -15,6 +15,9 @@ COPY ./target/${JAR_NAME}-${JAR_VERSION}-jar-with-dependencies.jar /app/${JAR_NA
 COPY ./target/${JAR_NAME}-${JAR_VERSION}-sources.jar /app
 COPY ./conf/default-config.json /app/conf/
 COPY ./conf/*.xml /app/conf/
+
+RUN adduser -D uid2-core && mkdir -p /app && chmod 705 -R /app && mkdir -p /app/file-uploads && chmod 777 -R /app/file-uploads
+USER uid2-core
 
 CMD java \
     -Djava.security.egd=file:/dev/./urandom \

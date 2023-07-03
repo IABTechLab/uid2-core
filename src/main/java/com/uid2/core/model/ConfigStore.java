@@ -22,7 +22,7 @@ public class ConfigStore {
     private Map<String, Object> secrets = new HashMap<>();
 
     public String get(String key) {
-        return (String)secrets.get(key);
+        return (String) secrets.get(key);
     }
 
     public Boolean getBoolean(String key) {
@@ -41,6 +41,18 @@ public class ConfigStore {
         }
     }
 
+    public Integer getIntegerOrDefault(String key, Integer defaultValue) {
+        try {
+            var value = secrets.get(key);
+            if (value == null) {
+                return defaultValue;
+            }
+            return (Integer) value;
+        } catch (NullPointerException e) {
+            return defaultValue;
+        }
+    }
+
     public long getLongOrDefault(String key, long defaultValue) {
         try {
             return ((Long) secrets.get(key)).longValue();
@@ -49,7 +61,9 @@ public class ConfigStore {
         }
     }
 
-    public String getPrintable(String key) { return get(key); }
+    public String getPrintable(String key) {
+        return get(key);
+    }
 
     public String getOrDefault(String key, String defaultValue) {
         return (String) secrets.getOrDefault(key, defaultValue);
@@ -77,7 +91,7 @@ public class ConfigStore {
         final InputStreamReader reader = new InputStreamReader(stream);
         final char[] buff = new char[1024];
         final StringBuilder sb = new StringBuilder();
-        for (int count; (count = reader.read(buff, 0, buff.length)) > 0;) {
+        for (int count; (count = reader.read(buff, 0, buff.length)) > 0; ) {
             sb.append(buff, 0, count);
         }
         return sb.toString();
