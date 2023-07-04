@@ -213,7 +213,7 @@ public class CoreVerticle extends AbstractVerticle {
                 }
 
                 // TODO: log requester identifier
-                logger.info("attestation successful");
+                logger.info("attestation successful for protocol: %s", protocol);
                 responseObj.put("attestation_token", attestationToken);
                 Success(rc, responseObj);
             });
