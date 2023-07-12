@@ -127,7 +127,7 @@ public class CoreVerticle extends AbstractVerticle {
 
         router.post("/attest")
                 .handler(new AttestationFailureHandler())
-                .handler(auth.handle(this::handleAttestAsync, Role.OPERATOR));
+                .handler(auth.handle(this::handleAttestAsync, Role.OPERATOR, Role.OPTOUT_SERVICE));
         router.get("/key/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeyRefresh), Role.OPERATOR));
         router.get("/key/acl/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeyAclRefresh), Role.OPERATOR));
         router.get("/key/keyset/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeysetRefresh), Role.OPERATOR));
@@ -219,7 +219,7 @@ public class CoreVerticle extends AbstractVerticle {
                 }
 
                 // TODO: log requester identifier
-                logger.info("attestation successful");
+                logger.info("attestation successful for protocol: {}", protocol);
                 responseObj.put("attestation_token", attestationToken);
                 Success(rc, responseObj);
             });
