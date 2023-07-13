@@ -55,6 +55,8 @@ public class CoreVerticle extends AbstractVerticle {
     private final IOperatorMetadataProvider operatorMetadataProvider;
     private final IKeyMetadataProvider keyMetadataProvider;
     private final IKeyAclMetadataProvider keyAclMetadataProvider;
+    private final IKeysetMetadataProvider keysetMetadataProvider;
+    private final IKeysetKeyMetadataProvider keysetKeyMetadataProvider;
     private final ISaltMetadataProvider saltMetadataProvider;
     private final IPartnerMetadataProvider partnerMetadataProvider;
 
@@ -79,6 +81,8 @@ public class CoreVerticle extends AbstractVerticle {
         this.keyAclMetadataProvider = new KeyAclMetadataProvider(cloudStorage);
         this.saltMetadataProvider = new SaltMetadataProvider(cloudStorage);
         this.partnerMetadataProvider = new PartnerMetadataProvider(cloudStorage);
+        this.keysetMetadataProvider = new KeysetMetadataProvider(cloudStorage);
+        this.keysetKeyMetadataProvider = new KeysetKeysMetadataProvider(cloudStorage);
     }
 
     @Override
@@ -126,6 +130,8 @@ public class CoreVerticle extends AbstractVerticle {
                 .handler(auth.handle(this::handleAttestAsync, Role.OPERATOR, Role.OPTOUT_SERVICE));
         router.get("/key/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeyRefresh), Role.OPERATOR));
         router.get("/key/acl/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeyAclRefresh), Role.OPERATOR));
+        router.get("/key/keyset/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeysetRefresh), Role.OPERATOR));
+        router.get("/key/keyset-keys/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeysetKeyRefresh), Role.OPERATOR));
         router.get("/salt/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleSaltRefresh), Role.OPERATOR));
         router.get("/clients/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleClientRefresh), Role.OPERATOR));
         router.get("/operators/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleOperatorRefresh), Role.OPTOUT_SERVICE));
@@ -261,6 +267,28 @@ public class CoreVerticle extends AbstractVerticle {
         } catch (Exception e) {
             logger.warn("exception in handleKeyAclRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing key acl refresh");
+        }
+    }
+
+    private void handleKeysetRefresh(RoutingContext rc) {
+        try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(keysetMetadataProvider.getMetadata(info));
+        } catch (Exception e) {
+            logger.warn("exception in handleKeysetRefresh: " + e.getMessage(), e);
+            Error("error", 500, rc, "error processing key refresh");
+        }
+    }
+
+    private void handleKeysetKeyRefresh(RoutingContext rc) {
+        try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(keysetKeyMetadataProvider.getMetadata(info));
+        } catch (Exception e) {
+            logger.warn("exception in handleKeysetKeyRefresh: " + e.getMessage(), e);
+            Error("error", 500, rc, "error processing key refresh");
         }
     }
 
