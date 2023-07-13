@@ -38,6 +38,7 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.time.Instant;
 import java.util.*;
 
 public class CoreVerticle extends AbstractVerticle {
@@ -202,6 +203,7 @@ public class CoreVerticle extends AbstractVerticle {
 
                 JsonObject responseObj = new JsonObject();
                 String attestationToken = attestationTokenService.createToken(token);
+                Instant expiresAt = attestationTokenService.getExpiresAt(attestationToken);
 
                 if(result.getPublicKey() != null) {
                     try {
@@ -221,6 +223,7 @@ public class CoreVerticle extends AbstractVerticle {
                 // TODO: log requester identifier
                 logger.info("attestation successful for protocol: {}", protocol);
                 responseObj.put("attestation_token", attestationToken);
+                responseObj.put("expiresAt", expiresAt);
                 Success(rc, responseObj);
             });
         } catch (AttestationService.NotFound e) {
