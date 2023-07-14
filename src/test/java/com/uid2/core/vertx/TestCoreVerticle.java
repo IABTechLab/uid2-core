@@ -2,6 +2,7 @@ package com.uid2.core.vertx;
 
 import com.uid2.core.service.AttestationService;
 import com.uid2.shared.Const;
+import com.uid2.shared.attest.EncryptedAttestationToken;
 import com.uid2.shared.attest.IAttestationTokenService;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.ICloudStorage;
@@ -30,6 +31,7 @@ import javax.crypto.Cipher;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.concurrent.Callable;
@@ -190,14 +192,17 @@ public class TestCoreVerticle {
       byte[] resultPublicKey = null;
       return Future.succeededFuture(new AttestationResult(resultPublicKey));
     });
-    when(attestationTokenService.createToken(any())).thenReturn("test-attestion-token");
+    EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestion-token", Instant.ofEpochMilli(111));
+    when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
     post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy"), ar -> {
       assertTrue(ar.succeeded());
       HttpResponse response = ar.result();
       assertEquals(200, response.statusCode());
       JsonObject json = response.bodyAsJsonObject();
       String attestationToken = json.getJsonObject("body").getString("attestation_token");
+      String expiresAt = json.getJsonObject("body").getString("expiresAt");
       assertEquals("test-attestion-token", attestationToken);
+      assertEquals("1970-01-01T00:00:00.111Z", expiresAt);
       testContext.completeNow();
     });
   }
@@ -214,7 +219,8 @@ public class TestCoreVerticle {
     onHandleAttestationRequest(() -> {
       return Future.succeededFuture(new AttestationResult(publicKey));
     });
-    when(attestationTokenService.createToken(any())).thenReturn("test-attestion-token");
+    EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestion-token", Instant.ofEpochMilli(111));
+    when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
     post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy"), ar -> {
       assertTrue(ar.succeeded());
       HttpResponse response = ar.result();
@@ -222,7 +228,8 @@ public class TestCoreVerticle {
       JsonObject json = response.bodyAsJsonObject();
       String attestationToken = json.getJsonObject("body").getString("attestation_token");
       assertNotEquals("", attestationToken);
-
+      String expiresAt = json.getJsonObject("body").getString("expiresAt");
+      assertEquals("1970-01-01T00:00:00.111Z", expiresAt);
       String[] decryptedAttestationToken = {""};
       assertDoesNotThrow(() -> {
         Cipher cipher = Cipher.getInstance(Const.Name.AsymetricEncryptionCipherClass);
@@ -248,7 +255,8 @@ public class TestCoreVerticle {
     onHandleAttestationRequest(() -> {
       return Future.succeededFuture(new AttestationResult(publicKey));
     });
-    when(attestationTokenService.createToken(any())).thenReturn("test-attestion-token");
+    EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestion-token", Instant.ofEpochMilli(111));
+    when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
     post(vertx, "attest", makeAttestationRequestJson("xxx", null), ar -> {
       assertTrue(ar.succeeded());
       HttpResponse response = ar.result();
@@ -256,6 +264,8 @@ public class TestCoreVerticle {
       JsonObject json = response.bodyAsJsonObject();
       String attestationToken = json.getJsonObject("body").getString("attestation_token");
       assertNotEquals("", attestationToken);
+      String expiresAt = json.getJsonObject("body").getString("expiresAt");
+      assertEquals("1970-01-01T00:00:00.111Z", expiresAt);
 
       String[] decryptedAttestationToken = {""};
       assertDoesNotThrow(() -> {
