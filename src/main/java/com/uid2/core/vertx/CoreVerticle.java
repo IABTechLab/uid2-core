@@ -8,6 +8,7 @@ import com.uid2.core.util.OperatorInfo;
 import com.uid2.shared.Const;
 
 import com.uid2.shared.Utils;
+import com.uid2.shared.attest.EncryptedAttestationToken;
 import com.uid2.shared.attest.IAttestationTokenService;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.ICloudStorage;
@@ -38,6 +39,7 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.time.Instant;
 import java.util.*;
 
 public class CoreVerticle extends AbstractVerticle {
@@ -201,7 +203,8 @@ public class CoreVerticle extends AbstractVerticle {
                 }
 
                 JsonObject responseObj = new JsonObject();
-                String attestationToken = attestationTokenService.createToken(token);
+                EncryptedAttestationToken encryptedAttestationToken = attestationTokenService.createToken(token);
+                String attestationToken = encryptedAttestationToken.getEncodedAttestationToken();
 
                 if(result.getPublicKey() != null) {
                     try {
@@ -221,6 +224,7 @@ public class CoreVerticle extends AbstractVerticle {
                 // TODO: log requester identifier
                 logger.info("attestation successful for protocol: {}", protocol);
                 responseObj.put("attestation_token", attestationToken);
+                responseObj.put("expiresAt", encryptedAttestationToken.getExpiresAt());
                 Success(rc, responseObj);
             });
         } catch (AttestationService.NotFound e) {
@@ -410,7 +414,7 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             JsonObject responseObj = new JsonObject();
             String attestationToken = attestationTokenService.createToken(
-                    AuthMiddleware.getAuthToken(rc));
+                    AuthMiddleware.getAuthToken(rc)).getEncodedAttestationToken();
             responseObj.put("attestation_token", attestationToken);
             Success(rc, responseObj);
         } catch (Exception e) {
