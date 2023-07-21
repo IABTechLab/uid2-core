@@ -16,10 +16,7 @@ import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.EmbeddedResourceStorage;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.jmx.AdminApi;
-import com.uid2.shared.secure.AzureAttestationProvider;
-import com.uid2.shared.secure.GcpVmidAttestationProvider;
-import com.uid2.shared.secure.NitroAttestationProvider;
-import com.uid2.shared.secure.TrustedAttestationProvider;
+import com.uid2.shared.secure.*;
 import com.uid2.shared.secure.nitro.InMemoryAWSCertificateStore;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.scope.GlobalScope;
@@ -137,6 +134,8 @@ public class Main {
                     attestationService
                             .with("gcp-vmid", new GcpVmidAttestationProvider(googleCredentials, enclaveParams));
                 }
+
+                attestationService.with("gcp-oidc", new GcpOidcAttestationProvider());
 
                 IAttestationTokenService attestationTokenService = new AttestationTokenService(
                         SecretStore.Global.get(Constants.AttestationEncryptionKeyName),
