@@ -18,6 +18,7 @@ import com.uid2.shared.middleware.AttestationMiddleware;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.secure.*;
 import com.uid2.shared.vertx.RequestCapturingHandler;
+import com.uid2.shared.vertx.VertxUtils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpHeaders;
@@ -229,9 +230,11 @@ public class CoreVerticle extends AbstractVerticle {
                 String optoutJwtToken = "";
                 try {
                     String clientKey = "unknown client";
-                    if (rc.data().containsKey("ClientKey")) {
-                        clientKey = rc.data().get("ClientKey").toString();
+                    if (rc.request().headers().contains(Const.Http.AppVersionHeader)) {
+                        var client = VertxUtils.parseClientAppVersion(rc.request().headers().get(Const.Http.AppVersionHeader));
+                        clientKey = profile.getContact() + "|" + client.getKey() + "|" + client.getValue();
                     }
+
                     optoutJwtToken = this.optOutJWTTokenProvider.getOptOutJWTToken(operator.getName(), operator.getRoles(), operator.getSiteId(), attestationResult.getEnclaveId(), protocol, clientKey, encryptedAttestationToken.getExpiresAt());
                 } catch (JWTTokenProvider.JwtSigningException e) {
                     logger.error("OptOut JWT token generation failed", e);

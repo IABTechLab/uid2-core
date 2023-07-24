@@ -151,7 +151,7 @@ public class JWTTokenProviderTests {
     }
 
     String openFile(String filePath) throws IOException {
-        return readToEndAsString(TestSiteSpecificMetadataPath.class.getResourceAsStream(filePath));
+        return readToEndAsString(JWTTokenProviderTests.class.getResourceAsStream(filePath));
     }
 
     private KmsClientBuilder getBuilder(boolean isSuccessful, String signature) {
