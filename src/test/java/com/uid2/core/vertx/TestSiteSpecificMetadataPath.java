@@ -3,6 +3,8 @@ package com.uid2.core.vertx;
 import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.AttestationService;
+import com.uid2.core.service.JWTTokenProvider;
+import com.uid2.core.service.OptOutJWTTokenProvider;
 import com.uid2.shared.Const;
 import com.uid2.shared.attest.IAttestationTokenService;
 import com.uid2.shared.auth.*;
@@ -49,6 +51,8 @@ public class TestSiteSpecificMetadataPath {
   private IAttestationTokenService attestationTokenService;
   @Mock
   private IEnclaveIdentifierProvider enclaveIdentifierProvider;
+  @Mock
+  private OptOutJWTTokenProvider optOutJWTTokenProvider;
 
   private AttestationService attestationService;
 
@@ -62,7 +66,7 @@ public class TestSiteSpecificMetadataPath {
     SecretStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testSiteSpecificMetadata/test-secrets.json"))));
     ConfigStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testSiteSpecificMetadata/test-configs-provide-private-site-data.json"))));
     MockitoAnnotations.initMocks(this);
-    CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider);
+    CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, optOutJWTTokenProvider);
     vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
   }
 

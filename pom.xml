@@ -19,12 +19,12 @@
     <vertx.version>4.3.8</vertx.version>
     <vertx-maven-plugin.version>1.0.22</vertx-maven-plugin.version>
     <micrometer.version>1.1.0</micrometer.version>
-    <junit-jupiter.version>5.7.0</junit-jupiter.version>
+    <junit-jupiter.version>5.9.2</junit-jupiter.version>
 
     <vertx.verticle>com.uid2.core.vertx.CoreVerticle</vertx.verticle>
     <launcher.class>io.vertx.core.Launcher</launcher.class>
 
-    <uid2-shared.version>2.11.0-8a5d2c779d</uid2-shared.version>
+    <uid2-shared.version>2.12.1-SNAPSHOT</uid2-shared.version>
     <image.version>${project.version}</image.version>
   </properties>
 
@@ -36,6 +36,13 @@
         <version>${vertx.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <dependency>
+          <groupId>software.amazon.awssdk</groupId>
+          <artifactId>bom</artifactId>
+          <version>2.20.69</version>
+          <type>pom</type>
+          <scope>import</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -90,7 +97,7 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-inline</artifactId>
-      <version>3.7.7</version>
+      <version>5.2.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -137,6 +144,14 @@
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
       <version>1.15</version>
+    </dependency>
+    <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>secretsmanager</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>kms</artifactId>
     </dependency>
   </dependencies>
 

@@ -5,6 +5,8 @@ import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.Constants;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.AttestationService;
+import com.uid2.core.service.JWTTokenProvider;
+import com.uid2.core.service.OptOutJWTTokenProvider;
 import com.uid2.core.vertx.CoreVerticle;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
@@ -41,6 +43,8 @@ import io.vertx.micrometer.MetricsDomain;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import io.vertx.micrometer.backends.BackendRegistries;
+import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.KmsClientBuilder;
 
 import javax.management.*;
 import java.lang.management.ManagementFactory;
@@ -138,13 +142,15 @@ public class Main {
                             .with("gcp-vmid", new GcpVmidAttestationProvider(googleCredentials, enclaveParams));
                 }
 
+                OptOutJWTTokenProvider optOutJWTTokenProvider = new OptOutJWTTokenProvider();
+
                 IAttestationTokenService attestationTokenService = new AttestationTokenService(
                         SecretStore.Global.get(Constants.AttestationEncryptionKeyName),
                         SecretStore.Global.get(Constants.AttestationEncryptionSaltName),
                         SecretStore.Global.getIntegerOrDefault(Constants.AttestationTokenLifetimeInSeconds, 7200)
                 );
 
-                coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider);
+                coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, optOutJWTTokenProvider);
             } catch (Exception e) {
                 System.out.println("failed to initialize core verticle: " + e.getMessage());
                 System.exit(-1);

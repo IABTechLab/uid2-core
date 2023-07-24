@@ -1,6 +1,8 @@
 package com.uid2.core.vertx;
 
 import com.uid2.core.service.AttestationService;
+import com.uid2.core.service.JWTTokenProvider;
+import com.uid2.core.service.OptOutJWTTokenProvider;
 import com.uid2.shared.Const;
 import com.uid2.shared.attest.EncryptedAttestationToken;
 import com.uid2.shared.attest.IAttestationTokenService;
@@ -51,6 +53,9 @@ public class TestCoreVerticle {
   @Mock
   private IEnclaveIdentifierProvider enclaveIdentifierProvider;
 
+  @Mock
+  private OptOutJWTTokenProvider optOutJWTTokenProvider;
+
   private AttestationService attestationService;
 
   private static final String attestationProtocol = "test-attestation-protocol";
@@ -59,7 +64,7 @@ public class TestCoreVerticle {
   void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
     attestationService = new AttestationService();
     MockitoAnnotations.initMocks(this);
-    CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider);
+    CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, optOutJWTTokenProvider);
     vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
   }
 
@@ -68,7 +73,7 @@ public class TestCoreVerticle {
   }
 
   private void fakeAuth(Role role) {
-    OperatorKey clientKey = new OperatorKey("test-key", "", "", attestationProtocol, 0, false, 88, new HashSet<>(), OperatorType.PRIVATE);
+    OperatorKey clientKey = new OperatorKey("test-key", "test-name", "test-contact", attestationProtocol, 0, false, 88, new HashSet<>(), OperatorType.PRIVATE);
     when(authProvider.get(any())).thenReturn(clientKey);
   }
 
@@ -190,7 +195,7 @@ public class TestCoreVerticle {
     addAttestationProvider(attestationProtocol);
     onHandleAttestationRequest(() -> {
       byte[] resultPublicKey = null;
-      return Future.succeededFuture(new AttestationResult(resultPublicKey));
+      return Future.succeededFuture(new AttestationResult(resultPublicKey, "test"));
     });
     EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestion-token", Instant.ofEpochMilli(111));
     when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
@@ -217,7 +222,7 @@ public class TestCoreVerticle {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     onHandleAttestationRequest(() -> {
-      return Future.succeededFuture(new AttestationResult(publicKey));
+      return Future.succeededFuture(new AttestationResult(publicKey, "test"));
     });
     EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestion-token", Instant.ofEpochMilli(111));
     when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
@@ -253,7 +258,7 @@ public class TestCoreVerticle {
     fakeAuth(Role.OPERATOR);
     addAttestationProvider(attestationProtocol);
     onHandleAttestationRequest(() -> {
-      return Future.succeededFuture(new AttestationResult(publicKey));
+      return Future.succeededFuture(new AttestationResult(publicKey, "test"));
     });
     EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestion-token", Instant.ofEpochMilli(111));
     when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
@@ -275,6 +280,35 @@ public class TestCoreVerticle {
       });
 
       assertEquals("test-attestion-token", decryptedAttestationToken[0]);
+
+      testContext.completeNow();
+    });
+  }
+  @Test
+  void attestOptOutJWTCalledUnknownClient(Vertx vertx, VertxTestContext testContext) throws Throwable {
+    KeyPairGenerator gen = KeyPairGenerator.getInstance(Const.Name.AsymetricEncryptionKeyClass);
+    gen.initialize(2048, new SecureRandom());
+    KeyPair keyPair = gen.generateKeyPair();
+    byte[] publicKey = keyPair.getPublic().getEncoded();
+
+    fakeAuth(Role.OPERATOR);
+    addAttestationProvider(attestationProtocol);
+    onHandleAttestationRequest(() -> {
+      return Future.succeededFuture(new AttestationResult(publicKey, "test-enclaveId"));
+    });
+    EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestion-token", Instant.ofEpochMilli(111));
+    when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
+    post(vertx, "attest", makeAttestationRequestJson("xxx", null), ar -> {
+      assertTrue(ar.succeeded());
+      HttpResponse response = ar.result();
+
+      try {
+        HashSet<Role> expectedRoles = new HashSet<>();
+        expectedRoles.add(Role.OPERATOR);
+        verify(optOutJWTTokenProvider, times(1)).getOptOutJWTToken("test-name", expectedRoles, 88, "test-enclaveId", attestationProtocol, "unknown client", Instant.ofEpochMilli(111));
+      } catch (JWTTokenProvider.JwtSigningException e) {
+        testContext.failNow(e);
+      }
 
       testContext.completeNow();
     });

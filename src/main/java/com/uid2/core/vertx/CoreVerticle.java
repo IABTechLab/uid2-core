@@ -39,7 +39,6 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.time.Instant;
 import java.util.*;
 
 public class CoreVerticle extends AbstractVerticle {
@@ -61,9 +60,15 @@ public class CoreVerticle extends AbstractVerticle {
     private final IKeysetKeyMetadataProvider keysetKeyMetadataProvider;
     private final ISaltMetadataProvider saltMetadataProvider;
     private final IPartnerMetadataProvider partnerMetadataProvider;
+    private final OptOutJWTTokenProvider optOutJWTTokenProvider;
 
-    public CoreVerticle(ICloudStorage cloudStorage, IAuthorizableProvider authProvider, AttestationService attestationService,
-                        IAttestationTokenService attestationTokenService, IEnclaveIdentifierProvider enclaveIdentifierProvider) throws Exception {
+    public CoreVerticle(ICloudStorage cloudStorage,
+                        IAuthorizableProvider authProvider,
+                        AttestationService attestationService,
+                        IAttestationTokenService attestationTokenService,
+                        IEnclaveIdentifierProvider enclaveIdentifierProvider,
+                        OptOutJWTTokenProvider optOutJWTTokenProvider) throws Exception {
+        this.optOutJWTTokenProvider = optOutJWTTokenProvider;
         this.healthComponent.setHealthStatus(false, "not started");
 
         this.authProvider = authProvider;
@@ -178,7 +183,7 @@ public class CoreVerticle extends AbstractVerticle {
 
         String request = json == null ? null : json.getString("attestation_request");
 
-        if(request == null || request.isEmpty()) {
+        if (request == null || request.isEmpty()) {
             setAttestationFailureReason(rc, AttestationFailureReason.NO_ATTESTATION_REQUEST_ATTACHED);
             Error("no attestation_request attached", 400, rc, null);
             return;
@@ -195,10 +200,10 @@ public class CoreVerticle extends AbstractVerticle {
                     return;
                 }
 
-                final AttestationResult result = ar.result();
-                if (!result.isSuccess()) {
-                    setAttestationFailureReason(rc, AttestationFailureReason.ATTESTATION_FAILURE, Collections.singletonMap("reason", result.getReason()));
-                    Error(result.getReason(), 401, rc, null);
+                final AttestationResult attestationResult = ar.result();
+                if (!attestationResult.isSuccess()) {
+                    setAttestationFailureReason(rc, AttestationFailureReason.ATTESTATION_FAILURE, Collections.singletonMap("reason", attestationResult.getReason()));
+                    Error(attestationResult.getReason(), 401, rc, null);
                     return;
                 }
 
@@ -206,10 +211,10 @@ public class CoreVerticle extends AbstractVerticle {
                 EncryptedAttestationToken encryptedAttestationToken = attestationTokenService.createToken(token);
                 String attestationToken = encryptedAttestationToken.getEncodedAttestationToken();
 
-                if(result.getPublicKey() != null) {
+                if (attestationResult.getPublicKey() != null) {
                     try {
                         Cipher cipher = Cipher.getInstance(Const.Name.AsymetricEncryptionCipherClass);
-                        KeySpec keySpec = new X509EncodedKeySpec(result.getPublicKey());
+                        KeySpec keySpec = new X509EncodedKeySpec(attestationResult.getPublicKey());
                         PublicKey publicKey = KeyFactory.getInstance(Const.Name.AsymetricEncryptionKeyClass).generatePublic(keySpec);
                         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
                         attestationToken = Base64.getEncoder().encodeToString(cipher.doFinal(attestationToken.getBytes(StandardCharsets.UTF_8)));
@@ -221,10 +226,25 @@ public class CoreVerticle extends AbstractVerticle {
                     }
                 }
 
+                String optoutJwtToken = "";
+                try {
+                    String clientKey = "unknown client";
+                    if (rc.data().containsKey("ClientKey")) {
+                        clientKey = rc.data().get("ClientKey").toString();
+                    }
+                    optoutJwtToken = this.optOutJWTTokenProvider.getOptOutJWTToken(operator.getName(), operator.getRoles(), operator.getSiteId(), attestationResult.getEnclaveId(), protocol, clientKey, encryptedAttestationToken.getExpiresAt());
+                } catch (JWTTokenProvider.JwtSigningException e) {
+                    logger.error("OptOut JWT token generation failed", e);
+                    setAttestationFailureReason(rc, AttestationFailureReason.INTERNAL_ERROR, Collections.singletonMap("exception", e.getMessage()));
+                    Error("attestation failure", 500, rc, null);
+                    return;
+                }
+
                 // TODO: log requester identifier
                 logger.info("attestation successful for protocol: {}", protocol);
                 responseObj.put("attestation_token", attestationToken);
                 responseObj.put("expiresAt", encryptedAttestationToken.getExpiresAt());
+                responseObj.put("optoutToken", optoutJwtToken);
                 Success(rc, responseObj);
             });
         } catch (AttestationService.NotFound e) {
@@ -335,7 +355,7 @@ public class CoreVerticle extends AbstractVerticle {
                 JsonObject o = new JsonObject();
                 o.put("name", name);
                 o.put("status", (failReason == null || failReason.isEmpty()) ? "success" : "failed");
-                if(failReason != null && !failReason.isEmpty()) o.put("reason", failReason);
+                if (failReason != null && !failReason.isEmpty()) o.put("reason", failReason);
                 return o;
             }
         }
@@ -343,14 +363,14 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             JsonObject main = rc.body().asJsonObject();
 
-            if(!main.containsKey("enclaves")) {
+            if (!main.containsKey("enclaves")) {
                 logger.info("enclave register has been called without .enclaves key");
                 Error("error", 400, rc, "no .enclaves key in json payload");
                 return;
             }
 
             Object enclavesObj = main.getValue("enclaves");
-            if(!(enclavesObj instanceof JsonArray)) {
+            if (!(enclavesObj instanceof JsonArray)) {
                 logger.info("enclave register has been called without .enclaves key");
                 Error("error", 400, rc, ".enclaves needs to be an array");
                 return;
@@ -358,13 +378,13 @@ public class CoreVerticle extends AbstractVerticle {
 
             JsonArray res = new JsonArray();
             JsonArray enclaves = (JsonArray) enclavesObj;
-            for (int i=0;i<enclaves.size();i++) {
+            for (int i = 0; i < enclaves.size(); i++) {
                 Result result = new Result();
                 JsonObject item = enclaves.getJsonObject(i);
                 String name = item.getString("name", "__item_" + String.valueOf(i));
                 String proto = item.getString("protocol", null);
                 String identifier = item.getString("identifier", null);
-                if(proto == null) {
+                if (proto == null) {
                     res.add(result.make(name, "no protocol provided"));
                     continue;
                 } else if (identifier == null) {
@@ -373,7 +393,7 @@ public class CoreVerticle extends AbstractVerticle {
                 }
 
                 try {
-                    if(isUnregister) {
+                    if (isUnregister) {
                         this.attestationService.unregisterEnclave(proto, identifier);
                     } else {
                         this.attestationService.registerEnclave(proto, identifier);
