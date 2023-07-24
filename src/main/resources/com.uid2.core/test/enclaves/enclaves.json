@@ -10,5 +10,11 @@
     "protocol": "gcp-vmid",
     "identifier": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
     "created": 1620693995
+  },
+  {
+    "name": "debug-gcp-oidc",
+    "protocol": "gcp-oidc",
+    "identifier": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "created": 1620693995
   }
 ]
