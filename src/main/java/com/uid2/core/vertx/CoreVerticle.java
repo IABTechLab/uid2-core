@@ -226,28 +226,33 @@ public class CoreVerticle extends AbstractVerticle {
                         return;
                     }
                 }
+                responseObj.put("attestation_token", attestationToken);
+                responseObj.put("expiresAt", encryptedAttestationToken.getExpiresAt());
 
-                String optoutJwtToken = "";
-                try {
-                    String clientKey = "unknown client";
-                    if (rc.request().headers().contains(Const.Http.AppVersionHeader)) {
-                        var client = VertxUtils.parseClientAppVersion(rc.request().headers().get(Const.Http.AppVersionHeader));
-                        clientKey = profile.getContact() + "|" + client.getKey() + "|" + client.getValue();
+                // TODO: this test should be removed once the KMS work has been done and the KeyId is set.
+                String keyId = ConfigStore.Global.get(Const.Config.AwsKmsJwtSigningKeyIdProp);
+                if (keyId != null && !keyId.isEmpty()) {
+                    try {
+                        String clientKey = "unknown client";
+                        if (rc.request().headers().contains(Const.Http.AppVersionHeader)) {
+                            var client = VertxUtils.parseClientAppVersion(rc.request().headers().get(Const.Http.AppVersionHeader));
+                            clientKey = profile.getContact() + "|" + client.getKey() + "|" + client.getValue();
+                        }
+
+                        String optoutJwtToken = this.optOutJWTTokenProvider.getOptOutJWTToken(operator.getName(), operator.getRoles(), operator.getSiteId(), attestationResult.getEnclaveId(), protocol, clientKey, encryptedAttestationToken.getExpiresAt());
+                        responseObj.put("optoutToken", optoutJwtToken);
+                    } catch (JWTTokenProvider.JwtSigningException e) {
+                        logger.error("OptOut JWT token generation failed", e);
+                        setAttestationFailureReason(rc, AttestationFailureReason.INTERNAL_ERROR, Collections.singletonMap("exception", e.getMessage()));
+                        Error("attestation failure", 500, rc, null);
+                        return;
                     }
-
-                    optoutJwtToken = this.optOutJWTTokenProvider.getOptOutJWTToken(operator.getName(), operator.getRoles(), operator.getSiteId(), attestationResult.getEnclaveId(), protocol, clientKey, encryptedAttestationToken.getExpiresAt());
-                } catch (JWTTokenProvider.JwtSigningException e) {
-                    logger.error("OptOut JWT token generation failed", e);
-                    setAttestationFailureReason(rc, AttestationFailureReason.INTERNAL_ERROR, Collections.singletonMap("exception", e.getMessage()));
-                    Error("attestation failure", 500, rc, null);
-                    return;
+                } else {
+                    logger.warn("OptOut JWT not set.");
                 }
 
                 // TODO: log requester identifier
                 logger.info("attestation successful for protocol: {}", protocol);
-                responseObj.put("attestation_token", attestationToken);
-                responseObj.put("expiresAt", encryptedAttestationToken.getExpiresAt());
-                responseObj.put("optoutToken", optoutJwtToken);
                 Success(rc, responseObj);
             });
         } catch (AttestationService.NotFound e) {

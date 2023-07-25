@@ -36,6 +36,7 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import static org.mockito.Mockito.*;
@@ -296,7 +297,7 @@ public class TestCoreVerticle {
     onHandleAttestationRequest(() -> {
       return Future.succeededFuture(new AttestationResult(publicKey, "test-enclaveId"));
     });
-    EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestion-token", Instant.ofEpochMilli(111));
+    EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestation-token", Instant.ofEpochMilli(111));
     when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
     post(vertx, "attest", makeAttestationRequestJson("xxx", null), ar -> {
       assertTrue(ar.succeeded());
@@ -307,6 +308,35 @@ public class TestCoreVerticle {
         expectedRoles.add(Role.OPERATOR);
         verify(optOutJWTTokenProvider, times(1)).getOptOutJWTToken("test-name", expectedRoles, 88, "test-enclaveId", attestationProtocol, "unknown client", Instant.ofEpochMilli(111));
       } catch (JWTTokenProvider.JwtSigningException e) {
+        testContext.failNow(e);
+      }
+
+      testContext.completeNow();
+    });
+  }
+  @Test
+  void attestOptOutJWTCalledReturns500OnError(Vertx vertx, VertxTestContext testContext) throws Throwable {
+    KeyPairGenerator gen = KeyPairGenerator.getInstance(Const.Name.AsymetricEncryptionKeyClass);
+    gen.initialize(2048, new SecureRandom());
+    KeyPair keyPair = gen.generateKeyPair();
+    byte[] publicKey = keyPair.getPublic().getEncoded();
+
+    fakeAuth(Role.OPERATOR);
+    addAttestationProvider(attestationProtocol);
+    onHandleAttestationRequest(() -> {
+      return Future.succeededFuture(new AttestationResult(publicKey, "test-enclaveId"));
+    });
+    EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestation-token", Instant.ofEpochMilli(111));
+    when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
+
+    when(optOutJWTTokenProvider.getOptOutJWTToken(anyString(), any(), anyInt(), anyString(), any(), anyString(), any())).thenThrow(new JWTTokenProvider(null).new JwtSigningException(Optional.of("Test error")));
+    post(vertx, "attest", makeAttestationRequestJson("xxx", null), ar -> {
+      assertTrue(ar.succeeded());
+      HttpResponse response = ar.result();
+      try {
+        assertEquals(500, response.statusCode());
+        assertEquals("Internal Server Error", response.statusMessage());
+      } catch (Throwable e) {
         testContext.failNow(e);
       }
 
