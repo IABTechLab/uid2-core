@@ -240,7 +240,7 @@ public class CoreVerticle extends AbstractVerticle {
                         }
 
                         String optoutJwtToken = this.optOutJWTTokenProvider.getOptOutJWTToken(operator.getName(), operator.getRoles(), operator.getSiteId(), attestationResult.getEnclaveId(), protocol, clientKey, encryptedAttestationToken.getExpiresAt());
-                        responseObj.put("optoutToken", optoutJwtToken);
+                        responseObj.put("optout_token", optoutJwtToken);
                     } catch (JWTTokenProvider.JwtSigningException e) {
                         logger.error("OptOut JWT token generation failed", e);
                         setAttestationFailureReason(rc, AttestationFailureReason.INTERNAL_ERROR, Collections.singletonMap("exception", e.getMessage()));
