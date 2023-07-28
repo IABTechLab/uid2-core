@@ -1,8 +1,8 @@
 package com.uid2.core.service;
 
-import com.uid2.core.model.ConfigStore;
 import com.uid2.shared.Const;
 import com.uid2.shared.auth.Role;
+import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.kms.KmsClient;
@@ -15,15 +15,16 @@ import java.util.stream.Collectors;
 
 public class OptOutJWTTokenProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(OptOutJWTTokenProvider.class);
+    private final JsonObject config;
     private final JWTTokenProvider jwtTokenProvider;
     private final Clock clock;
 
-    public OptOutJWTTokenProvider() {
-        this(new JWTTokenProvider(KmsClient.builder()), Clock.systemUTC());
+    public OptOutJWTTokenProvider(JsonObject config) {
+        this(config, new JWTTokenProvider(config, KmsClient.builder()), Clock.systemUTC());
     }
 
-    public OptOutJWTTokenProvider(JWTTokenProvider jwtTokenProvider, Clock clock) {
-
+    public OptOutJWTTokenProvider(JsonObject config, JWTTokenProvider jwtTokenProvider, Clock clock) {
+        this.config = config;
         this.jwtTokenProvider = jwtTokenProvider;
         this.clock = clock;
     }
@@ -41,11 +42,9 @@ public class OptOutJWTTokenProvider {
     public String getOptOutJWTToken(String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
         String roleString = String.join(",", roles.stream().map(Object::toString).collect(Collectors.toList()));
         HashMap<String, String> claims = new HashMap<>();
-        claims.put("iss", ConfigStore.Global.get(Const.Config.CorePublicUrlProp));
+        claims.put("iss", this.config.getString(Const.Config.CorePublicUrlProp));
         claims.put("sub", name);
-        claims.put("aud", ConfigStore.Global.get(Const.Config.OptOutUrlProp));
-        claims.put("exp", Long.toString(expiresAt.getEpochSecond()));
-        claims.put("iat", Long.toString(this.clock.instant().getEpochSecond()));
+        claims.put("aud", this.config.getString(Const.Config.OptOutUrlProp));
         claims.put("roles", roleString);
         claims.put("siteId", siteId.toString());
         claims.put("enclaveId", enclaveId);
@@ -53,7 +52,7 @@ public class OptOutJWTTokenProvider {
         claims.put("operatorVersion", operatorVersion);
 
         LOGGER.debug(String.format("Creating token with: Roles: %s, SiteId: %s, EnclaveId: %s, EnclaveType: %s, OperatorVersion: %s", roleString, siteId, enclaveId, enclaveType, operatorVersion));
-        String token = this.jwtTokenProvider.getJWT(claims);
+        String token = this.jwtTokenProvider.getJWT(expiresAt, this.clock.instant(), claims);
         return token;
     }
 }

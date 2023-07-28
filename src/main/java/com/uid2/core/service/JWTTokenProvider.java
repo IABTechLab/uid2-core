@@ -1,25 +1,21 @@
 package com.uid2.core.service;
 
 import com.uid2.core.model.ConfigStore;
+import com.uid2.shared.Const;
+import com.uid2.shared.cloud.CloudUtils;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.SdkBytes;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.kms.KmsClientBuilder;
-import software.amazon.awssdk.services.kms.endpoints.KmsEndpointProvider;
 import software.amazon.awssdk.services.kms.model.KmsException;
 import software.amazon.awssdk.services.kms.model.SignRequest;
 import software.amazon.awssdk.services.kms.model.SignResponse;
@@ -31,17 +27,19 @@ public class JWTTokenProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(JWTTokenProvider.class);
     private static final Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
 
+    private final JsonObject config;
     private final KmsClientBuilder kmsClientBuilder;
 
-    public JWTTokenProvider(KmsClientBuilder clientBuilder) {
+    public JWTTokenProvider(JsonObject config, KmsClientBuilder clientBuilder) {
+        this.config = config;
         this.kmsClientBuilder = clientBuilder;
     }
 
-    public String getJWT(Map<String, String> customClaims) throws JwtSigningException {
-        return this.getJWT(null, customClaims);
+    public String getJWT(Instant expiresAt, Instant issuedAt, Map<String, String> customClaims) throws JwtSigningException {
+        return this.getJWT(expiresAt, issuedAt, null, customClaims);
     }
 
-    public String getJWT(Map<String, String> headers, Map<String, String> customClaims) throws JwtSigningException {
+    public String getJWT(Instant expiresAt, Instant issuedAt, Map<String, String> headers, Map<String, String> customClaims) throws JwtSigningException {
         // headers we are going to use are:
         // "typ: : "JWT",
         // "alg" : "RS256"
@@ -56,6 +54,8 @@ public class JWTTokenProvider {
         }
 
         JsonObject claimsJson = new JsonObject();
+        claimsJson.put("exp", expiresAt.getEpochSecond());
+        claimsJson.put("iat", issuedAt.getEpochSecond());
         for (Map.Entry<String, String> claim : customClaims.entrySet()) {
             claimsJson.put(claim.getKey(), claim.getValue());
         }
@@ -66,7 +66,7 @@ public class JWTTokenProvider {
                 .append(encoder.encodeToString(claimsJson.encode().getBytes(StandardCharsets.UTF_8)))
                 .toString();
 
-        KmsClient client = getKmsClient();
+        KmsClient client = CloudUtils.getKmsClient(this.kmsClientBuilder, this.config);
         String signature = signJwtContent(client, jwtContent);
         return new StringBuilder()
                 .append(jwtContent)
@@ -75,36 +75,7 @@ public class JWTTokenProvider {
                 .toString();
     }
 
-    private KmsClient getKmsClient() {
-        KmsClient client = null;
-        String accessKeyId = ConfigStore.Global.get(AccessKeyIdProp);
-        String secretAccessKey = ConfigStore.Global.get(SecretAccessKeyProp);
-        String s3Endpoint = ConfigStore.Global.get(S3EndpointProp);
 
-        if (accessKeyId != null && !accessKeyId.isEmpty() && secretAccessKey != null && !secretAccessKey.isEmpty()) {
-            AwsBasicCredentials basicCredentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
-
-            software.amazon.awssdk.auth.credentials.StaticCredentialsProvider.create(basicCredentials);
-            try {
-                client = this.kmsClientBuilder
-                        .endpointOverride(new URI(s3Endpoint))
-                        .region(Region.of(ConfigStore.Global.get(AwsRegionProp)))
-                        .credentialsProvider(StaticCredentialsProvider.create(basicCredentials))
-                        .build();
-            } catch (URISyntaxException e) {
-                LOGGER.error("Error creating KMS Client Builder using static credentials.", e);
-            }
-        } else {
-            InstanceProfileCredentialsProvider credentialsProvider = InstanceProfileCredentialsProvider.create();
-
-            client = this.kmsClientBuilder
-                    .region(Region.of(ConfigStore.Global.get(AwsRegionProp)))
-                    .credentialsProvider(credentialsProvider)
-                    .build();
-        }
-
-        return client;
-    }
 
     private String signJwtContent(KmsClient kmsClient, String jwtContents) throws JwtSigningException {
         try {

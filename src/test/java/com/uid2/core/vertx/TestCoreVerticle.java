@@ -6,6 +6,7 @@ import com.uid2.core.service.OptOutJWTTokenProvider;
 import com.uid2.shared.Const;
 import com.uid2.shared.attest.EncryptedAttestationToken;
 import com.uid2.shared.attest.IAttestationTokenService;
+import com.uid2.shared.attest.JwtService;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.secure.AttestationException;
@@ -53,9 +54,10 @@ public class TestCoreVerticle {
   private IAttestationTokenService attestationTokenService;
   @Mock
   private IEnclaveIdentifierProvider enclaveIdentifierProvider;
-
   @Mock
   private OptOutJWTTokenProvider optOutJWTTokenProvider;
+  @Mock
+  private JwtService jwtService;
 
   private AttestationService attestationService;
 
@@ -65,7 +67,7 @@ public class TestCoreVerticle {
   void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
     attestationService = new AttestationService();
     MockitoAnnotations.initMocks(this);
-    CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, optOutJWTTokenProvider);
+    CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, optOutJWTTokenProvider, jwtService);
     vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
   }
 
@@ -329,7 +331,7 @@ public class TestCoreVerticle {
     EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestation-token", Instant.ofEpochMilli(111));
     when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
 
-    when(optOutJWTTokenProvider.getOptOutJWTToken(anyString(), any(), anyInt(), anyString(), any(), anyString(), any())).thenThrow(new JWTTokenProvider(null).new JwtSigningException(Optional.of("Test error")));
+    when(optOutJWTTokenProvider.getOptOutJWTToken(anyString(), any(), anyInt(), anyString(), any(), anyString(), any())).thenThrow(new JWTTokenProvider(null,null).new JwtSigningException(Optional.of("Test error")));
     post(vertx, "attest", makeAttestationRequestJson("xxx", null), ar -> {
       assertTrue(ar.succeeded());
       HttpResponse response = ar.result();

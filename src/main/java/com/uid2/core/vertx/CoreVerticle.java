@@ -10,6 +10,7 @@ import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import com.uid2.shared.attest.EncryptedAttestationToken;
 import com.uid2.shared.attest.IAttestationTokenService;
+import com.uid2.shared.attest.JwtService;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.health.HealthComponent;
@@ -62,13 +63,15 @@ public class CoreVerticle extends AbstractVerticle {
     private final ISaltMetadataProvider saltMetadataProvider;
     private final IPartnerMetadataProvider partnerMetadataProvider;
     private final OptOutJWTTokenProvider optOutJWTTokenProvider;
+    private final JwtService jwtService;
 
     public CoreVerticle(ICloudStorage cloudStorage,
                         IAuthorizableProvider authProvider,
                         AttestationService attestationService,
                         IAttestationTokenService attestationTokenService,
                         IEnclaveIdentifierProvider enclaveIdentifierProvider,
-                        OptOutJWTTokenProvider optOutJWTTokenProvider) throws Exception {
+                        OptOutJWTTokenProvider optOutJWTTokenProvider,
+                        JwtService jwtService) throws Exception {
         this.optOutJWTTokenProvider = optOutJWTTokenProvider;
         this.healthComponent.setHealthStatus(false, "not started");
 
@@ -76,10 +79,13 @@ public class CoreVerticle extends AbstractVerticle {
 
         this.attestationService = attestationService;
         this.attestationTokenService = attestationTokenService;
+        this.jwtService = jwtService;
         this.enclaveIdentifierProvider = enclaveIdentifierProvider;
         this.enclaveIdentifierProvider.addListener(this.attestationService);
 
-        this.attestationMiddleware = new AttestationMiddleware(this.attestationTokenService);
+        String jwtAudience = ConfigStore.Global.get(Const.Config.OptOutUrlProp);
+        String jwtIssuer = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
+        this.attestationMiddleware = new AttestationMiddleware(this.attestationTokenService, this.jwtService, jwtAudience, jwtIssuer);
 
         this.auth = new AuthMiddleware(authProvider);
 

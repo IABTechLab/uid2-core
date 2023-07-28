@@ -5,13 +5,13 @@ import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.Constants;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.AttestationService;
-import com.uid2.core.service.JWTTokenProvider;
 import com.uid2.core.service.OptOutJWTTokenProvider;
 import com.uid2.core.vertx.CoreVerticle;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import com.uid2.shared.attest.AttestationTokenService;
 import com.uid2.shared.attest.IAttestationTokenService;
+import com.uid2.shared.attest.JwtService;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.cloud.CloudUtils;
@@ -40,8 +40,6 @@ import io.vertx.micrometer.MetricsDomain;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import io.vertx.micrometer.backends.BackendRegistries;
-import software.amazon.awssdk.services.kms.KmsClient;
-import software.amazon.awssdk.services.kms.KmsClientBuilder;
 
 import javax.management.*;
 import java.lang.management.ManagementFactory;
@@ -141,7 +139,7 @@ public class Main {
 
                 attestationService.with("gcp-oidc", new GcpOidcAttestationProvider());
 
-                OptOutJWTTokenProvider optOutJWTTokenProvider = new OptOutJWTTokenProvider();
+                OptOutJWTTokenProvider optOutJWTTokenProvider = new OptOutJWTTokenProvider(config);
                 
                 IAttestationTokenService attestationTokenService = new AttestationTokenService(
                         SecretStore.Global.get(Constants.AttestationEncryptionKeyName),
@@ -149,7 +147,9 @@ public class Main {
                         SecretStore.Global.getIntegerOrDefault(Constants.AttestationTokenLifetimeInSeconds, 7200)
                 );
 
-                coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, optOutJWTTokenProvider);
+                JwtService jwtService = new JwtService(config);
+
+                coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, optOutJWTTokenProvider, jwtService);
             } catch (Exception e) {
                 System.out.println("failed to initialize core verticle: " + e.getMessage());
                 System.exit(-1);
