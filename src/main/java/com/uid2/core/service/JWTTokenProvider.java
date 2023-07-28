@@ -1,12 +1,12 @@
 package com.uid2.core.service;
 
 import com.uid2.core.model.ConfigStore;
-import com.uid2.shared.Const;
 import com.uid2.shared.cloud.CloudUtils;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
@@ -40,25 +40,15 @@ public class JWTTokenProvider {
     }
 
     public String getJWT(Instant expiresAt, Instant issuedAt, Map<String, String> headers, Map<String, String> customClaims) throws JwtSigningException {
-        // headers we are going to use are:
-        // "typ: : "JWT",
-        // "alg" : "RS256"
-
         JsonObject headersJson = new JsonObject();
         headersJson.put("typ", "JWT");
         headersJson.put("alg", "RS256");
-        if (headers != null && !headers.entrySet().isEmpty()) {
-            for (Map.Entry<String, String> headerEntry : headers.entrySet()) {
-                headersJson.put(headerEntry.getKey(), headerEntry.getValue());
-            }
-        }
+        this.addMapToJsonObject(headersJson, headers);
 
         JsonObject claimsJson = new JsonObject();
         claimsJson.put("exp", expiresAt.getEpochSecond());
         claimsJson.put("iat", issuedAt.getEpochSecond());
-        for (Map.Entry<String, String> claim : customClaims.entrySet()) {
-            claimsJson.put(claim.getKey(), claim.getValue());
-        }
+        this.addMapToJsonObject(claimsJson, customClaims);
 
         String jwtContent = new StringBuilder()
                 .append(encoder.encodeToString(headersJson.encode().getBytes(StandardCharsets.UTF_8)))
@@ -66,7 +56,12 @@ public class JWTTokenProvider {
                 .append(encoder.encodeToString(claimsJson.encode().getBytes(StandardCharsets.UTF_8)))
                 .toString();
 
-        KmsClient client = CloudUtils.getKmsClient(this.kmsClientBuilder, this.config);
+        KmsClient client = null;
+        try {
+            client = CloudUtils.getKmsClient(this.kmsClientBuilder, this.config);
+        } catch (URISyntaxException e) {
+            throw new JwtSigningException(Optional.of("Unable to get KMS Client"), e);
+        }
         String signature = signJwtContent(client, jwtContent);
         return new StringBuilder()
                 .append(jwtContent)
@@ -74,8 +69,6 @@ public class JWTTokenProvider {
                 .append(signature)
                 .toString();
     }
-
-
 
     private String signJwtContent(KmsClient kmsClient, String jwtContents) throws JwtSigningException {
         try {
@@ -109,10 +102,21 @@ public class JWTTokenProvider {
         }
     }
 
-    public class JwtSigningException extends Exception {
-        public JwtSigningException(Optional<String> message) {
-            super(message == null ? "No message returned from KMS Client" : message.orElse("No message returned from KMS Client"));
+    private void addMapToJsonObject(JsonObject jsonObject, Map<String, String> map) {
+        if (map != null) {
+            for (Map.Entry<String, String> entry : map.entrySet()) {
+                jsonObject.put(entry.getKey(), entry.getValue());
+            }
         }
     }
 
+    public class JwtSigningException extends Exception {
+        public JwtSigningException(Optional<String> message) {
+            this(message, null);
+        }
+
+        public JwtSigningException(Optional<String> message, Exception e) {
+            super(message == null ? "No message returned from KMS Client" : message.orElse("No message returned from KMS Client"), e);
+        }
+    }
 }

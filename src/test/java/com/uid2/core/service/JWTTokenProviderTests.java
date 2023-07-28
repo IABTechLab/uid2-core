@@ -1,7 +1,6 @@
 package com.uid2.core.service;
 
 import com.uid2.core.model.ConfigStore;
-import com.uid2.core.vertx.TestSiteSpecificMetadataPath;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,7 +46,7 @@ public class JWTTokenProviderTests {
     }
 
     @Test
-    void getJWT_returns_valid_token() throws JWTTokenProvider.JwtSigningException {
+    void getJwtReturnsValidToken() throws JWTTokenProvider.JwtSigningException {
 
         HashMap<String, String> headers = new HashMap<>();
         headers.put("a", "b");
@@ -82,7 +81,7 @@ public class JWTTokenProviderTests {
     }
 
     @Test
-    void getJWT_empty_signature_throws_exception() {
+    void getJwtEmptySignatureThrowsException() {
         var builder = getBuilder(false, "");
 
         JWTTokenProvider provider = new JWTTokenProvider(config, builder);
@@ -95,7 +94,7 @@ public class JWTTokenProviderTests {
     }
 
     @Test
-    void getJWT_empty_signature_empty_response_text() {
+    void getJwtEmptySignatureEmptyResponseText() {
         var builder = getBuilder(false, "", Optional.empty());
 
         JWTTokenProvider provider = new JWTTokenProvider(config, builder);
@@ -108,7 +107,7 @@ public class JWTTokenProviderTests {
     }
 
     @Test
-    void getJWT_empty_signature_null_response_text() {
+    void getJwtEmptySignatureNullResponseText() {
         var builder = getBuilder(false, "", null);
 
         JWTTokenProvider provider = new JWTTokenProvider(config, builder);
@@ -121,7 +120,7 @@ public class JWTTokenProviderTests {
     }
 
     @Test
-    void getJWT_signature_throws_kms_exception() {
+    void getJwtSignatureThrowsKmsException() {
         var builder = getBuilder(false, "", Optional.empty());
 
         JWTTokenProvider provider = new JWTTokenProvider(config, builder);
@@ -136,7 +135,7 @@ public class JWTTokenProviderTests {
     }
 
     @Test
-    void getJWT_missing_key_in_config() throws IOException {
+    void getJwtMissingKeyInConfig() throws IOException {
         var data = (JsonObject) Json.decodeValue(openFile("/com.uid2.core/service/jwt-token-provider-test-config.json"));
         data.put("aws_kms_jwt_signing_key_id", "");
 
