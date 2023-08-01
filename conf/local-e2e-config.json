@@ -21,5 +21,6 @@
     "provide_private_site_data": true,
     "aws_kms_jwt_signing_key_id": "ff275b92-0def-4dfc-b0f6-87c96b26c6c7",
     "core_public_url": "http://localhost:8088",
-    "optout_url": "http://localhost:8090"
+    "optout_url": "http://localhost:8090",
+    "enforceJwt": false
 }
