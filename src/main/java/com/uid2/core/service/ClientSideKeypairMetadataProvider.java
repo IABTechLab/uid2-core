@@ -1,7 +1,6 @@
 package com.uid2.core.service;
 
 import com.uid2.core.model.SecretStore;
-import com.uid2.core.util.OperatorInfo;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.scope.GlobalScope;
