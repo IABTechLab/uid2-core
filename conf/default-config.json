@@ -5,6 +5,7 @@
     "aws_access_key_id": null,
     "aws_secret_access_key": null,
     "clients_metadata_path": null,
+    "client_side_keypairs_metadata_path": null,
     "keys_metadata_path": null,
     "salts_metadata_path": null,
     "operators_metadata_path": null,

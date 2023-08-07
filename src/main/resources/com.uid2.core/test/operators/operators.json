@@ -18,6 +18,17 @@
     "name": "partner-trusted@uid2.com",
     "contact": "partner-trusted@uid2.com",
     "created": 1617149276,
-    "protocol": "trusted"
+    "protocol": "trusted",
+    "operator_type": "PUBLIC",
+    "site_id" : 10
+  },
+  {
+    "key": "trusted-partner-key-2",
+    "name": "partner-trusted@uid2.com",
+    "contact": "partner-trusted@uid2.com",
+    "created": 1617149276,
+    "protocol": "trusted",
+    "operator_type": "PRIVATE",
+    "site_id" : 11
   }
 ]

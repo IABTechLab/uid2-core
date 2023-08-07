@@ -8,6 +8,7 @@
   "aws_access_key_id": "no access key needed for test",
   "aws_secret_access_key": "no secret key needed for test",
   "clients_metadata_path": "clients/metadata.json",
+  "client_side_keypairs_metadata_path": "client_side_keypairs/metadata.json",
   "keys_metadata_path": "keys/metadata.json",
   "keys_acl_metadata_path": "keys_acl/metadata.json",
   "salts_metadata_path": "salts/metadata.json",
