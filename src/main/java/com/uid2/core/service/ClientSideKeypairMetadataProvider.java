@@ -23,7 +23,7 @@ public class ClientSideKeypairMetadataProvider implements IClientSideKeypairMeta
     }
 
     @Override
-    public String getMetadata(OperatorInfo info) throws Exception {
+    public String getMetadata() throws Exception {
         String pathname = new GlobalScope(new CloudPath(SecretStore.Global.get(ClientSideKeypairMetadataPathName))).getMetadataPath().toString();
         String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
