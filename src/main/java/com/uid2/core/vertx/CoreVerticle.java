@@ -285,7 +285,7 @@ public class CoreVerticle extends AbstractVerticle {
                 Error("error", 400, rc, "endpoint /client_side_keypairs/refresh is for public operators only");
             }
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(clientSideKeypairMetadataProvider.getMetadata(info));
+                    .end(clientSideKeypairMetadataProvider.getMetadata());
         } catch (Exception e) {
             logger.warn("exception in handleClientSideKeypairRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing client_side_keypairs refresh");
