@@ -5,7 +5,7 @@ import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.Constants;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.AttestationService;
-import com.uid2.core.service.OptOutJWTTokenProvider;
+import com.uid2.core.service.OperatorJWTTokenProvider;
 import com.uid2.core.vertx.CoreVerticle;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
@@ -139,7 +139,7 @@ public class Main {
 
                 attestationService.with("gcp-oidc", new GcpOidcAttestationProvider());
 
-                OptOutJWTTokenProvider optOutJWTTokenProvider = new OptOutJWTTokenProvider(config);
+                OperatorJWTTokenProvider operatorJWTTokenProvider = new OperatorJWTTokenProvider(config);
                 
                 IAttestationTokenService attestationTokenService = new AttestationTokenService(
                         SecretStore.Global.get(Constants.AttestationEncryptionKeyName),
@@ -149,7 +149,7 @@ public class Main {
 
                 JwtService jwtService = new JwtService(config);
 
-                coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, optOutJWTTokenProvider, jwtService);
+                coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, operatorJWTTokenProvider, jwtService);
             } catch (Exception e) {
                 System.out.println("failed to initialize core verticle: " + e.getMessage());
                 System.exit(-1);

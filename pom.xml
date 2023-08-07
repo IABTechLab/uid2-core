@@ -24,7 +24,7 @@
     <vertx.verticle>com.uid2.core.vertx.CoreVerticle</vertx.verticle>
     <launcher.class>io.vertx.core.Launcher</launcher.class>
 
-    <uid2-shared.version>4.0.3-72107b9b31</uid2-shared.version>
+    <uid2-shared.version>4.1.0-4a63fdfda1</uid2-shared.version>
     <image.version>${project.version}</image.version>
   </properties>
 
@@ -119,11 +119,6 @@
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-registry-prometheus</artifactId>
       <version>${micrometer.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>1.7.26</version>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>

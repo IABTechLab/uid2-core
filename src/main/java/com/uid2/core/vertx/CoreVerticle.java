@@ -69,7 +69,7 @@ public class CoreVerticle extends AbstractVerticle {
     private final IKeysetKeyMetadataProvider keysetKeyMetadataProvider;
     private final ISaltMetadataProvider saltMetadataProvider;
     private final IPartnerMetadataProvider partnerMetadataProvider;
-    private final OptOutJWTTokenProvider optOutJWTTokenProvider;
+    private final OperatorJWTTokenProvider operatorJWTTokenProvider;
     private final JwtService jwtService;
 
     public CoreVerticle(ICloudStorage cloudStorage,
@@ -77,9 +77,9 @@ public class CoreVerticle extends AbstractVerticle {
                         AttestationService attestationService,
                         IAttestationTokenService attestationTokenService,
                         IEnclaveIdentifierProvider enclaveIdentifierProvider,
-                        OptOutJWTTokenProvider optOutJWTTokenProvider,
+                        OperatorJWTTokenProvider operatorJWTTokenProvider,
                         JwtService jwtService) throws Exception {
-        this.optOutJWTTokenProvider = optOutJWTTokenProvider;
+        this.operatorJWTTokenProvider = operatorJWTTokenProvider;
         this.healthComponent.setHealthStatus(false, "not started");
 
         this.authProvider = authProvider;
@@ -90,7 +90,7 @@ public class CoreVerticle extends AbstractVerticle {
         this.enclaveIdentifierProvider = enclaveIdentifierProvider;
         this.enclaveIdentifierProvider.addListener(this.attestationService);
 
-        final String jwtAudience = ConfigStore.Global.get(Const.Config.OptOutUrlProp);
+        final String jwtAudience = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
         final String jwtIssuer = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
         Boolean enforceJwt = ConfigStore.Global.getBoolean(Const.Config.EnforceJwtProp);
         if (enforceJwt == null) {
@@ -234,11 +234,12 @@ public class CoreVerticle extends AbstractVerticle {
                     responseObj.put("attestation_token", attestationToken);
                     responseObj.put("expiresAt", encryptedAttestationToken.getExpiresAt());
 
-                    String jwt = getOptOutJWTToken(rc, profile, operator, attestationResult.getEnclaveId(), encryptedAttestationToken.getExpiresAt());
-                    if (jwt != null && !jwt.isEmpty()) {
-                        responseObj.put("attestation_jwt", jwt);
+                    Map.Entry<String, String> tokens = getJWTTokens(rc, profile, operator, attestationResult.getEnclaveId(), encryptedAttestationToken.getExpiresAt());
+                    if (tokens != null) {
+                        responseObj.put("attestation_jwt_optout", tokens.getKey());
+                        responseObj.put("attestation_jwt_core", tokens.getValue());
                     }
-                } catch (Exception e){
+                } catch (Exception e) {
                     Error("attestation failure", 500, rc, null);
                     return;
                 }
@@ -270,13 +271,15 @@ public class CoreVerticle extends AbstractVerticle {
         return encodedAttestationToken;
     }
 
-    private String getOptOutJWTToken(RoutingContext rc, IAuthorizable profile, OperatorKey operator, String enclaveId, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
+    private Map.Entry<String, String> getJWTTokens(RoutingContext rc, IAuthorizable profile, OperatorKey operator, String enclaveId, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
         String keyId = ConfigStore.Global.get(Const.Config.AwsKmsJwtSigningKeyIdProp);
         if (keyId != null && !keyId.isEmpty()) {
             try {
                 String clientKey = getClientKeyFromHeader(rc, profile);
-                String optoutJwtToken = this.optOutJWTTokenProvider.getOptOutJWTToken(operator.getName(), operator.getRoles(), operator.getSiteId(), enclaveId, operator.getProtocol(), clientKey, expiresAt);
-                return  optoutJwtToken;
+                String optoutJwtToken = this.operatorJWTTokenProvider.getOptOutJWTToken(operator.getName(), operator.getRoles(), operator.getSiteId(), enclaveId, operator.getProtocol(), clientKey, expiresAt);
+                String coreJwtToken = this.operatorJWTTokenProvider.getCoreJWTToken(operator.getName(), operator.getRoles(), operator.getSiteId(), enclaveId, operator.getProtocol(), clientKey, expiresAt);
+                Map.Entry<String, String> tokens = new AbstractMap.SimpleEntry<>(optoutJwtToken, coreJwtToken);
+                return tokens;
             } catch (JWTTokenProvider.JwtSigningException e) {
                 setAttestationFailureReason(rc, AttestationFailureReason.INTERNAL_ERROR, Collections.singletonMap("exception", e.getMessage()));
                 logger.error("OptOut JWT token generation failed", e);
@@ -285,7 +288,7 @@ public class CoreVerticle extends AbstractVerticle {
         } else {
             logger.warn("OptOut JWT not set.");
         }
-        return "";
+        return null;
     }
 
     private static void setAttestationFailureReason(RoutingContext context, AttestationFailureReason reason) {

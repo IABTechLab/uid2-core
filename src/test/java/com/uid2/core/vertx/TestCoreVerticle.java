@@ -3,7 +3,7 @@ package com.uid2.core.vertx;
 import com.uid2.core.model.ConfigStore;
 import com.uid2.core.service.AttestationService;
 import com.uid2.core.service.JWTTokenProvider;
-import com.uid2.core.service.OptOutJWTTokenProvider;
+import com.uid2.core.service.OperatorJWTTokenProvider;
 import com.uid2.shared.Const;
 import com.uid2.shared.attest.EncryptedAttestationToken;
 import com.uid2.shared.attest.IAttestationTokenService;
@@ -36,7 +36,6 @@ import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
-import java.util.Dictionary;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -56,7 +55,7 @@ public class TestCoreVerticle {
     @Mock
     private IEnclaveIdentifierProvider enclaveIdentifierProvider;
     @Mock
-    private OptOutJWTTokenProvider optOutJWTTokenProvider;
+    private OperatorJWTTokenProvider operatorJWTTokenProvider;
     @Mock
     private JwtService jwtService;
 
@@ -75,7 +74,7 @@ public class TestCoreVerticle {
 
         attestationService = new AttestationService();
         MockitoAnnotations.initMocks(this);
-        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, optOutJWTTokenProvider, jwtService);
+        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
     }
 
@@ -318,15 +317,19 @@ public class TestCoreVerticle {
         when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
         HashSet<Role> expectedRoles = new HashSet<>();
         expectedRoles.add(Role.OPERATOR);
-        when(optOutJWTTokenProvider.getOptOutJWTToken("test-name", expectedRoles, 88, "test-enclaveId", attestationProtocol, "unknown client", Instant.ofEpochMilli(111))).thenReturn("dummy_token");
+        when(operatorJWTTokenProvider.getOptOutJWTToken("test-name", expectedRoles, 88, "test-enclaveId", attestationProtocol, "unknown client", Instant.ofEpochMilli(111))).thenReturn("dummy_token_optout");
+        when(operatorJWTTokenProvider.getCoreJWTToken("test-name", expectedRoles, 88, "test-enclaveId", attestationProtocol, "unknown client", Instant.ofEpochMilli(111))).thenReturn("dummy_token_core");
         post(vertx, "attest", makeAttestationRequestJson("xxx", null), ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
 
             try {
-                verify(optOutJWTTokenProvider, times(1)).getOptOutJWTToken("test-name", expectedRoles, 88, "test-enclaveId", attestationProtocol, "unknown client", Instant.ofEpochMilli(111));
+                verify(operatorJWTTokenProvider, times(1)).getOptOutJWTToken("test-name", expectedRoles, 88, "test-enclaveId", attestationProtocol, "unknown client", Instant.ofEpochMilli(111));
                 JsonObject json = response.bodyAsJsonObject();
-                String jwt = json.getJsonObject("body").getString("attestation_jwt");
+                String jwtOptout = json.getJsonObject("body").getString("attestation_jwt_optout");
+                String jwtCore = json.getJsonObject("body").getString("attestation_jwt_core");
+                assertEquals("dummy_token_optout", jwtOptout);
+                assertEquals("dummy_token_core", jwtCore);
             } catch (Exception e) {
                 testContext.failNow(e);
             }
@@ -350,7 +353,7 @@ public class TestCoreVerticle {
         when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
         HashSet<Role> expectedRoles = new HashSet<>();
         expectedRoles.add(Role.OPERATOR);
-        when(optOutJWTTokenProvider.getOptOutJWTToken("test-name", expectedRoles, 88, "test-enclaveId", attestationProtocol, "test-contact|uid2-operator|2.7.16-SNAPSHOT", Instant.ofEpochMilli(111))).thenReturn("dummy_token");
+        when(operatorJWTTokenProvider.getOptOutJWTToken("test-name", expectedRoles, 88, "test-enclaveId", attestationProtocol, "test-contact|uid2-operator|2.7.16-SNAPSHOT", Instant.ofEpochMilli(111))).thenReturn("dummy_token");
 
         MultiMap map = MultiMap.caseInsensitiveMultiMap();
         map.add(Const.Http.AppVersionHeader, "uid2-operator=2.7.16-SNAPSHOT;uid2-attestation-api=1.1.0;uid2-shared=2.7.0-3e279acefa");
@@ -360,9 +363,9 @@ public class TestCoreVerticle {
             HttpResponse response = ar.result();
 
             try {
-                verify(optOutJWTTokenProvider, times(1)).getOptOutJWTToken("test-name", expectedRoles, 88, "test-enclaveId", attestationProtocol, "test-contact|uid2-operator|2.7.16-SNAPSHOT", Instant.ofEpochMilli(111));
+                verify(operatorJWTTokenProvider, times(1)).getOptOutJWTToken("test-name", expectedRoles, 88, "test-enclaveId", attestationProtocol, "test-contact|uid2-operator|2.7.16-SNAPSHOT", Instant.ofEpochMilli(111));
                 JsonObject json = response.bodyAsJsonObject();
-                String jwt = json.getJsonObject("body").getString("attestation_jwt");
+                String jwt = json.getJsonObject("body").getString("attestation_jwt_optout");
             } catch (Exception e) {
                 testContext.failNow(e);
             }
@@ -386,7 +389,7 @@ public class TestCoreVerticle {
         EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestation-token", Instant.ofEpochMilli(111));
         when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
 
-        when(optOutJWTTokenProvider.getOptOutJWTToken(anyString(), any(), anyInt(), anyString(), any(), anyString(), any())).thenThrow(new JWTTokenProvider(null, null).new JwtSigningException(Optional.of("Test error")));
+        when(operatorJWTTokenProvider.getOptOutJWTToken(anyString(), any(), anyInt(), anyString(), any(), anyString(), any())).thenThrow(new JWTTokenProvider(null, null).new JwtSigningException(Optional.of("Test error")));
         post(vertx, "attest", makeAttestationRequestJson("xxx", null), ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
