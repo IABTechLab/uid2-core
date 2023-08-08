@@ -17,7 +17,7 @@
   "partners_metadata_path": "partners/metadata.json",
   "att_token_enc_key": "<key-for-attestation-token>",
   "att_token_enc_salt": "<salt-for-attestation-token>",
-  "att_token_lifetime_seconds": 120,
+  "att_token_lifetime_seconds": 1200,
   "provide_private_site_data": true,
   "aws_kms_jwt_signing_key_id": "ff275b92-0def-4dfc-b0f6-87c96b26c6c7",
   "aws_kms_jwt_signing_public_keys": [
