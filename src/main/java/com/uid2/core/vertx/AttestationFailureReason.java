@@ -21,4 +21,9 @@ public enum AttestationFailureReason {
      * Attestation was attempted, but failed.
      */
     ATTESTATION_FAILURE,
+
+    /**
+     * Internal server error
+     */
+    INTERNAL_ERROR,
 }

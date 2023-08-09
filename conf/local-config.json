@@ -1,4 +1,5 @@
 {
+    "aws_s3_endpoint": "http://localstack:5001",
     "enable_test_endpoints": true,
     "storage_mock": true,
     "clients_metadata_path": "/com.uid2.core/test/clients/metadata.json",
@@ -10,5 +11,6 @@
     "partners_metadata_path": "/com.uid2.core/test/partners/metadata.json",
     "att_token_enc_key": "<key-for-attestation-token>",
     "att_token_enc_salt": "<salt-for-attestation-token>",
-    "provide_private_site_data": true
+    "provide_private_site_data": true,
+    "enforceJwt": false
 }

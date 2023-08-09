@@ -1,3 +1,4 @@
 {
-    "provide_private_site_data": true
+    "provide_private_site_data": true,
+    "enforceJwt": false
 }

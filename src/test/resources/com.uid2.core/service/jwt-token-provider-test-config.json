@@ -1,0 +1,4 @@
+{
+    "aws_kms_jwt_signing_key_id": "1234",
+    "aws_region": "ap-southeast-2"
+}
