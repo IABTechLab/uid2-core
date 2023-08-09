@@ -138,6 +138,7 @@ public class JWTTokenProviderTests {
     void getJwtMissingKeyInConfig() throws IOException {
         var data = (JsonObject) Json.decodeValue(openFile("/com.uid2.core/service/jwt-token-provider-test-config.json"));
         data.put("aws_kms_jwt_signing_key_id", "");
+        data.put("enforceJwt", true);
 
         ConfigStore.Global.load(data);
 

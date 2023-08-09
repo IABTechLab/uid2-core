@@ -94,7 +94,7 @@ public class CoreVerticle extends AbstractVerticle {
         final String jwtIssuer = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
         Boolean enforceJwt = ConfigStore.Global.getBoolean(Const.Config.EnforceJwtProp);
         if (enforceJwt == null) {
-            enforceJwt = true;
+            enforceJwt = false;
         }
 
         this.attestationMiddleware = new AttestationMiddleware(this.attestationTokenService, this.jwtService, jwtAudience, jwtIssuer, enforceJwt);

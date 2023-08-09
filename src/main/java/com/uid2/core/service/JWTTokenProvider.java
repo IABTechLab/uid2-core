@@ -79,10 +79,19 @@ public class JWTTokenProvider {
     private String signJwtContent(KmsClient kmsClient, String jwtContents) throws JwtSigningException {
         try {
             String keyId = ConfigStore.Global.get(AwsKmsJwtSigningKeyIdProp);
+            Boolean enforceJWT = ConfigStore.Global.getBoolean(EnforceJwtProp);
+            if (enforceJWT == null) {
+                enforceJWT = false;
+            }
+
             if (keyId == null || keyId.isEmpty()) {
-                String message = "Unable to retrieve the AWS KMS Key Id from config. Unable to sign JWT token";
-                LOGGER.error(message);
-                throw new JwtSigningException(Optional.of(message));
+                if (enforceJWT) {
+                    String message = "Unable to retrieve the AWS KMS Key Id from config. Unable to sign JWT token";
+                    LOGGER.error(message);
+                    throw new JwtSigningException(Optional.of(message));
+                } else {
+                    return "";
+                }
             }
 
             SdkBytes dataToSign = SdkBytes.fromUtf8String(jwtContents);
