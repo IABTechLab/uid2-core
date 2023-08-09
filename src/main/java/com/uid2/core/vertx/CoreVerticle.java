@@ -283,6 +283,7 @@ public class CoreVerticle extends AbstractVerticle {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             if (info.getOperatorType() != OperatorType.PUBLIC) {
                 Error("error", 400, rc, "endpoint /client_side_keypairs/refresh is for public operators only");
+                return;
             }
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(clientSideKeypairMetadataProvider.getMetadata());
