@@ -73,7 +73,6 @@ public class OperatorJWTTokenProvider {
         claims.put("operatorVersion", operatorVersion);
 
         LOGGER.debug(String.format("Creating token with: Issuer: %s, Audience: %s, Roles: %s, SiteId: %s, EnclaveId: %s, EnclaveType: %s, OperatorVersion: %s", audience, issuer, roleString, siteId, enclaveId, enclaveType, operatorVersion));
-        String token = this.jwtTokenProvider.getJWT(expiresAt, this.clock.instant(), claims);
-        return token;
+        return this.jwtTokenProvider.getJWT(expiresAt, this.clock.instant(), claims);
     }
 }

@@ -104,8 +104,7 @@ public class JWTTokenProvider {
 
             SignResponse response = kmsClient.sign(request);
             if (response.sdkHttpResponse().isSuccessful()) {
-                String signature = encoder.encodeToString(response.signature().asByteArray());
-                return signature;
+                return encoder.encodeToString(response.signature().asByteArray());
             } else {
                 LOGGER.error("Error returned when attempting to sign JWT: {}", response.sdkHttpResponse().statusText());
                 throw new JwtSigningException(response.sdkHttpResponse().statusText());
