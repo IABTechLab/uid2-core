@@ -1,8 +1,6 @@
 package com.uid2.core.service;
 
 import com.uid2.core.model.ConfigStore;
-import com.uid2.shared.Const;
-import com.uid2.shared.cloud.CloudUtils;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +26,7 @@ import software.amazon.awssdk.services.kms.model.SignResponse;
 import software.amazon.awssdk.services.kms.model.SigningAlgorithmSpec;
 
 import static com.uid2.shared.Const.Config.*;
+import static com.uid2.core.Const.Config.*;
 
 public class JWTTokenProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(JWTTokenProvider.class);
@@ -127,18 +126,21 @@ public class JWTTokenProvider {
     private static KmsClient getKmsClient(KmsClientBuilder kmsClientBuilder, JsonObject config) throws URISyntaxException {
         KmsClient client;
 
-        String accessKeyId = config.getString(Const.Config.AccessKeyIdProp);
-        String secretAccessKey = config.getString(Const.Config.SecretAccessKeyProp);
-        String s3Endpoint = config.getString(Const.Config.S3EndpointProp);
-        String awsRegion = config.getString(Const.Config.AwsRegionProp);
+        String accessKeyId = config.getString(KmsAccessKeyIdProp);
+        String secretAccessKey = config.getString(KmsSecretAccessKeyProp);
+        String endpoint = config.getString(KmsEndpointProp, "");
+        String awsRegion = config.getString(AwsRegionProp);
 
         if (accessKeyId != null && !accessKeyId.isEmpty() && secretAccessKey != null && !secretAccessKey.isEmpty()) {
             AwsBasicCredentials basicCredentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
 
             StaticCredentialsProvider.create(basicCredentials);
             try {
+                if (endpoint != null && !endpoint.isEmpty()) {
+                    kmsClientBuilder.endpointOverride(new URI(endpoint));
+                }
+
                 client = kmsClientBuilder
-                        .endpointOverride(new URI(s3Endpoint))
                         .region(Region.of(awsRegion))
                         .credentialsProvider(StaticCredentialsProvider.create(basicCredentials))
                         .build();
