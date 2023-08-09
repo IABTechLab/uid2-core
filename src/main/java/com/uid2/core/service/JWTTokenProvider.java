@@ -117,7 +117,7 @@ public class JWTTokenProvider {
     }
 
     private static KmsClient getKmsClient(KmsClientBuilder kmsClientBuilder, JsonObject config) throws URISyntaxException {
-        KmsClient client = null;
+        KmsClient client;
 
         String accessKeyId = config.getString(Const.Config.AccessKeyIdProp);
         String secretAccessKey = config.getString(Const.Config.SecretAccessKeyProp);
