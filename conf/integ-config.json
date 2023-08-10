@@ -3,11 +3,14 @@
     "core_s3_bucket": "<s3_bucket_for_stores>",
     "aws_access_key_id": "<your_aws_key_here>",
     "aws_secret_access_key": "<your_aws_secret_here>",
+    "kms_aws_access_key_id": "<your_aws_key_here>",
+    "kms_aws_secret_access_key": "<your_aws_secret_here>",
     "clients_metadata_path": "uid2/clients/metadata.json",
     "client_side_keypairs_metadata_path": "uid2/client_side_keypairs/metadata.json",
     "operators_metadata_path": "uid2/operators/metadata.json",
     "keys_acl_metadata_path": "uid2/keys_acl/metadata.json",
     "enclaves_metadata_path": "uid2/enclaves/metadata.json",
     "keys_metadata_path": "uid2/keys/metadata.json",
-    "salts_metadata_path": "uid2/salts/metadata.json"
+    "salts_metadata_path": "uid2/salts/metadata.json",
+    "enforceJwt": false
 }

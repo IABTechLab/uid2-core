@@ -12,5 +12,6 @@
     "enclaves_metadata_path": null,
     "partners_metadata_path": null,
     "att_token_enc_key": null,
-    "att_token_enc_salt": null
+    "att_token_enc_salt": null,
+    "enforceJwt": false
 }

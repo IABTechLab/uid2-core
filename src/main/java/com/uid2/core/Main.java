@@ -5,11 +5,13 @@ import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.Constants;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.AttestationService;
+import com.uid2.core.service.OperatorJWTTokenProvider;
 import com.uid2.core.vertx.CoreVerticle;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import com.uid2.shared.attest.AttestationTokenService;
 import com.uid2.shared.attest.IAttestationTokenService;
+import com.uid2.shared.attest.JwtService;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.cloud.CloudUtils;
@@ -137,13 +139,17 @@ public class Main {
 
                 attestationService.with("gcp-oidc", new GcpOidcAttestationProvider());
 
+                OperatorJWTTokenProvider operatorJWTTokenProvider = new OperatorJWTTokenProvider(config);
+                
                 IAttestationTokenService attestationTokenService = new AttestationTokenService(
                         SecretStore.Global.get(Constants.AttestationEncryptionKeyName),
                         SecretStore.Global.get(Constants.AttestationEncryptionSaltName),
                         SecretStore.Global.getIntegerOrDefault(Constants.AttestationTokenLifetimeInSeconds, 7200)
                 );
 
-                coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider);
+                JwtService jwtService = new JwtService(config);
+
+                coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, operatorJWTTokenProvider, jwtService);
             } catch (Exception e) {
                 System.out.println("failed to initialize core verticle: " + e.getMessage());
                 System.exit(-1);

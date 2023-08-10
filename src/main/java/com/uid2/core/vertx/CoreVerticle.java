@@ -10,6 +10,7 @@ import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import com.uid2.shared.attest.EncryptedAttestationToken;
 import com.uid2.shared.attest.IAttestationTokenService;
+import com.uid2.shared.attest.JwtService;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.health.HealthComponent;
@@ -18,6 +19,7 @@ import com.uid2.shared.middleware.AttestationMiddleware;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.secure.*;
 import com.uid2.shared.vertx.RequestCapturingHandler;
+import com.uid2.shared.vertx.VertxUtils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpHeaders;
@@ -33,10 +35,16 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
@@ -62,19 +70,35 @@ public class CoreVerticle extends AbstractVerticle {
     private final IKeysetKeyMetadataProvider keysetKeyMetadataProvider;
     private final ISaltMetadataProvider saltMetadataProvider;
     private final IPartnerMetadataProvider partnerMetadataProvider;
+    private final OperatorJWTTokenProvider operatorJWTTokenProvider;
+    private final JwtService jwtService;
 
-    public CoreVerticle(ICloudStorage cloudStorage, IAuthorizableProvider authProvider, AttestationService attestationService,
-                        IAttestationTokenService attestationTokenService, IEnclaveIdentifierProvider enclaveIdentifierProvider) throws Exception {
+    public CoreVerticle(ICloudStorage cloudStorage,
+                        IAuthorizableProvider authProvider,
+                        AttestationService attestationService,
+                        IAttestationTokenService attestationTokenService,
+                        IEnclaveIdentifierProvider enclaveIdentifierProvider,
+                        OperatorJWTTokenProvider operatorJWTTokenProvider,
+                        JwtService jwtService) throws Exception {
+        this.operatorJWTTokenProvider = operatorJWTTokenProvider;
         this.healthComponent.setHealthStatus(false, "not started");
 
         this.authProvider = authProvider;
 
         this.attestationService = attestationService;
         this.attestationTokenService = attestationTokenService;
+        this.jwtService = jwtService;
         this.enclaveIdentifierProvider = enclaveIdentifierProvider;
         this.enclaveIdentifierProvider.addListener(this.attestationService);
 
-        this.attestationMiddleware = new AttestationMiddleware(this.attestationTokenService);
+        final String jwtAudience = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
+        final String jwtIssuer = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
+        Boolean enforceJwt = ConfigStore.Global.getBoolean(Const.Config.EnforceJwtProp);
+        if (enforceJwt == null) {
+            enforceJwt = false;
+        }
+
+        this.attestationMiddleware = new AttestationMiddleware(this.attestationTokenService, this.jwtService, jwtAudience, jwtIssuer, enforceJwt);
 
         this.auth = new AuthMiddleware(authProvider);
 
@@ -181,7 +205,7 @@ public class CoreVerticle extends AbstractVerticle {
 
         String request = json == null ? null : json.getString("attestation_request");
 
-        if(request == null || request.isEmpty()) {
+        if (request == null || request.isEmpty()) {
             setAttestationFailureReason(rc, AttestationFailureReason.NO_ATTESTATION_REQUEST_ATTACHED);
             Error("no attestation_request attached", 400, rc, null);
             return;
@@ -198,42 +222,76 @@ public class CoreVerticle extends AbstractVerticle {
                     return;
                 }
 
-                final AttestationResult result = ar.result();
-                if (!result.isSuccess()) {
-                    setAttestationFailureReason(rc, AttestationFailureReason.ATTESTATION_FAILURE, Collections.singletonMap("reason", result.getReason()));
-                    Error(result.getReason(), 401, rc, null);
+                final AttestationResult attestationResult = ar.result();
+                if (!attestationResult.isSuccess()) {
+                    setAttestationFailureReason(rc, AttestationFailureReason.ATTESTATION_FAILURE, Collections.singletonMap("reason", attestationResult.getReason()));
+                    Error(attestationResult.getReason(), 401, rc, null);
                     return;
                 }
 
                 JsonObject responseObj = new JsonObject();
                 EncryptedAttestationToken encryptedAttestationToken = attestationTokenService.createToken(token);
-                String attestationToken = encryptedAttestationToken.getEncodedAttestationToken();
 
-                if(result.getPublicKey() != null) {
-                    try {
-                        Cipher cipher = Cipher.getInstance(Const.Name.AsymetricEncryptionCipherClass);
-                        KeySpec keySpec = new X509EncodedKeySpec(result.getPublicKey());
-                        PublicKey publicKey = KeyFactory.getInstance(Const.Name.AsymetricEncryptionKeyClass).generatePublic(keySpec);
-                        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-                        attestationToken = Base64.getEncoder().encodeToString(cipher.doFinal(attestationToken.getBytes(StandardCharsets.UTF_8)));
-                    } catch (Exception e) {
-                        setAttestationFailureReason(rc, AttestationFailureReason.RESPONSE_ENCRYPTION_EXCEPTION, Collections.singletonMap("exception", e.getMessage()));
-                        logger.warn("attestation failure: exception while encrypting response", e);
-                        Error("attestation failure", 500, rc, null);
-                        return;
+                try {
+                    String attestationToken = encodeAttestationToken(rc, attestationResult, encryptedAttestationToken.getEncodedAttestationToken());
+                    responseObj.put("attestation_token", attestationToken);
+                    responseObj.put("expiresAt", encryptedAttestationToken.getExpiresAt());
+
+                    Map.Entry<String, String> tokens = getJWTTokens(rc, profile, operator, attestationResult.getEnclaveId(), encryptedAttestationToken.getExpiresAt());
+                    if (tokens != null) {
+                        responseObj.put("attestation_jwt_optout", tokens.getKey());
+                        responseObj.put("attestation_jwt_core", tokens.getValue());
                     }
+                } catch (Exception e) {
+                    Error("attestation failure", 500, rc, null);
+                    return;
                 }
 
-                // TODO: log requester identifier
-                logger.info("attestation successful for protocol: {}", protocol);
-                responseObj.put("attestation_token", attestationToken);
-                responseObj.put("expiresAt", encryptedAttestationToken.getExpiresAt());
+                logger.info("attestation successful for SiteId: {}, Operator name: {}, protocol: {}", operator.getSiteId(), operator.getName(), protocol);
                 Success(rc, responseObj);
             });
         } catch (AttestationService.NotFound e) {
             setAttestationFailureReason(rc, AttestationFailureReason.INVALID_PROTOCOL);
             Error("protocol not found", 500, rc, null);
         }
+    }
+
+    private static String encodeAttestationToken(RoutingContext rc, AttestationResult attestationResult, String encodedAttestationToken) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, InvalidKeySpecException, BadPaddingException, InvalidKeyException {
+        if (attestationResult.getPublicKey() != null) {
+            try {
+                Cipher cipher = Cipher.getInstance(Const.Name.AsymetricEncryptionCipherClass);
+                KeySpec keySpec = new X509EncodedKeySpec(attestationResult.getPublicKey());
+                PublicKey publicKey = KeyFactory.getInstance(Const.Name.AsymetricEncryptionKeyClass).generatePublic(keySpec);
+                cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+                return Base64.getEncoder().encodeToString(cipher.doFinal(encodedAttestationToken.getBytes(StandardCharsets.UTF_8)));
+            } catch (Exception e) {
+                setAttestationFailureReason(rc, AttestationFailureReason.RESPONSE_ENCRYPTION_EXCEPTION, Collections.singletonMap("exception", e.getMessage()));
+                logger.warn("attestation failure: exception while encrypting response", e);
+                throw e;
+            }
+        }
+
+        return encodedAttestationToken;
+    }
+
+    private Map.Entry<String, String> getJWTTokens(RoutingContext rc, IAuthorizable profile, OperatorKey operator, String enclaveId, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
+        String keyId = ConfigStore.Global.get(Const.Config.AwsKmsJwtSigningKeyIdProp);
+        if (keyId != null && !keyId.isEmpty()) {
+            try {
+                String clientKey = getClientKeyFromHeader(rc, profile);
+                String optoutJwtToken = this.operatorJWTTokenProvider.getOptOutJWTToken(operator.getName(), operator.getRoles(), operator.getSiteId(), enclaveId, operator.getProtocol(), clientKey, expiresAt);
+                String coreJwtToken = this.operatorJWTTokenProvider.getCoreJWTToken(operator.getName(), operator.getRoles(), operator.getSiteId(), enclaveId, operator.getProtocol(), clientKey, expiresAt);
+                Map.Entry<String, String> tokens = new AbstractMap.SimpleEntry<>(optoutJwtToken, coreJwtToken);
+                return tokens;
+            } catch (JWTTokenProvider.JwtSigningException e) {
+                setAttestationFailureReason(rc, AttestationFailureReason.INTERNAL_ERROR, Collections.singletonMap("exception", e.getMessage()));
+                logger.error("OptOut JWT token generation failed", e);
+                throw e;
+            }
+        } else {
+            logger.warn("OptOut JWT not set.");
+        }
+        return null;
     }
 
     private static void setAttestationFailureReason(RoutingContext context, AttestationFailureReason reason) {
@@ -353,7 +411,7 @@ public class CoreVerticle extends AbstractVerticle {
                 JsonObject o = new JsonObject();
                 o.put("name", name);
                 o.put("status", (failReason == null || failReason.isEmpty()) ? "success" : "failed");
-                if(failReason != null && !failReason.isEmpty()) o.put("reason", failReason);
+                if (failReason != null && !failReason.isEmpty()) o.put("reason", failReason);
                 return o;
             }
         }
@@ -361,14 +419,14 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             JsonObject main = rc.body().asJsonObject();
 
-            if(!main.containsKey("enclaves")) {
+            if (!main.containsKey("enclaves")) {
                 logger.info("enclave register has been called without .enclaves key");
                 Error("error", 400, rc, "no .enclaves key in json payload");
                 return;
             }
 
             Object enclavesObj = main.getValue("enclaves");
-            if(!(enclavesObj instanceof JsonArray)) {
+            if (!(enclavesObj instanceof JsonArray)) {
                 logger.info("enclave register has been called without .enclaves key");
                 Error("error", 400, rc, ".enclaves needs to be an array");
                 return;
@@ -376,13 +434,13 @@ public class CoreVerticle extends AbstractVerticle {
 
             JsonArray res = new JsonArray();
             JsonArray enclaves = (JsonArray) enclavesObj;
-            for (int i=0;i<enclaves.size();i++) {
+            for (int i = 0; i < enclaves.size(); i++) {
                 Result result = new Result();
                 JsonObject item = enclaves.getJsonObject(i);
                 String name = item.getString("name", "__item_" + String.valueOf(i));
-                String proto = item.getString("protocol", null);
+                String protocol = item.getString("protocol", null);
                 String identifier = item.getString("identifier", null);
-                if(proto == null) {
+                if (protocol == null) {
                     res.add(result.make(name, "no protocol provided"));
                     continue;
                 } else if (identifier == null) {
@@ -391,13 +449,13 @@ public class CoreVerticle extends AbstractVerticle {
                 }
 
                 try {
-                    if(isUnregister) {
-                        this.attestationService.unregisterEnclave(proto, identifier);
+                    if (isUnregister) {
+                        this.attestationService.unregisterEnclave(protocol, identifier);
                     } else {
-                        this.attestationService.registerEnclave(proto, identifier);
+                        this.attestationService.registerEnclave(protocol, identifier);
                     }
                 } catch (AttestationService.NotFound notFound) {
-                    res.add(result.make(name, "unknown protocol: " + proto));
+                    res.add(result.make(name, "unknown protocol: " + protocol));
                     continue;
                 } catch (AttestationException ex) {
                     res.add(result.make(name, "bad identifier"));
@@ -412,6 +470,15 @@ public class CoreVerticle extends AbstractVerticle {
             logger.warn("exception in handleEnclaveRegister: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing enclave register");
         }
+    }
+
+    private static String getClientKeyFromHeader(RoutingContext rc, IAuthorizable profile) {
+        String clientKey = "unknown client";
+        if (rc.request().headers().contains(Const.Http.AppVersionHeader)) {
+            var client = VertxUtils.parseClientAppVersion(rc.request().headers().get(Const.Http.AppVersionHeader));
+            clientKey = profile.getContact() + "|" + client.getKey() + "|" + client.getValue();
+        }
+        return clientKey;
     }
 
     private void handleEnclaveRegister(RoutingContext rc) {

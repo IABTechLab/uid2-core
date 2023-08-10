@@ -4,9 +4,12 @@
   "aws_s3_endpoint": "http://localstack:5001",
   "core_s3_bucket": "test-core-bucket",
   "pre_signed_url_expiry": 1800,
-  "aws_region": "test-region",
+  "aws_region": "us-east-2",
   "aws_access_key_id": "no access key needed for test",
   "aws_secret_access_key": "no secret key needed for test",
+  "kms_aws_access_key_id": "no access key needed for test",
+  "kms_aws_secret_access_key": "no secret key needed for test",
+  "kms_aws_endpoint": "http://localstack:5001",
   "clients_metadata_path": "clients/metadata.json",
   "client_side_keypairs_metadata_path": "client_side_keypairs/metadata.json",
   "keys_metadata_path": "keys/metadata.json",
@@ -18,6 +21,7 @@
   "partners_metadata_path": "partners/metadata.json",
   "att_token_enc_key": "<key-for-attestation-token>",
   "att_token_enc_salt": "<salt-for-attestation-token>",
-  "att_token_lifetime_seconds": 120,
-  "provide_private_site_data": true
+  "att_token_lifetime_seconds": 1200,
+  "provide_private_site_data": true,
+  "enforceJwt": false
 }
