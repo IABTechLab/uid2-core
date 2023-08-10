@@ -11,7 +11,6 @@ import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.shared.cloud.ICloudStorage;
-import com.uid2.shared.secure.IAttestationProvider;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -40,7 +39,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
-public class TestMetadataPath {
+public class TestClientSideKeypairMetadataPath {
 
     @Mock
     private ICloudStorage cloudStorage;
