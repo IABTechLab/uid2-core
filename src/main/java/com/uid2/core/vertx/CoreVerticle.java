@@ -62,6 +62,7 @@ public class CoreVerticle extends AbstractVerticle {
 
     private final IAttestationTokenService attestationTokenService;
     private final IClientMetadataProvider clientMetadataProvider;
+    private final IClientSideKeypairMetadataProvider clientSideKeypairMetadataProvider;
     private final IOperatorMetadataProvider operatorMetadataProvider;
     private final IKeyMetadataProvider keyMetadataProvider;
     private final IKeyAclMetadataProvider keyAclMetadataProvider;
@@ -109,6 +110,7 @@ public class CoreVerticle extends AbstractVerticle {
         this.partnerMetadataProvider = new PartnerMetadataProvider(cloudStorage);
         this.keysetMetadataProvider = new KeysetMetadataProvider(cloudStorage);
         this.keysetKeyMetadataProvider = new KeysetKeysMetadataProvider(cloudStorage);
+        this.clientSideKeypairMetadataProvider = new ClientSideKeypairMetadataProvider(cloudStorage);
     }
 
     @Override
@@ -160,6 +162,7 @@ public class CoreVerticle extends AbstractVerticle {
         router.get("/key/keyset-keys/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeysetKeyRefresh), Role.OPERATOR));
         router.get("/salt/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleSaltRefresh), Role.OPERATOR));
         router.get("/clients/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleClientRefresh), Role.OPERATOR));
+        router.get("/client_side_keypairs/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleClientSideKeypairRefresh), Role.OPERATOR));
         router.get("/operators/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleOperatorRefresh), Role.OPTOUT_SERVICE));
         router.get("/partners/refresh").handler(auth.handle(attestationMiddleware.handle(this::handlePartnerRefresh), Role.OPTOUT_SERVICE));
         router.get("/ops/healthcheck").handler(this::handleHealthCheck);
@@ -362,6 +365,21 @@ public class CoreVerticle extends AbstractVerticle {
         } catch (Exception e) {
             logger.warn("exception in handleClientRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing client refresh");
+        }
+    }
+
+    private void handleClientSideKeypairRefresh(RoutingContext rc) {
+        try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+            if (info.getOperatorType() != OperatorType.PUBLIC) {
+                Error("error", 400, rc, "endpoint /client_side_keypairs/refresh is for public operators only");
+                return;
+            }
+            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(clientSideKeypairMetadataProvider.getMetadata());
+        } catch (Exception e) {
+            logger.warn("exception in handleClientSideKeypairRefresh: " + e.getMessage(), e);
+            Error("error", 500, rc, "error processing client_side_keypairs refresh");
         }
     }
 
