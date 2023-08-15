@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.regions.Region;
@@ -68,11 +68,15 @@ public class JWTTokenProvider {
             throw new JwtSigningException(Optional.of("Unable to get KMS Client"), e);
         }
         String signature = signJwtContent(client, jwtContent);
-        return new StringBuilder()
-                .append(jwtContent)
-                .append(".")
-                .append(signature)
-                .toString();
+        if (signature != null && !signature.isBlank()) {
+            return new StringBuilder()
+                    .append(jwtContent)
+                    .append(".")
+                    .append(signature)
+                    .toString();
+        } else {
+            return "";
+        }
     }
 
     private String signJwtContent(KmsClient kmsClient, String jwtContents) throws JwtSigningException {
@@ -93,20 +97,29 @@ public class JWTTokenProvider {
                 }
             }
 
-            SdkBytes dataToSign = SdkBytes.fromUtf8String(jwtContents);
+            try {
+                SdkBytes dataToSign = SdkBytes.fromUtf8String(jwtContents);
 
-            SignRequest request = SignRequest.builder()
-                    .keyId(keyId)
-                    .signingAlgorithm(SigningAlgorithmSpec.RSASSA_PKCS1_V1_5_SHA_256)
-                    .message(dataToSign)
-                    .build();
+                SignRequest request = SignRequest.builder()
+                        .keyId(keyId)
+                        .signingAlgorithm(SigningAlgorithmSpec.RSASSA_PKCS1_V1_5_SHA_256)
+                        .message(dataToSign)
+                        .build();
 
-            SignResponse response = kmsClient.sign(request);
-            if (response.sdkHttpResponse().isSuccessful()) {
-                return encoder.encodeToString(response.signature().asByteArray());
-            } else {
-                LOGGER.error("Error returned when attempting to sign JWT: {}", response.sdkHttpResponse().statusText());
-                throw new JwtSigningException(response.sdkHttpResponse().statusText());
+                SignResponse response = kmsClient.sign(request);
+                if (response.sdkHttpResponse().isSuccessful()) {
+                    return encoder.encodeToString(response.signature().asByteArray());
+                } else {
+                    LOGGER.error("Error returned when attempting to sign JWT: {}", response.sdkHttpResponse().statusText());
+                    throw new JwtSigningException(response.sdkHttpResponse().statusText());
+                }
+            } catch (Exception e) {
+                if (enforceJWT) {
+                    throw e;
+                } else {
+                    LOGGER.info("Failed to sign the JWT. enforceJWT is false.");
+                    return "";
+                }
             }
         } catch (KmsException e) {
             String message = "Error signing JWT Token.";
@@ -149,7 +162,7 @@ public class JWTTokenProvider {
                 throw e;
             }
         } else {
-            InstanceProfileCredentialsProvider credentialsProvider = InstanceProfileCredentialsProvider.create();
+            WebIdentityTokenFileCredentialsProvider credentialsProvider = WebIdentityTokenFileCredentialsProvider.create();
 
             client = kmsClientBuilder
                     .region(Region.of(awsRegion))

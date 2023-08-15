@@ -41,8 +41,7 @@ public class OperatorJWTTokenProvider {
         "iat" : the current date time
      */
     public String getOptOutJWTToken(String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
-        String token = this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.OptOutUrlProp), name, roles, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
-        return token;
+        return this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.OptOutUrlProp), name, roles, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
     }
 
     /*
@@ -56,8 +55,7 @@ public class OperatorJWTTokenProvider {
         "iat" : the current date time
      */
     public String getCoreJWTToken(String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
-        String token = this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.CorePublicUrlProp), name, roles, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
-        return token;
+        return this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.CorePublicUrlProp), name, roles, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
     }
 
     private String getJWTToken(String issuer, String audience, String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
