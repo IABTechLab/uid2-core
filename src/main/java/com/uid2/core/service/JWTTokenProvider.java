@@ -97,29 +97,20 @@ public class JWTTokenProvider {
                 }
             }
 
-            try {
-                SdkBytes dataToSign = SdkBytes.fromUtf8String(jwtContents);
+            SdkBytes dataToSign = SdkBytes.fromUtf8String(jwtContents);
 
-                SignRequest request = SignRequest.builder()
-                        .keyId(keyId)
-                        .signingAlgorithm(SigningAlgorithmSpec.RSASSA_PKCS1_V1_5_SHA_256)
-                        .message(dataToSign)
-                        .build();
+            SignRequest request = SignRequest.builder()
+                    .keyId(keyId)
+                    .signingAlgorithm(SigningAlgorithmSpec.RSASSA_PKCS1_V1_5_SHA_256)
+                    .message(dataToSign)
+                    .build();
 
-                SignResponse response = kmsClient.sign(request);
-                if (response.sdkHttpResponse().isSuccessful()) {
-                    return encoder.encodeToString(response.signature().asByteArray());
-                } else {
-                    LOGGER.error("Error returned when attempting to sign JWT: {}", response.sdkHttpResponse().statusText());
-                    throw new JwtSigningException(response.sdkHttpResponse().statusText());
-                }
-            } catch (Exception e) {
-                if (enforceJWT) {
-                    throw e;
-                } else {
-                    LOGGER.info("Failed to sign the JWT. enforceJWT is false.");
-                    return "";
-                }
+            SignResponse response = kmsClient.sign(request);
+            if (response.sdkHttpResponse().isSuccessful()) {
+                return encoder.encodeToString(response.signature().asByteArray());
+            } else {
+                LOGGER.error("Error returned when attempting to sign JWT: {}", response.sdkHttpResponse().statusText());
+                throw new JwtSigningException(response.sdkHttpResponse().statusText());
             }
         } catch (KmsException e) {
             String message = "Error signing JWT Token.";

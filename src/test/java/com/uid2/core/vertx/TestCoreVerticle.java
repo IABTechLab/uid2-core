@@ -69,7 +69,7 @@ public class TestCoreVerticle {
         config.put(Const.Config.OptOutUrlProp, "test_optout_url");
         config.put(Const.Config.CorePublicUrlProp, "test_core_url");
         config.put(Const.Config.AwsKmsJwtSigningKeyIdProp, "test_aws_kms_keyId");
-        config.put(Const.Config.EnforceJwtProp, false);
+        config.put(Const.Config.EnforceJwtProp, true);
         ConfigStore.Global.load(config);
 
         attestationService = new AttestationService();

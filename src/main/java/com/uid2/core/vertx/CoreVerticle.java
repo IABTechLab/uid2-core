@@ -239,15 +239,8 @@ public class CoreVerticle extends AbstractVerticle {
                     try {
                         Map.Entry<String, String> tokens = getJWTTokens(rc, profile, operator, attestationResult.getEnclaveId(), encryptedAttestationToken.getExpiresAt());
                         if (tokens != null) {
-                            String optOutJwt = tokens.getKey();
-                            if (optOutJwt != null && !optOutJwt.isBlank()) {
-                                responseObj.put("attestation_jwt_optout", optOutJwt);
-                            }
-
-                            String coreJwt = tokens.getValue();
-                            if (coreJwt != null && !coreJwt.isBlank()) {
-                                responseObj.put("attestation_jwt_core", coreJwt);
-                            }
+                            responseObj.put("attestation_jwt_optout", tokens.getKey());
+                            responseObj.put("attestation_jwt_core", tokens.getValue());
                         }
                     } catch (Exception e) {
                         Boolean enforceJWT = ConfigStore.Global.getBoolean(EnforceJwtProp);
