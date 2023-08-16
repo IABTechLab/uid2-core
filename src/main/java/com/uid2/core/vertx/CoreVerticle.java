@@ -50,6 +50,8 @@ import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.*;
 
+import static com.uid2.shared.Const.Config.EnforceJwtProp;
+
 public class CoreVerticle extends AbstractVerticle {
     private final static Logger logger = LoggerFactory.getLogger(CoreVerticle.class);
 
@@ -234,10 +236,23 @@ public class CoreVerticle extends AbstractVerticle {
                     responseObj.put("attestation_token", attestationToken);
                     responseObj.put("expiresAt", encryptedAttestationToken.getExpiresAt());
 
-                    Map.Entry<String, String> tokens = getJWTTokens(rc, profile, operator, attestationResult.getEnclaveId(), encryptedAttestationToken.getExpiresAt());
-                    if (tokens != null) {
-                        responseObj.put("attestation_jwt_optout", tokens.getKey());
-                        responseObj.put("attestation_jwt_core", tokens.getValue());
+                    try {
+                        Map.Entry<String, String> tokens = getJWTTokens(rc, profile, operator, attestationResult.getEnclaveId(), encryptedAttestationToken.getExpiresAt());
+                        if (tokens != null) {
+                            responseObj.put("attestation_jwt_optout", tokens.getKey());
+                            responseObj.put("attestation_jwt_core", tokens.getValue());
+                        }
+                    } catch (Exception e) {
+                        Boolean enforceJWT = ConfigStore.Global.getBoolean(EnforceJwtProp);
+                        if (enforceJWT == null) {
+                            enforceJWT = false;
+                        }
+
+                        if (enforceJWT) {
+                            throw e;
+                        } else {
+                            logger.info("Failed creating the JWT, but enforceJWT is false. No JWTs returned.");
+                        }
                     }
                 } catch (Exception e) {
                     Error("attestation failure", 500, rc, null);
