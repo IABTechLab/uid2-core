@@ -3,8 +3,10 @@ package com.uid2.core.vertx;
 import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.AttestationService;
+import com.uid2.core.service.OperatorJWTTokenProvider;
 import com.uid2.shared.Const;
 import com.uid2.shared.attest.IAttestationTokenService;
+import com.uid2.shared.attest.JwtService;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.shared.cloud.ICloudStorage;
@@ -49,6 +51,10 @@ public class TestSiteSpecificMetadataPath {
   private IAttestationTokenService attestationTokenService;
   @Mock
   private IEnclaveIdentifierProvider enclaveIdentifierProvider;
+  @Mock
+  private OperatorJWTTokenProvider operatorJWTTokenProvider;
+  @Mock
+  private JwtService jwtService;
 
   private AttestationService attestationService;
 
@@ -62,7 +68,7 @@ public class TestSiteSpecificMetadataPath {
     SecretStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testSiteSpecificMetadata/test-secrets.json"))));
     ConfigStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testSiteSpecificMetadata/test-configs-provide-private-site-data.json"))));
     MockitoAnnotations.initMocks(this);
-    CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider);
+    CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService);
     vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
   }
 
