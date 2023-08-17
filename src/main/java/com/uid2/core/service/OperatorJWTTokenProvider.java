@@ -1,6 +1,7 @@
 package com.uid2.core.service;
 
 import com.uid2.shared.Const;
+import com.uid2.shared.Utils;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
@@ -10,9 +11,10 @@ import software.amazon.awssdk.services.kms.KmsClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class OperatorJWTTokenProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(OperatorJWTTokenProvider.class);
@@ -40,8 +42,8 @@ public class OperatorJWTTokenProvider {
         "exp" : the expiry date time of the token, set to be the same as the expiry of the attestation token
         "iat" : the current date time
      */
-    public String getOptOutJWTToken(String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
-        return this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.OptOutUrlProp), name, roles, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
+    public String getOptOutJWTToken(String operatorKey, String name, Role role, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
+        return this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.OptOutUrlProp), operatorKey, name, role, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
     }
 
     /*
@@ -54,23 +56,38 @@ public class OperatorJWTTokenProvider {
         "exp" : the expiry date time of the token, set to be the same as the expiry of the attestation token
         "iat" : the current date time
      */
-    public String getCoreJWTToken(String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
-        return this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.CorePublicUrlProp), name, roles, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
+    public String getCoreJWTToken(String operatorKey, String name, Role role, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
+        return this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.CorePublicUrlProp), operatorKey, name, role, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
     }
 
-    private String getJWTToken(String issuer, String audience, String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
-        String roleString = String.join(",", roles.stream().map(Object::toString).collect(Collectors.toList()));
+    private String getJWTToken(String issuer, String audience, String operatorKey, String name, Role role, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
+
+        byte[] keyBytes = operatorKey.getBytes();
+        MessageDigest md = createMessageDigest();
+        byte[] hashBytes = md.digest(keyBytes);
+        String keyHash = Utils.toBase64String(hashBytes);
+
         HashMap<String, String> claims = new HashMap<>();
         claims.put("iss", issuer);
-        claims.put("sub", name);
+        claims.put("sub", keyHash);
         claims.put("aud", audience);
-        claims.put("roles", roleString);
+        claims.put("name", name);
+        claims.put("role", role.toString());
         claims.put("siteId", siteId.toString());
         claims.put("enclaveId", enclaveId);
         claims.put("enclaveType", enclaveType);
         claims.put("operatorVersion", operatorVersion);
 
-        LOGGER.debug(String.format("Creating token with: Issuer: %s, Audience: %s, Roles: %s, SiteId: %s, EnclaveId: %s, EnclaveType: %s, OperatorVersion: %s", audience, issuer, roleString, siteId, enclaveId, enclaveType, operatorVersion));
+        LOGGER.debug(String.format("Creating token with: Issuer: %s, Audience: %s, Role: %s, SiteId: %s, EnclaveId: %s, EnclaveType: %s, OperatorVersion: %s", audience, issuer, role, siteId, enclaveId, enclaveType, operatorVersion));
         return this.jwtTokenProvider.getJWT(expiresAt, this.clock.instant(), claims);
     }
+
+    private MessageDigest createMessageDigest() {
+        try {
+            return MessageDigest.getInstance("SHA-512");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }
