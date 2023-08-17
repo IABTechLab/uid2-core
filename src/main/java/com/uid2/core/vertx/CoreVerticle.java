@@ -61,6 +61,7 @@ public class CoreVerticle extends AbstractVerticle {
     private final IEnclaveIdentifierProvider enclaveIdentifierProvider;
 
     private final IAttestationTokenService attestationTokenService;
+    private final ISiteMetadataProvider siteMetadataProvider;
     private final IClientMetadataProvider clientMetadataProvider;
     private final IClientSideKeypairMetadataProvider clientSideKeypairMetadataProvider;
     private final IOperatorMetadataProvider operatorMetadataProvider;
@@ -102,6 +103,7 @@ public class CoreVerticle extends AbstractVerticle {
 
         this.auth = new AuthMiddleware(authProvider);
 
+        this.siteMetadataProvider = new SiteMetadataProvider(cloudStorage);
         this.clientMetadataProvider = new ClientMetadataProvider(cloudStorage);
         this.operatorMetadataProvider = new OperatorMetadataProvider(cloudStorage);
         this.keyMetadataProvider = new KeyMetadataProvider(cloudStorage);
@@ -156,6 +158,7 @@ public class CoreVerticle extends AbstractVerticle {
         router.post("/attest")
                 .handler(new AttestationFailureHandler())
                 .handler(auth.handle(this::handleAttestAsync, Role.OPERATOR, Role.OPTOUT_SERVICE));
+        router.get("/sites/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleSiteRefresh), Role.OPERATOR));
         router.get("/key/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeyRefresh), Role.OPERATOR));
         router.get("/key/acl/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeyAclRefresh), Role.OPERATOR));
         router.get("/key/keyset/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeysetRefresh), Role.OPERATOR));
@@ -301,6 +304,21 @@ public class CoreVerticle extends AbstractVerticle {
     private static void setAttestationFailureReason(RoutingContext context, AttestationFailureReason reason, Map<String, Object> data) {
         context.put(com.uid2.core.Const.RoutingContextData.ATTESTATION_FAILURE_REASON_PROP, reason);
         context.put(com.uid2.core.Const.RoutingContextData.ATTESTATION_FAILURE_DATA_PROP, data);
+    }
+
+    private void handleSiteRefresh(RoutingContext rc) {
+        try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+            if (info.getOperatorType() != OperatorType.PUBLIC) {
+                Error("error", 400, rc, "endpoint /sites/refresh is for public operators only");
+                return;
+            }
+            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(siteMetadataProvider.getMetadata());
+        } catch (Exception e) {
+            logger.warn("exception in handleSiteRefresh: " + e.getMessage(), e);
+            Error("error", 500, rc, "error processing sties refresh");
+        }
     }
 
     private void handleSaltRefresh(RoutingContext rc) {
