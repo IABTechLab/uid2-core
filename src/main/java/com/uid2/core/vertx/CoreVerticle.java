@@ -310,14 +310,14 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             if (info.getOperatorType() != OperatorType.PUBLIC) {
-                Error("error", 400, rc, "endpoint /sites/refresh is for public operators only");
+                Error("error", 403, rc, "endpoint /sites/refresh is for public operators only");
                 return;
             }
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(siteMetadataProvider.getMetadata());
         } catch (Exception e) {
             logger.warn("exception in handleSiteRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing sties refresh");
+            Error("error", 500, rc, "error processing sites refresh");
         }
     }
 
@@ -390,7 +390,7 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             if (info.getOperatorType() != OperatorType.PUBLIC) {
-                Error("error", 400, rc, "endpoint /client_side_keypairs/refresh is for public operators only");
+                Error("error", 403, rc, "endpoint /client_side_keypairs/refresh is for public operators only");
                 return;
             }
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")

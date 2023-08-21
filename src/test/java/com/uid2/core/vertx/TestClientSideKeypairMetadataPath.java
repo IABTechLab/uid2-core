@@ -95,15 +95,13 @@ public class TestClientSideKeypairMetadataPath {
         when(cloudStorage.download(eq(metadata))).thenReturn(new StringBufferInputStream(metadataContent));
         when(cloudStorage.preSignUrl(any())).thenAnswer(i -> new URL(i.getArgument(0)));
         fakeAuth(OperatorType.PUBLIC, 99);
-        get(vertx, "/client_side_keypairs/refresh", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
+        get(vertx, "/client_side_keypairs/refresh", "", testContext.succeeding(response -> testContext.verify(()-> {
             assertEquals(200, response.statusCode());
             JsonObject json = response.bodyAsJsonObject();
             String resultLocation = json.getJsonObject("client_side_keypairs").getString("location");
             assertEquals(resultLocation, location);
             testContext.completeNow();
-        });
+        })));
     }
 
     @Test
@@ -114,13 +112,11 @@ public class TestClientSideKeypairMetadataPath {
         when(cloudStorage.download(eq(metadata))).thenReturn(new StringBufferInputStream(metadataContent));
         when(cloudStorage.preSignUrl(any())).thenAnswer(i -> new URL(i.getArgument(0)));
         fakeAuth(OperatorType.PRIVATE, 99);
-        get(vertx, "/client_side_keypairs/refresh", "", ar -> {
-            assertTrue(ar.succeeded());
-            HttpResponse response = ar.result();
-            assertEquals(400, response.statusCode());
+        get(vertx, "/client_side_keypairs/refresh", "", testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(403, response.statusCode());
             assertEquals("endpoint /client_side_keypairs/refresh is for public operators only", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
-        });
+        })));
     }
 
     String openFile(String filePath) throws IOException
