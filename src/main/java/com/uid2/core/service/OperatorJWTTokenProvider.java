@@ -42,8 +42,8 @@ public class OperatorJWTTokenProvider {
         "exp" : the expiry date time of the token, set to be the same as the expiry of the attestation token
         "iat" : the current date time
      */
-    public String getOptOutJWTToken(String operatorKey, String name, Role role, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
-        return this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.OptOutUrlProp), operatorKey, name, role, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
+    public String getOptOutJWTToken(String operatorKey, String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
+        return this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.OptOutUrlProp), operatorKey, name, roles, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
     }
 
     /*
@@ -56,11 +56,13 @@ public class OperatorJWTTokenProvider {
         "exp" : the expiry date time of the token, set to be the same as the expiry of the attestation token
         "iat" : the current date time
      */
-    public String getCoreJWTToken(String operatorKey, String name, Role role, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
-        return this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.CorePublicUrlProp), operatorKey, name, role, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
+    public String getCoreJWTToken(String operatorKey, String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
+        return this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.CorePublicUrlProp), operatorKey, name, roles, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
     }
 
-    private String getJWTToken(String issuer, String audience, String operatorKey, String name, Role role, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
+    private String getJWTToken(String issuer, String audience, String operatorKey, String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
+
+        String roleString = String.join(",", roles.stream().map(Object::toString).collect(Collectors.toList()));
 
         byte[] keyBytes = operatorKey.getBytes();
         MessageDigest md = createMessageDigest();
@@ -72,13 +74,13 @@ public class OperatorJWTTokenProvider {
         claims.put("sub", keyHash);
         claims.put("aud", audience);
         claims.put("name", name);
-        claims.put("role", role.toString());
+        claims.put("roles", roleString);
         claims.put("siteId", siteId.toString());
         claims.put("enclaveId", enclaveId);
         claims.put("enclaveType", enclaveType);
         claims.put("operatorVersion", operatorVersion);
 
-        LOGGER.debug(String.format("Creating token with: Issuer: %s, Audience: %s, Role: %s, SiteId: %s, EnclaveId: %s, EnclaveType: %s, OperatorVersion: %s", audience, issuer, role, siteId, enclaveId, enclaveType, operatorVersion));
+        LOGGER.debug(String.format("Creating token with: Issuer: %s, Audience: %s, Role: %s, SiteId: %s, EnclaveId: %s, EnclaveType: %s, OperatorVersion: %s", audience, issuer, roleString, siteId, enclaveId, enclaveType, operatorVersion));
         return this.jwtTokenProvider.getJWT(expiresAt, this.clock.instant(), claims);
     }
 
@@ -89,5 +91,4 @@ public class OperatorJWTTokenProvider {
             throw new RuntimeException(e);
         }
     }
-
 }

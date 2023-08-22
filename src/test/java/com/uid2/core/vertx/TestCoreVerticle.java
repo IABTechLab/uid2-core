@@ -35,10 +35,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 import static org.mockito.Mockito.*;
@@ -87,9 +84,11 @@ public class TestCoreVerticle {
         OperatorKey clientKey = new OperatorKey("test-key", "test-name", "test-contact", attestationProtocol, 0, false, 88, new HashSet<>(Arrays.asList(roles)), OperatorType.PRIVATE);
         when(authProvider.get(any())).thenReturn(clientKey);
     }
+
     private void post(Vertx vertx, String endpoint, String body, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
         post(vertx, endpoint, body, null, handler);
     }
+
     private void post(Vertx vertx, String endpoint, String body, MultiMap multiMap, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
         WebClient client = WebClient.create(vertx);
         if (multiMap == null) {
@@ -316,15 +315,15 @@ public class TestCoreVerticle {
         });
         EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestation-token", Instant.ofEpochMilli(111));
         when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
-        when(operatorJWTTokenProvider.getOptOutJWTToken("test-key", "test-name", Role.OPTOUT, 88, "test-enclaveId", attestationProtocol, "unknown client", Instant.ofEpochMilli(111))).thenReturn("dummy_token_optout");
-        when(operatorJWTTokenProvider.getCoreJWTToken("test-key", "test-name", Role.OPERATOR, 88, "test-enclaveId", attestationProtocol, "unknown client", Instant.ofEpochMilli(111))).thenReturn("dummy_token_core");
+        when(operatorJWTTokenProvider.getOptOutJWTToken("test-key", "test-name", Set.of(Role.OPTOUT), 88, "test-enclaveId", attestationProtocol, "unknown client", Instant.ofEpochMilli(111))).thenReturn("dummy_token_optout");
+        when(operatorJWTTokenProvider.getCoreJWTToken("test-key", "test-name", Set.of(Role.OPERATOR), 88, "test-enclaveId", attestationProtocol, "unknown client", Instant.ofEpochMilli(111))).thenReturn("dummy_token_core");
         post(vertx, "attest", makeAttestationRequestJson("xxx", null), ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
 
             try {
-                verify(operatorJWTTokenProvider, times(1)).getCoreJWTToken("test-key", "test-name", Role.OPERATOR, 88, "test-enclaveId", attestationProtocol, "unknown client", Instant.ofEpochMilli(111));
-                verify(operatorJWTTokenProvider, times(1)).getOptOutJWTToken("test-key", "test-name", Role.OPTOUT, 88, "test-enclaveId", attestationProtocol, "unknown client", Instant.ofEpochMilli(111));
+                verify(operatorJWTTokenProvider, times(1)).getCoreJWTToken("test-key", "test-name", Set.of(Role.OPERATOR), 88, "test-enclaveId", attestationProtocol, "unknown client", Instant.ofEpochMilli(111));
+                verify(operatorJWTTokenProvider, times(1)).getOptOutJWTToken("test-key", "test-name", Set.of(Role.OPTOUT), 88, "test-enclaveId", attestationProtocol, "unknown client", Instant.ofEpochMilli(111));
                 JsonObject json = response.bodyAsJsonObject();
                 String jwtOptout = json.getJsonObject("body").getString("attestation_jwt_optout");
                 String jwtCore = json.getJsonObject("body").getString("attestation_jwt_core");
@@ -337,6 +336,7 @@ public class TestCoreVerticle {
             testContext.completeNow();
         });
     }
+
     @Test
     void attestOptOutJWTCalledKnownClient(Vertx vertx, VertxTestContext testContext) throws Throwable {
         KeyPairGenerator gen = KeyPairGenerator.getInstance(Const.Name.AsymetricEncryptionKeyClass);
@@ -351,7 +351,7 @@ public class TestCoreVerticle {
         });
         EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestation-token", Instant.ofEpochMilli(111));
         when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
-        when(operatorJWTTokenProvider.getCoreJWTToken("test-key", "test-name", Role.OPERATOR, 88, "test-enclaveId", attestationProtocol, "test-contact|uid2-operator|2.7.16-SNAPSHOT", Instant.ofEpochMilli(111))).thenReturn("dummy_token_core");
+        when(operatorJWTTokenProvider.getCoreJWTToken("test-key", "test-name", Set.of(Role.OPERATOR), 88, "test-enclaveId", attestationProtocol, "test-contact|uid2-operator|2.7.16-SNAPSHOT", Instant.ofEpochMilli(111))).thenReturn("dummy_token_core");
 
         MultiMap map = MultiMap.caseInsensitiveMultiMap();
         map.add(Const.Http.AppVersionHeader, "uid2-operator=2.7.16-SNAPSHOT;uid2-attestation-api=1.1.0;uid2-shared=2.7.0-3e279acefa");
@@ -361,7 +361,7 @@ public class TestCoreVerticle {
             HttpResponse response = ar.result();
 
             try {
-                verify(operatorJWTTokenProvider, times(1)).getCoreJWTToken("test-key", "test-name", Role.OPERATOR, 88, "test-enclaveId", attestationProtocol, "test-contact|uid2-operator|2.7.16-SNAPSHOT", Instant.ofEpochMilli(111));
+                verify(operatorJWTTokenProvider, times(1)).getCoreJWTToken("test-key", "test-name", Set.of(Role.OPERATOR), 88, "test-enclaveId", attestationProtocol, "test-contact|uid2-operator|2.7.16-SNAPSHOT", Instant.ofEpochMilli(111));
                 JsonObject json = response.bodyAsJsonObject();
                 String jwt = json.getJsonObject("body").getString("attestation_jwt_core");
                 assertEquals("dummy_token_core", jwt);
