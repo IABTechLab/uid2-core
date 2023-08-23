@@ -1,6 +1,7 @@
 package com.uid2.core.service;
 
 import com.uid2.shared.Const;
+import com.uid2.shared.Utils;
 import com.uid2.shared.auth.Role;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
@@ -10,9 +11,11 @@ import software.amazon.awssdk.services.kms.KmsClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.security.MessageDigest;
+
+import static com.uid2.shared.Utils.createMessageDigestSHA512;
 
 public class OperatorJWTTokenProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(OperatorJWTTokenProvider.class);
@@ -40,8 +43,8 @@ public class OperatorJWTTokenProvider {
         "exp" : the expiry date time of the token, set to be the same as the expiry of the attestation token
         "iat" : the current date time
      */
-    public String getOptOutJWTToken(String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
-        return this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.OptOutUrlProp), name, roles, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
+    public String getOptOutJWTToken(String operatorKey, String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
+        return this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.OptOutUrlProp), operatorKey, name, roles, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
     }
 
     /*
@@ -54,16 +57,24 @@ public class OperatorJWTTokenProvider {
         "exp" : the expiry date time of the token, set to be the same as the expiry of the attestation token
         "iat" : the current date time
      */
-    public String getCoreJWTToken(String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
-        return this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.CorePublicUrlProp), name, roles, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
+    public String getCoreJWTToken(String operatorKey, String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
+        return this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.CorePublicUrlProp), operatorKey, name, roles, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
     }
 
-    private String getJWTToken(String issuer, String audience, String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
+    private String getJWTToken(String issuer, String audience, String operatorKey, String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
+
         String roleString = String.join(",", roles.stream().map(Object::toString).collect(Collectors.toList()));
+
+        byte[] keyBytes = operatorKey.getBytes();
+        MessageDigest md = createMessageDigestSHA512();
+        byte[] hashBytes = md.digest(keyBytes);
+        String keyHash = Utils.toBase64String(hashBytes);
+
         HashMap<String, String> claims = new HashMap<>();
         claims.put("iss", issuer);
-        claims.put("sub", name);
+        claims.put("sub", keyHash);
         claims.put("aud", audience);
+        claims.put("name", name);
         claims.put("roles", roleString);
         claims.put("siteId", siteId.toString());
         claims.put("enclaveId", enclaveId);

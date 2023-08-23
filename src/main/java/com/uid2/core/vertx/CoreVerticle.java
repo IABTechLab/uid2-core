@@ -239,8 +239,12 @@ public class CoreVerticle extends AbstractVerticle {
                     try {
                         Map.Entry<String, String> tokens = getJWTTokens(rc, profile, operator, attestationResult.getEnclaveId(), encryptedAttestationToken.getExpiresAt());
                         if (tokens != null) {
-                            responseObj.put("attestation_jwt_optout", tokens.getKey());
-                            responseObj.put("attestation_jwt_core", tokens.getValue());
+                            if (tokens.getKey() != null && !tokens.getKey().isBlank()) {
+                                responseObj.put("attestation_jwt_optout", tokens.getKey());
+                            }
+                            if (tokens.getValue() != null && !tokens.getValue().isBlank()) {
+                                responseObj.put("attestation_jwt_core", tokens.getValue());
+                            }
                         }
                     } catch (Exception e) {
                         Boolean enforceJWT = ConfigStore.Global.getBoolean(EnforceJwtProp);
@@ -290,10 +294,11 @@ public class CoreVerticle extends AbstractVerticle {
         String keyId = ConfigStore.Global.get(Const.Config.AwsKmsJwtSigningKeyIdProp);
         if (keyId != null && !keyId.isEmpty()) {
             try {
-                String clientKey = getClientKeyFromHeader(rc, profile);
-                String optoutJwtToken = this.operatorJWTTokenProvider.getOptOutJWTToken(operator.getName(), operator.getRoles(), operator.getSiteId(), enclaveId, operator.getProtocol(), clientKey, expiresAt);
-                String coreJwtToken = this.operatorJWTTokenProvider.getCoreJWTToken(operator.getName(), operator.getRoles(), operator.getSiteId(), enclaveId, operator.getProtocol(), clientKey, expiresAt);
-                Map.Entry<String, String> tokens = new AbstractMap.SimpleEntry<>(optoutJwtToken, coreJwtToken);
+                String clientVersion = getClientVersionFromHeader(rc, profile);
+                String optOutJwtToken = this.operatorJWTTokenProvider.getOptOutJWTToken(operator.getKey(), operator.getName(), operator.getRoles(), operator.getSiteId(), enclaveId, operator.getProtocol(), clientVersion, expiresAt);
+                String coreJwtToken = this.operatorJWTTokenProvider.getCoreJWTToken(operator.getKey(), operator.getName(), operator.getRoles(), operator.getSiteId(), enclaveId, operator.getProtocol(), clientVersion, expiresAt);
+
+                Map.Entry<String, String> tokens = new AbstractMap.SimpleEntry<>(optOutJwtToken, coreJwtToken);
                 return tokens;
             } catch (JWTTokenProvider.JwtSigningException e) {
                 setAttestationFailureReason(rc, AttestationFailureReason.INTERNAL_ERROR, Collections.singletonMap("exception", e.getMessage()));
@@ -469,13 +474,13 @@ public class CoreVerticle extends AbstractVerticle {
         }
     }
 
-    private static String getClientKeyFromHeader(RoutingContext rc, IAuthorizable profile) {
-        String clientKey = "unknown client";
+    private static String getClientVersionFromHeader(RoutingContext rc, IAuthorizable profile) {
+        String clientVersion = "unknown client version";
         if (rc.request().headers().contains(Const.Http.AppVersionHeader)) {
             var client = VertxUtils.parseClientAppVersion(rc.request().headers().get(Const.Http.AppVersionHeader));
-            clientKey = profile.getContact() + "|" + client.getKey() + "|" + client.getValue();
+            clientVersion = profile.getContact() + "|" + client.getKey() + "|" + client.getValue();
         }
-        return clientKey;
+        return clientVersion;
     }
 
     private void handleEnclaveRegister(RoutingContext rc) {
