@@ -1,6 +1,5 @@
 package com.uid2.core.vertx;
 
-import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.AttestationService;
 import com.uid2.core.service.OperatorJWTTokenProvider;
@@ -66,8 +65,7 @@ public class TestClientSideKeypairMetadataPath {
     @BeforeEach
     void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
         attestationService = new AttestationService();
-        SecretStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testSiteSpecificMetadata/test-secrets.json"))));
-        ConfigStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testSiteSpecificMetadata/test-configs-provide-private-site-data.json"))));
+        SecretStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testGlobalMetadata/test-secrets.json"))));
         MockitoAnnotations.initMocks(this);
         CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
@@ -89,7 +87,7 @@ public class TestClientSideKeypairMetadataPath {
 
     @Test
     void publicOperatorGetsGlobalKeypairs(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
-        String metadata = "/com.uid2.core/testSiteSpecificMetadata/client_side_keypairs/metadata.json";
+        String metadata = "/com.uid2.core/testGlobalMetadata/client_side_keypairs/metadata.json";
         String metadataContent = openFile(metadata);
         String location = ((JsonObject) Json.decodeValue(metadataContent)).getJsonObject("client_side_keypairs").getString("location");
         when(cloudStorage.download(eq(metadata))).thenReturn(new StringBufferInputStream(metadataContent));
@@ -106,7 +104,7 @@ public class TestClientSideKeypairMetadataPath {
 
     @Test
     void privateOperatorGetsKeypairsError(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
-        String metadata = "/com.uid2.core/testSiteSpecificMetadata/client_side_keypairs/metadata.json";
+        String metadata = "/com.uid2.core/testGlobalMetadata/client_side_keypairs/metadata.json";
         String metadataContent = openFile(metadata);
         String location = ((JsonObject) Json.decodeValue(metadataContent)).getJsonObject("client_side_keypairs").getString("location");
         when(cloudStorage.download(eq(metadata))).thenReturn(new StringBufferInputStream(metadataContent));

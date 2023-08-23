@@ -1,6 +1,5 @@
 package com.uid2.core.vertx;
 
-import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.AttestationService;
 import com.uid2.core.service.OperatorJWTTokenProvider;
@@ -41,6 +40,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+// this class is for test public operator able to retrieve site metadata for CSTG use.
+// For testing Core Service returning site specific metadata for private operator refer to TestSiteSpecificMetadataPath/TestSiteSpecificMetadataPathDisabled classes
 @ExtendWith(VertxExtension.class)
 public class TestSitesMetadataPath {
     @Mock
@@ -66,8 +67,7 @@ public class TestSitesMetadataPath {
     @BeforeEach
     void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
         attestationService = new AttestationService();
-        SecretStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testSiteSpecificMetadata/test-secrets.json"))));
-        ConfigStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testSiteSpecificMetadata/test-configs-provide-private-site-data.json"))));
+        SecretStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testGlobalMetadata/test-secrets.json"))));
         MockitoAnnotations.initMocks(this);
         CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
@@ -89,7 +89,7 @@ public class TestSitesMetadataPath {
 
     @Test
     void publicOperatorGetsGlobalSites(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
-        String metadata = "/com.uid2.core/testSiteSpecificMetadata/sites/metadata.json";
+        String metadata = "/com.uid2.core/testGlobalMetadata/sites/metadata.json";
         String metadataContent = openFile(metadata);
         String location = ((JsonObject) Json.decodeValue(metadataContent)).getJsonObject("sites").getString("location");
         when(cloudStorage.download(eq(metadata))).thenReturn(new StringBufferInputStream(metadataContent));
@@ -105,8 +105,8 @@ public class TestSitesMetadataPath {
     }
 
     @Test
-    void privateOperatorGetsKeypairsError(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
-        String metadata = "/com.uid2.core/testSiteSpecificMetadata/sites/metadata.json";
+    void privateOperatorGetsSitesError(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
+        String metadata = "/com.uid2.core/testGlobalMetadata/sites/metadata.json";
         String metadataContent = openFile(metadata);
         String location = ((JsonObject) Json.decodeValue(metadataContent)).getJsonObject("sites").getString("location");
         when(cloudStorage.download(eq(metadata))).thenReturn(new StringBufferInputStream(metadataContent));
