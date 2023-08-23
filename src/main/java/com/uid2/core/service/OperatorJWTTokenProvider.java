@@ -14,7 +14,8 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+
+import static com.uid2.shared.Utils.createMessageDigestSHA512;
 
 public class OperatorJWTTokenProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(OperatorJWTTokenProvider.class);
@@ -65,7 +66,7 @@ public class OperatorJWTTokenProvider {
         String roleString = String.join(",", roles.stream().map(Object::toString).collect(Collectors.toList()));
 
         byte[] keyBytes = operatorKey.getBytes();
-        MessageDigest md = createMessageDigest();
+        MessageDigest md = createMessageDigestSHA512();
         byte[] hashBytes = md.digest(keyBytes);
         String keyHash = Utils.toBase64String(hashBytes);
 
@@ -82,13 +83,5 @@ public class OperatorJWTTokenProvider {
 
         LOGGER.debug(String.format("Creating token with: Issuer: %s, Audience: %s, Role: %s, SiteId: %s, EnclaveId: %s, EnclaveType: %s, OperatorVersion: %s", audience, issuer, roleString, siteId, enclaveId, enclaveType, operatorVersion));
         return this.jwtTokenProvider.getJWT(expiresAt, this.clock.instant(), claims);
-    }
-
-    private MessageDigest createMessageDigest() {
-        try {
-            return MessageDigest.getInstance("SHA-512");
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
     }
 }
