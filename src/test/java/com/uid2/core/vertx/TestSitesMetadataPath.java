@@ -33,15 +33,17 @@ import java.io.StringBufferInputStream;
 import java.net.URL;
 import java.util.HashSet;
 
-import static com.uid2.shared.Utils.readToEndAsString;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.uid2.core.util.MetadataHelper.readToEndAsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+// this class is for test public operator able to retrieve site metadata for CSTG use.
+// For testing Core Service returning site specific metadata for private operator refer to TestSiteSpecificMetadataPath/TestSiteSpecificMetadataPathDisabled classes
 @ExtendWith(VertxExtension.class)
-public class TestClientSideKeypairMetadataPath {
-
+public class TestSitesMetadataPath {
     @Mock
     private ICloudStorage cloudStorage;
     @Mock
@@ -86,33 +88,33 @@ public class TestClientSideKeypairMetadataPath {
     }
 
     @Test
-    void publicOperatorGetsGlobalKeypairs(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
-        String metadata = "/com.uid2.core/testGlobalMetadata/client_side_keypairs/metadata.json";
+    void publicOperatorGetsGlobalSites(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
+        String metadata = "/com.uid2.core/testGlobalMetadata/sites/metadata.json";
         String metadataContent = openFile(metadata);
-        String location = ((JsonObject) Json.decodeValue(metadataContent)).getJsonObject("client_side_keypairs").getString("location");
+        String location = ((JsonObject) Json.decodeValue(metadataContent)).getJsonObject("sites").getString("location");
         when(cloudStorage.download(eq(metadata))).thenReturn(new StringBufferInputStream(metadataContent));
         when(cloudStorage.preSignUrl(any())).thenAnswer(i -> new URL(i.getArgument(0)));
         fakeAuth(OperatorType.PUBLIC, 99);
-        get(vertx, "/client_side_keypairs/refresh", "", testContext.succeeding(response -> testContext.verify(()-> {
+        get(vertx, "/sites/refresh", "", testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(200, response.statusCode());
             JsonObject json = response.bodyAsJsonObject();
-            String resultLocation = json.getJsonObject("client_side_keypairs").getString("location");
+            String resultLocation = json.getJsonObject("sites").getString("location");
             assertEquals(resultLocation, location);
             testContext.completeNow();
         })));
     }
 
     @Test
-    void privateOperatorGetsKeypairsError(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
-        String metadata = "/com.uid2.core/testGlobalMetadata/client_side_keypairs/metadata.json";
+    void privateOperatorGetsSitesError(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
+        String metadata = "/com.uid2.core/testGlobalMetadata/sites/metadata.json";
         String metadataContent = openFile(metadata);
-        String location = ((JsonObject) Json.decodeValue(metadataContent)).getJsonObject("client_side_keypairs").getString("location");
+        String location = ((JsonObject) Json.decodeValue(metadataContent)).getJsonObject("sites").getString("location");
         when(cloudStorage.download(eq(metadata))).thenReturn(new StringBufferInputStream(metadataContent));
         when(cloudStorage.preSignUrl(any())).thenAnswer(i -> new URL(i.getArgument(0)));
         fakeAuth(OperatorType.PRIVATE, 99);
-        get(vertx, "/client_side_keypairs/refresh", "", testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, "/sites/refresh", "", testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(403, response.statusCode());
-            assertEquals("endpoint /client_side_keypairs/refresh is for public operators only", response.bodyAsJsonObject().getString("message"));
+            assertEquals("endpoint /sites/refresh is for public operators only", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         })));
     }

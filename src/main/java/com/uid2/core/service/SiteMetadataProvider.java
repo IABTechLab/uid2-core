@@ -13,22 +13,20 @@ import java.io.InputStreamReader;
 
 import static com.uid2.core.util.MetadataHelper.readToEndAsString;
 
-public class ClientSideKeypairMetadataProvider implements IClientSideKeypairMetadataProvider {
-    public static final String ClientSideKeypairMetadataPathName = "client_side_keypairs_metadata_path";
-
+public class SiteMetadataProvider implements ISiteMetadataProvider {
+    public static final String SiteMetadataPathName = "sites_metadata_path";
     private final ICloudStorage metadataStreamProvider;
     private final ICloudStorage downloadUrlGenerator;
 
-    public ClientSideKeypairMetadataProvider(ICloudStorage cloudStorage) {
+    public SiteMetadataProvider(ICloudStorage cloudStorage) {
         this.metadataStreamProvider = this.downloadUrlGenerator = cloudStorage;
     }
-
     @Override
     public String getMetadata() throws Exception {
-        String pathname = new GlobalScope(new CloudPath(SecretStore.Global.get(ClientSideKeypairMetadataPathName))).getMetadataPath().toString();
+        String pathname = new GlobalScope(new CloudPath(SecretStore.Global.get(SiteMetadataPathName))).getMetadataPath().toString();
         String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
-        JsonObject obj = main.getJsonObject("client_side_keypairs");
+        JsonObject obj = main.getJsonObject("sites");
         String location = obj.getString("location");
         obj.put("location", downloadUrlGenerator.preSignUrl(location).toString());
         return main.encode();
