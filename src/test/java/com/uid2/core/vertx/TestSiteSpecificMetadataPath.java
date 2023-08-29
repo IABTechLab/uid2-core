@@ -36,7 +36,9 @@ import static org.mockito.Mockito.*;
 
 /**
  * UID2-576 Make sure that private operator only gets site-specific client keys/keys/keys_acl data
- * while public operators will get the unfiltered global data set
+ * while public operators will get the unfiltered global data set.
+ *
+ * See TestSitesMetadataPath for testing public operator able to retrieve site metadata for CSTG use.
  */
 @ExtendWith(VertxExtension.class)
 public class TestSiteSpecificMetadataPath {
