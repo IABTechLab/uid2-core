@@ -1,5 +1,6 @@
 package com.uid2.core.vertx;
 
+import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.AttestationService;
 import com.uid2.core.service.OperatorJWTTokenProvider;
@@ -63,6 +64,10 @@ public class TestServiceLinkMetadataPath {
 
     @BeforeEach
     void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
+        JsonObject config = new JsonObject();
+        config.put(Const.Config.EnforceJwtProp, false);
+        ConfigStore.Global.load(config);
+
         attestationService = new AttestationService();
         SecretStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testGlobalMetadata/test-secrets.json"))));
         MockitoAnnotations.initMocks(this);
