@@ -4,21 +4,27 @@
     "name": "partner@uid2.com",
     "contact": "partner@uid2.com",
     "created": 1617149276,
-    "protocol": "aws-nitro"
+    "protocol": "aws-nitro",
+    "key_hash": "YJtxmu8X+y0TPW4akJuaXk3McKfzKdaLT9QI5cChFnPGwLPpnyqyRcDT997xTG6apL8mfCt3DB3ZlnR3qrSNBA==",
+    "key_salt": "W0i/DcKwCqBGD3jN6dNTsFl+tp6akTc3LpEVRuK5OB0="
   },
   {
     "key": "test-gcp-key",
     "name": "partner-gcp@uid2.com",
     "contact": "partner-gcp@uid2.com",
     "created": 1617149276,
-    "protocol": "gcp-vmid"
+    "protocol": "gcp-vmid",
+    "key_hash": "+8Vp3bOKibg7PpWomCtolqZu3uRqR7G5DLcAwvt9n2ZqkWAdmPGoXuQMcEBAmE/nAslF7eA+VwXLp7zN40IZkA==",
+    "key_salt": "uJYzyAZujZ6QOatbwEB9/+/sgXe3jvPvYaULNANxgkQ="
   },
   {
     "key": "test-gcp-key-2",
     "name": "partner-gcp-2@uid2.com",
     "contact": "partner-gcp-2@uid2.com",
     "created": 1617149276,
-    "protocol": "gcp-oidc"
+    "protocol": "gcp-oidc",
+    "key_hash": "nF2JfhBwEd1J9W2aiO2XWBnVGWaTHKzmq5WadU9GFC+gHjkFhkT4sG0boNG76fZQpBjQWYcCEhWFNPCBje52iA==",
+    "key_salt": "WSwyr8znzT0Yj/QiSRGZlsPz2lUIfRuO5FSpl89biiI="
   },
   {
     "key": "trusted-partner-key",
@@ -27,7 +33,9 @@
     "created": 1617149276,
     "protocol": "trusted",
     "operator_type": "PUBLIC",
-    "site_id" : 10
+    "site_id": 10,
+    "key_hash": "aGVkzavynvr6cX/kAqLSCHTlKPdumakBh0M0ysUyUVr6CiX2nSph0OlPXKzb02NZwKxnx1UQrRc5WOZTygpIVg==",
+    "key_salt": "DBQn4VlAN3CvS/2HPSvsKgBAmfctp23JjDe3Z4vBmWs="
   },
   {
     "key": "trusted-partner-key-2",
@@ -36,6 +44,8 @@
     "created": 1617149276,
     "protocol": "trusted",
     "operator_type": "PRIVATE",
-    "site_id" : 11
+    "site_id": 11,
+    "key_hash": "ty2mA34ZzTtrRhEl4cJZWAPmDu+xbAijCFWPvYOtRweBvcWS1pqzVLUVhXE+QllnOWS8vpRmdMo0VDgBMiCA8w==",
+    "key_salt": "MXolvY4RSkGZjd0GpexZvywZq887C5BgMYapF5UhHB0="
   }
 ]
