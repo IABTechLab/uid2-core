@@ -5,6 +5,8 @@
     "sites_metadata_path": "/com.uid2.core/test/sites/metadata.json",
     "clients_metadata_path": "/com.uid2.core/test/clients/metadata.json",
     "client_side_keypairs_metadata_path": "/com.uid2.core/test/client_side_keypairs/metadata.json",
+    "services_metadata_path": "/com.uid2.core/test/services/metadata.json",
+    "service_links_metadata_path": "/com.uid2.core/test/service_links/metadata.json",
     "keys_metadata_path": "/com.uid2.core/test/keys/metadata.json",
     "keys_acl_metadata_path": "/com.uid2.core/test/keys_acl/metadata.json",
     "keysets_metadata_path": "/com.uid2.core/test/keysets/metadata.json",

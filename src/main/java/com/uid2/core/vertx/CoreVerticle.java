@@ -66,6 +66,8 @@ public class CoreVerticle extends AbstractVerticle {
     private final ISiteMetadataProvider siteMetadataProvider;
     private final IClientMetadataProvider clientMetadataProvider;
     private final IClientSideKeypairMetadataProvider clientSideKeypairMetadataProvider;
+    private final IServiceMetadataProvider serviceMetadataProvider;
+    private final IServiceLinkMetadataProvider serviceLinkMetadataProvider;
     private final IOperatorMetadataProvider operatorMetadataProvider;
     private final IKeyMetadataProvider keyMetadataProvider;
     private final IKeyAclMetadataProvider keyAclMetadataProvider;
@@ -115,6 +117,8 @@ public class CoreVerticle extends AbstractVerticle {
         this.keysetMetadataProvider = new KeysetMetadataProvider(cloudStorage);
         this.keysetKeyMetadataProvider = new KeysetKeysMetadataProvider(cloudStorage);
         this.clientSideKeypairMetadataProvider = new ClientSideKeypairMetadataProvider(cloudStorage);
+        this.serviceMetadataProvider = new ServiceMetadataProvider(cloudStorage);
+        this.serviceLinkMetadataProvider = new ServiceLinkMetadataProvider(cloudStorage);
     }
 
     @Override
@@ -168,6 +172,8 @@ public class CoreVerticle extends AbstractVerticle {
         router.get("/salt/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleSaltRefresh), Role.OPERATOR));
         router.get("/clients/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleClientRefresh), Role.OPERATOR));
         router.get("/client_side_keypairs/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleClientSideKeypairRefresh), Role.OPERATOR));
+        router.get("/services/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleServiceRefresh), Role.OPERATOR));
+        router.get("/service_links/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleServiceLinkRefresh), Role.OPERATOR));
         router.get("/operators/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleOperatorRefresh), Role.OPTOUT_SERVICE));
         router.get("/partners/refresh").handler(auth.handle(attestationMiddleware.handle(this::handlePartnerRefresh), Role.OPTOUT_SERVICE));
         router.get("/ops/healthcheck").handler(this::handleHealthCheck);
@@ -418,6 +424,36 @@ public class CoreVerticle extends AbstractVerticle {
         } catch (Exception e) {
             logger.warn("exception in handleClientSideKeypairRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing client_side_keypairs refresh");
+        }
+    }
+
+    private void handleServiceRefresh(RoutingContext rc) {
+        try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+            if (info.getOperatorType() != OperatorType.PUBLIC) {
+                Error("error", 403, rc, "endpoint /services/refresh is for public operators only");
+                return;
+            }
+            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(serviceMetadataProvider.getMetadata());
+        } catch (Exception e) {
+            logger.warn("exception in handleServiceRefresh: " + e.getMessage(), e);
+            Error("error", 500, rc, "error processing services refresh");
+        }
+    }
+
+    private void handleServiceLinkRefresh(RoutingContext rc) {
+        try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+            if (info.getOperatorType() != OperatorType.PUBLIC) {
+                Error("error", 403, rc, "endpoint /service_links/refresh is for public operators only");
+                return;
+            }
+            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(serviceLinkMetadataProvider.getMetadata());
+        } catch (Exception e) {
+            logger.warn("exception in handleServiceLinkRefresh: " + e.getMessage(), e);
+            Error("error", 500, rc, "error processing service_links refresh");
         }
     }
 

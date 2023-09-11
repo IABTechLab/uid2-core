@@ -8,12 +8,14 @@
     "sites_metadata_path": "uid2/sites/metadata.json",
     "clients_metadata_path": "uid2/clients/metadata.json",
     "client_side_keypairs_metadata_path": "uid2/client_side_keypairs/metadata.json",
+    "services_metadata_path": "uid2/services/metadata.json",
+    "service_links_metadata_path": "uid2/service_links/metadata.json",
     "operators_metadata_path": "uid2/operators/metadata.json",
     "keys_acl_metadata_path": "uid2/keys_acl/metadata.json",
     "enclaves_metadata_path": "uid2/enclaves/metadata.json",
     "keys_metadata_path": "uid2/keys/metadata.json",
     "keysets_metadata_path": "uid2/keysets/metadata.json",
     "keyset_keys_metadata_path": "uid2/keyset_keys/metadata.json",
-    "salts_metadata_path": "uid2/salts/metadata.json"
+    "salts_metadata_path": "uid2/salts/metadata.json",
     "enforceJwt": false
 }
