@@ -301,8 +301,8 @@ public class CoreVerticle extends AbstractVerticle {
         if (keyId != null && !keyId.isEmpty()) {
             try {
                 String clientVersion = getClientVersionFromHeader(rc, profile);
-                String optOutJwtToken = this.operatorJWTTokenProvider.getOptOutJWTToken(operator.getKey(), operator.getName(), operator.getRoles(), operator.getSiteId(), enclaveId, operator.getProtocol(), clientVersion, expiresAt);
-                String coreJwtToken = this.operatorJWTTokenProvider.getCoreJWTToken(operator.getKey(), operator.getName(), operator.getRoles(), operator.getSiteId(), enclaveId, operator.getProtocol(), clientVersion, expiresAt);
+                String optOutJwtToken = this.operatorJWTTokenProvider.getOptOutJWTToken(operator.getKeyHash(), operator.getName(), operator.getRoles(), operator.getSiteId(), enclaveId, operator.getProtocol(), clientVersion, expiresAt);
+                String coreJwtToken = this.operatorJWTTokenProvider.getCoreJWTToken(operator.getKeyHash(), operator.getName(), operator.getRoles(), operator.getSiteId(), enclaveId, operator.getProtocol(), clientVersion, expiresAt);
 
                 Map.Entry<String, String> tokens = new AbstractMap.SimpleEntry<>(optOutJwtToken, coreJwtToken);
                 return tokens;
