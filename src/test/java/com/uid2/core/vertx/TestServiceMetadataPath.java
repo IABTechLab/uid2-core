@@ -35,14 +35,13 @@ import java.net.URL;
 import java.util.HashSet;
 
 import static com.uid2.shared.Utils.readToEndAsString;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
-public class TestClientSideKeypairMetadataPath {
-
+public class TestServiceMetadataPath {
     @Mock
     private ICloudStorage cloudStorage;
     @Mock
@@ -81,7 +80,7 @@ public class TestClientSideKeypairMetadataPath {
     }
 
     private void fakeAuth(OperatorType operatorType, int siteId) {
-        OperatorKey clientKey = new OperatorKey("test-key", "test-key-hash", "test-key-salt", "", "", attestationProtocol, 0, false, siteId, new HashSet<>(), operatorType);
+        OperatorKey clientKey = new OperatorKey("test-key", "", "", attestationProtocol, 0, false, siteId, new HashSet<>(), operatorType);
         when(authProvider.get(any())).thenReturn(clientKey);
     }
 
@@ -92,16 +91,16 @@ public class TestClientSideKeypairMetadataPath {
 
     @Test
     void publicOperatorGetsGlobalKeypairs(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
-        String metadata = "/com.uid2.core/testGlobalMetadata/client_side_keypairs/metadata.json";
+        String metadata = "/com.uid2.core/testGlobalMetadata/services/metadata.json";
         String metadataContent = openFile(metadata);
-        String location = ((JsonObject) Json.decodeValue(metadataContent)).getJsonObject("client_side_keypairs").getString("location");
+        String location = ((JsonObject) Json.decodeValue(metadataContent)).getJsonObject("services").getString("location");
         when(cloudStorage.download(eq(metadata))).thenReturn(new StringBufferInputStream(metadataContent));
         when(cloudStorage.preSignUrl(any())).thenAnswer(i -> new URL(i.getArgument(0)));
         fakeAuth(OperatorType.PUBLIC, 99);
-        get(vertx, "/client_side_keypairs/refresh", "", testContext.succeeding(response -> testContext.verify(()-> {
+        get(vertx, "/services/refresh", "", testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(200, response.statusCode());
             JsonObject json = response.bodyAsJsonObject();
-            String resultLocation = json.getJsonObject("client_side_keypairs").getString("location");
+            String resultLocation = json.getJsonObject("services").getString("location");
             assertEquals(resultLocation, location);
             testContext.completeNow();
         })));
@@ -109,21 +108,20 @@ public class TestClientSideKeypairMetadataPath {
 
     @Test
     void privateOperatorGetsKeypairsError(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
-        String metadata = "/com.uid2.core/testGlobalMetadata/client_side_keypairs/metadata.json";
+        String metadata = "/com.uid2.core/testGlobalMetadata/services/metadata.json";
         String metadataContent = openFile(metadata);
-        String location = ((JsonObject) Json.decodeValue(metadataContent)).getJsonObject("client_side_keypairs").getString("location");
+        String location = ((JsonObject) Json.decodeValue(metadataContent)).getJsonObject("services").getString("location");
         when(cloudStorage.download(eq(metadata))).thenReturn(new StringBufferInputStream(metadataContent));
         when(cloudStorage.preSignUrl(any())).thenAnswer(i -> new URL(i.getArgument(0)));
         fakeAuth(OperatorType.PRIVATE, 99);
-        get(vertx, "/client_side_keypairs/refresh", "", testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, "/services/refresh", "", testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(403, response.statusCode());
-            assertEquals("endpoint /client_side_keypairs/refresh is for public operators only", response.bodyAsJsonObject().getString("message"));
+            assertEquals("endpoint /services/refresh is for public operators only", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         })));
     }
 
-    String openFile(String filePath) throws IOException
-    {
+    String openFile(String filePath) throws IOException {
         return readToEndAsString(TestSiteSpecificMetadataPath.class.getResourceAsStream(filePath));
     }
 }

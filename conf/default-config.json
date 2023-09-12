@@ -7,6 +7,8 @@
     "sites_metadata_path": null,
     "clients_metadata_path": null,
     "client_side_keypairs_metadata_path": null,
+    "services_metadata_path": null,
+    "service_links_metadata_path": null,
     "keys_metadata_path": null,
     "salts_metadata_path": null,
     "operators_metadata_path": null,
