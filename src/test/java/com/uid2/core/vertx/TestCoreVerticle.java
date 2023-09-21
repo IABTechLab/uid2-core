@@ -81,8 +81,8 @@ public class TestCoreVerticle {
     }
 
     private void fakeAuth(Role... roles) {
-        OperatorKey clientKey = new OperatorKey("test-key", "test-key-hash", "test-key-salt", "test-name", "test-contact", attestationProtocol, 0, false, 88, new HashSet<>(Arrays.asList(roles)), OperatorType.PRIVATE);
-        when(authProvider.get(any())).thenReturn(clientKey);
+        OperatorKey operatorKey = new OperatorKey("test-key-hash", "test-key-salt", "test-name", "test-contact", attestationProtocol, 0, false, 88, new HashSet<>(Arrays.asList(roles)), OperatorType.PRIVATE);
+        when(authProvider.get(any())).thenReturn(operatorKey);
     }
 
     private void post(Vertx vertx, String endpoint, String body, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
