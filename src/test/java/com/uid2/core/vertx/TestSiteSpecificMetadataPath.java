@@ -79,8 +79,8 @@ public class TestSiteSpecificMetadataPath {
   }
 
   private void fakeAuth(OperatorType operatorType, int siteId) {
-    OperatorKey clientKey = new OperatorKey("test-key", "test-key-hash", "test-key-salt", "", "", attestationProtocol, 0, false, siteId, new HashSet<>(), operatorType);
-    when(authProvider.get(any())).thenReturn(clientKey);
+    OperatorKey operatorKey = new OperatorKey("test-key-hash", "test-key-salt", "", "", attestationProtocol, 0, false, siteId, new HashSet<>(), operatorType);
+    when(authProvider.get(any())).thenReturn(operatorKey);
   }
 
   private void get(Vertx vertx, String endpoint, String body, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {

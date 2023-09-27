@@ -9,7 +9,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.web.RoutingContext;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,15 +40,13 @@ public class AttestationFailureHandler implements Handler<RoutingContext> {
         final AttestationFailureReason attestationFailureReason = context.get(Const.RoutingContextData.ATTESTATION_FAILURE_REASON_PROP);
         final String attestationFailureDataJson = getAttestationFailureDataJson(context);
 
-        final String operatorKeyHash = DigestUtils.sha256Hex(operatorKey.getKey());
-
         final String originatingIpAddress = getOriginatingIpAddress(context);
 
         LOG.warn("Attestation failed. StatusCode={} Reason={} Data={} OperatorKeyHash={} OperatorKeyName={} SiteId={} Protocol={} OperatorType={} OriginatingIpAddress={}",
                 context.response().getStatusCode(),
                 attestationFailureReason,
                 attestationFailureDataJson,
-                operatorKeyHash,
+                operatorKey.getKeyHash(),
                 operatorKey.getName(),
                 operatorKey.getSiteId(),
                 operatorKey.getProtocol(),
