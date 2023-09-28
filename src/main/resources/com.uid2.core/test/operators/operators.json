@@ -27,6 +27,15 @@
     "key_salt": "WSwyr8znzT0Yj/QiSRGZlsPz2lUIfRuO5FSpl89biiI="
   },
   {
+    "key": "test-azure-key",
+    "name": "partner-azure@uid2.com",
+    "contact": "partner-azure@uid2.com",
+    "created": 1617149276,
+    "protocol": "azure-cc",
+    "key_hash": "9hmTDqMPlR7Y6mnCDKWFOWGCK8uepsg/s6pCHPCqL16ziQ8OvUSpTlqOERJJkcyvZLRShgNVbafPO66TH91Vkw==",
+    "key_salt": "VhOxETeT1+hvq8y2YRCpdcPg0JrHkBfZXI58twuohGY="
+  },
+  {
     "key": "trusted-partner-key",
     "name": "partner-trusted@uid2.com",
     "contact": "partner-trusted@uid2.com",
