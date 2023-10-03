@@ -1,0 +1,3 @@
+[submodule "src/main/resources/com.uid2.core/test"]
+	path = src/main/resources/com.uid2.core/test
+	url = git@github.com:UnifiedID2/uid2-mock-data.git
