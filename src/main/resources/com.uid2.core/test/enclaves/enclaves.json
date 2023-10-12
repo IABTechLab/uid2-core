@@ -16,5 +16,11 @@
     "protocol": "gcp-oidc",
     "identifier": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
     "created": 1620693995
+  },
+  {
+    "name": "debug-azure-cc",
+    "protocol": "azure-cc",
+    "identifier": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "created": 1620693995
   }
 ]

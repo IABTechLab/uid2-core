@@ -116,11 +116,11 @@ public class Main {
                 EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
                 enclaveRotatingVerticle = new RotatingStoreVerticle("enclaves", 60000, enclaveIdProvider);
 
+
+                var maaServerBaseUrl = ConfigStore.Global.getOrDefault(com.uid2.core.Const.Config.MaaServerBaseUrlProp, "https://sharedeus.eus.attest.azure.net");
                 AttestationService attestationService = new AttestationService()
                         .with("trusted", new TrustedAttestationProvider())
-                        .with("azure-sgx", new AzureAttestationProvider(
-                                ConfigStore.Global.getOrDefault("maa_server_base_url", "https://sharedeus.eus.attest.azure.net"),
-                                WebClient.create(vertx)))
+                        .with("azure-sgx", new AzureAttestationProvider(maaServerBaseUrl, WebClient.create(vertx)))
                         .with("aws-nitro", new NitroAttestationProvider(new InMemoryAWSCertificateStore()));
 
                 // try read GoogleCredentials
@@ -136,6 +136,8 @@ public class Main {
                     attestationService
                             .with("gcp-vmid", new GcpVmidAttestationProvider(googleCredentials, enclaveParams));
                 }
+
+                attestationService.with("azure-cc", new AzureCCAttestationProvider(maaServerBaseUrl));
 
                 attestationService.with("gcp-oidc", new GcpOidcAttestationProvider());
 
