@@ -117,7 +117,7 @@ public class Main {
                 enclaveRotatingVerticle = new RotatingStoreVerticle("enclaves", 60000, enclaveIdProvider);
 
 
-                var maaServerBaseUrl = ConfigStore.Global.getOrDefault(com.uid2.core.Const.Config.MaaServerBaseUrl, "https://sharedeus.eus.attest.azure.net");
+                var maaServerBaseUrl = ConfigStore.Global.getOrDefault(com.uid2.core.Const.Config.MaaServerBaseUrlProp, "https://sharedeus.eus.attest.azure.net");
                 AttestationService attestationService = new AttestationService()
                         .with("trusted", new TrustedAttestationProvider())
                         .with("azure-sgx", new AzureAttestationProvider(maaServerBaseUrl, WebClient.create(vertx)))
