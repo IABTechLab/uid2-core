@@ -10,7 +10,8 @@
     ],
     "site_id": 3,
     "key_hash": "poag9K6u2rHmltuQDWeGMb1AsYnfRlxx6aJVtnCJSzvftwcOKV3QzknBhA9tHWHGrjRVQN+9cjifRkDUbD6aWA==",
-    "key_salt": "fYhiujcFuJnfQy8pw4VVeQlSM5fJSmnBVo8KMz+XzF0="
+    "key_salt": "fYhiujcFuJnfQy8pw4VVeQlSM5fJSmnBVo8KMz+XzF0=",
+    "key_id": "test-"
   },
   {
     "key": "test-mapper-key",
@@ -23,7 +24,8 @@
     ],
     "site_id": 4,
     "key_hash": "dHbN5wd/GUnbON14NGMMLseApTgp9ai/XM9/d7udIz4/SIEzJi4RqCU/TtGxzqah5r21D2537KitOSZMXakagw==",
-    "key_salt": "j9O/NzABFM/mqIU8tEs4nmSdK5vbtcU6LIKoz9VdEQw="
+    "key_salt": "j9O/NzABFM/mqIU8tEs4nmSdK5vbtcU6LIKoz9VdEQw=",
+    "key_id": "test-"
   },
   {
     "key": "test-optout-key",
@@ -35,7 +37,8 @@
     ],
     "site_id": 5,
     "key_hash": "DNuG54XqyEypaNrCFqHPAy3e25zIqcofWnvVzprR9r7cBIGOcqA7vSkmLrRezawpyidhJ+Kx1cnK/s/LtlHZPQ==",
-    "key_salt": "3gCfrkODHPBxgyq4XN01Zmv4f0wLJLAl/vdFiXULDXI="
+    "key_salt": "3gCfrkODHPBxgyq4XN01Zmv4f0wLJLAl/vdFiXULDXI=",
+    "key_id": "test-"
   },
   {
     "key": "trusted-partner-key",
@@ -49,7 +52,8 @@
     ],
     "site_id": 6,
     "key_hash": "v2KvE309S7osPiSakx/MoTKz5K97CkXv6dm80UWdXnbufUPQHFpCE69PGmAIvMzD4dQmmS//F8BbQPKP1REP+Q==",
-    "key_salt": "tg3VfH+bP3I+sjL5xVjSm/1gF9+LHZ2yZkaiOtMU99Q="
+    "key_salt": "tg3VfH+bP3I+sjL5xVjSm/1gF9+LHZ2yZkaiOtMU99Q=",
+    "key_id": "trust"
   },
   {
     "key": "friendly-partner-key",
@@ -63,7 +67,8 @@
     ],
     "site_id": 7,
     "key_hash": "ThnnaO4vxLTyRXhLYnlI3R7gw1EL274uUZ1SHIrI8t+MJ16jYssqbjLHnsA/3dXelbOxgDenDhmuuBMmUUB8tg==",
-    "key_salt": "gRItFk+JXO/d2V9YIJ9pjO7FNBp032/apIi+FlQIq2s="
+    "key_salt": "gRItFk+JXO/d2V9YIJ9pjO7FNBp032/apIi+FlQIq2s=",
+    "key_id": "frien"
   },
   {
     "key": "unfriendly-partner-key",
@@ -77,6 +82,7 @@
     ],
     "site_id": 8,
     "key_hash": "mKz08gn4SRs2kWzGK4S99gAj6Rb9dxS4Cx3ZPdaWZhL0OuUflxwaShfRAKKuD0288FO7Ehm7Qu4RGqf+qHe54A==",
-    "key_salt": "5hnfxqwd+eB/x2fR9DyYLaoXtbX6gibcnxcP2wwc7A8="
+    "key_salt": "5hnfxqwd+eB/x2fR9DyYLaoXtbX6gibcnxcP2wwc7A8=",
+    "key_id": "unfri"
   }
 ]
