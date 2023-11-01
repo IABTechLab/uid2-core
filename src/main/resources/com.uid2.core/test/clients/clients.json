@@ -11,7 +11,7 @@
     "site_id": 3,
     "key_hash": "poag9K6u2rHmltuQDWeGMb1AsYnfRlxx6aJVtnCJSzvftwcOKV3QzknBhA9tHWHGrjRVQN+9cjifRkDUbD6aWA==",
     "key_salt": "fYhiujcFuJnfQy8pw4VVeQlSM5fJSmnBVo8KMz+XzF0=",
-    "key_id": "test-"
+    "key_id": "test-admin-key"
   },
   {
     "key": "test-mapper-key",
@@ -25,7 +25,7 @@
     "site_id": 4,
     "key_hash": "dHbN5wd/GUnbON14NGMMLseApTgp9ai/XM9/d7udIz4/SIEzJi4RqCU/TtGxzqah5r21D2537KitOSZMXakagw==",
     "key_salt": "j9O/NzABFM/mqIU8tEs4nmSdK5vbtcU6LIKoz9VdEQw=",
-    "key_id": "test-"
+    "key_id": "test-mapper-key"
   },
   {
     "key": "test-optout-key",
@@ -38,7 +38,7 @@
     "site_id": 5,
     "key_hash": "DNuG54XqyEypaNrCFqHPAy3e25zIqcofWnvVzprR9r7cBIGOcqA7vSkmLrRezawpyidhJ+Kx1cnK/s/LtlHZPQ==",
     "key_salt": "3gCfrkODHPBxgyq4XN01Zmv4f0wLJLAl/vdFiXULDXI=",
-    "key_id": "test-"
+    "key_id": "test-optout-key"
   },
   {
     "key": "trusted-partner-key",
