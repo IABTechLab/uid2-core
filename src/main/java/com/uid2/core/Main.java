@@ -34,7 +34,6 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.WebClient;
 import io.vertx.micrometer.Label;
 import io.vertx.micrometer.MetricsDomain;
 import io.vertx.micrometer.MicrometerMetricsOptions;
@@ -117,10 +116,8 @@ public class Main {
                 enclaveRotatingVerticle = new RotatingStoreVerticle("enclaves", 60000, enclaveIdProvider);
 
 
-                var maaServerBaseUrl = ConfigStore.Global.getOrDefault(com.uid2.core.Const.Config.MaaServerBaseUrlProp, "https://sharedeus.eus.attest.azure.net");
                 AttestationService attestationService = new AttestationService()
                         .with("trusted", new TrustedAttestationProvider())
-                        .with("azure-sgx", new AzureAttestationProvider(maaServerBaseUrl, WebClient.create(vertx)))
                         .with("aws-nitro", new NitroAttestationProvider(new InMemoryAWSCertificateStore()));
 
                 // try read GoogleCredentials
@@ -137,6 +134,7 @@ public class Main {
                             .with("gcp-vmid", new GcpVmidAttestationProvider(googleCredentials, enclaveParams));
                 }
 
+                var maaServerBaseUrl = ConfigStore.Global.getOrDefault(com.uid2.core.Const.Config.MaaServerBaseUrlProp, "https://sharedeus.eus.attest.azure.net");
                 attestationService.with("azure-cc", new AzureCCAttestationProvider(maaServerBaseUrl));
 
                 attestationService.with("gcp-oidc", new GcpOidcAttestationProvider());
