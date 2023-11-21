@@ -81,7 +81,7 @@ public class TestClientSideKeypairMetadataPath {
     }
 
     private void fakeAuth(OperatorType operatorType, int siteId) {
-        OperatorKey operatorKey = new OperatorKey("test-key-hash", "test-key-salt", "", "", attestationProtocol, 0, false, siteId, new HashSet<>(), operatorType);
+        OperatorKey operatorKey = new OperatorKey("test-key-hash", "test-key-salt", "", "", attestationProtocol, 0, false, siteId, new HashSet<>(), operatorType,  "test-key-id");
         when(authProvider.get(any())).thenReturn(operatorKey);
     }
 
