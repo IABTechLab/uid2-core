@@ -34,6 +34,9 @@ public class AttestationFailureHandler implements Handler<RoutingContext> {
         final OperatorKey operatorKey = profile instanceof OperatorKey ? (OperatorKey) profile : null;
 
         if (operatorKey == null) {
+            if (context.response().getStatusCode() == 401)  {
+                LOG.warn("Attestation failed. Reason={invalid operator key}");
+            }
             return;
         }
 
