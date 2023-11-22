@@ -81,7 +81,7 @@ public class TestCoreVerticle {
     }
 
     private void fakeAuth(Role... roles) {
-        OperatorKey operatorKey = new OperatorKey("test-key-hash", "test-key-salt", "test-name", "test-contact", attestationProtocol, 0, false, 88, new HashSet<>(Arrays.asList(roles)), OperatorType.PRIVATE);
+        OperatorKey operatorKey = new OperatorKey("test-key-hash", "test-key-salt", "test-name", "test-contact", attestationProtocol, 0, false, 88, new HashSet<>(Arrays.asList(roles)), OperatorType.PRIVATE,  "test-key-id");
         when(authProvider.get(any())).thenReturn(operatorKey);
     }
 
