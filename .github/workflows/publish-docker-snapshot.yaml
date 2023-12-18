@@ -1,10 +1,10 @@
 name: Publish Snapshot to Docker
 on:
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'The tag to apply to the Docker file'
-        type: string
+    # inputs:
+    #   tag:
+    #     description: 'The tag to apply to the Docker file'
+    #     type: string
 
 jobs:
   build-publish-docker:
