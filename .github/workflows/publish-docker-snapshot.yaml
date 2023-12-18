@@ -10,7 +10,7 @@ jobs:
   build-publish-docker:
     uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-publish-docker-versioned.yaml@v2.8
     with: 
-      tag: ${{ inputs.tag }}
+      # tag: ${{ inputs.tag }}
       cloud_provider: 'default'
       release_type: 'Snapshot'
     secrets: inherit
