@@ -15,7 +15,7 @@ To setup dependencies before building, run the follow script
 To run unit tests:
 
 ```
-mvn clean test
+mvn clean test -D"net.bytebuddy.experimental=true"
 ```
 
 To package application:
