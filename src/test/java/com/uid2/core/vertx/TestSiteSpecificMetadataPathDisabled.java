@@ -10,7 +10,7 @@ import com.uid2.shared.attest.JwtService;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.shared.cloud.ICloudStorage;
-import com.uid2.shared.secure.IAttestationProvider;
+import com.uid2.shared.secure.ICoreAttestationService;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -49,7 +49,7 @@ public class TestSiteSpecificMetadataPathDisabled {
   @Mock
   private IAuthorizableProvider authProvider;
   @Mock
-  private IAttestationProvider attestationProvider;
+  private ICoreAttestationService attestationProvider;
   @Mock
   private IAttestationTokenService attestationTokenService;
   @Mock

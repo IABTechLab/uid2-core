@@ -117,8 +117,8 @@ public class Main {
 
 
                 AttestationService attestationService = new AttestationService()
-                        .with("trusted", new TrustedAttestationProvider())
-                        .with("aws-nitro", new NitroAttestationProvider(new InMemoryAWSCertificateStore(), ConfigStore.Global.get(Const.Config.CorePublicUrlProp)));
+                        .with("trusted", new TrustedCoreAttestationService())
+                        .with("aws-nitro", new NitroCoreAttestationService(new InMemoryAWSCertificateStore(), ConfigStore.Global.get(Const.Config.CorePublicUrlProp)));
 
                 // try read GoogleCredentials
                 GoogleCredentials googleCredentials = CloudUtils.getGoogleCredentialsFromConfig(config);
@@ -131,13 +131,13 @@ public class Main {
 
                     // enable gcp-vmid attestation if requested
                     attestationService
-                            .with("gcp-vmid", new GcpVmidAttestationProvider(googleCredentials, enclaveParams));
+                            .with("gcp-vmid", new GcpVmidCoreAttestationService(googleCredentials, enclaveParams));
                 }
 
                 var maaServerBaseUrl = ConfigStore.Global.getOrDefault(com.uid2.core.Const.Config.MaaServerBaseUrlProp, "https://sharedeus.eus.attest.azure.net");
-                attestationService.with("azure-cc", new AzureCCAttestationProvider(maaServerBaseUrl));
+                attestationService.with("azure-cc", new AzureCCCoreAttestationService(maaServerBaseUrl));
 
-                attestationService.with("gcp-oidc", new GcpOidcAttestationProvider());
+                attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService());
 
                 OperatorJWTTokenProvider operatorJWTTokenProvider = new OperatorJWTTokenProvider(config);
                 

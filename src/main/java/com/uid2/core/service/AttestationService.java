@@ -4,7 +4,7 @@ import com.uid2.shared.auth.IOperatorChangeHandler;
 import com.uid2.shared.model.EnclaveIdentifier;
 import com.uid2.shared.secure.AttestationException;
 import com.uid2.shared.secure.AttestationResult;
-import com.uid2.shared.secure.IAttestationProvider;
+import com.uid2.shared.secure.ICoreAttestationService;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import org.slf4j.Logger;
@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class AttestationService implements IOperatorChangeHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(AttestationService.class);
 
-    private final Map<String, IAttestationProvider> protocols;
+    private final Map<String, ICoreAttestationService> protocols;
     private final AtomicReference<Set<EnclaveIdentifier>> activeOperatorIdentifiers;
 
     public AttestationService() {
@@ -24,7 +24,7 @@ public class AttestationService implements IOperatorChangeHandler {
         activeOperatorIdentifiers = new AtomicReference<>(new HashSet<>());
     }
 
-    public AttestationService with(String name, IAttestationProvider protocol) {
+    public AttestationService with(String name, ICoreAttestationService protocol) {
         this.protocols.put(name, protocol);
         return this;
     }
@@ -59,8 +59,8 @@ public class AttestationService implements IOperatorChangeHandler {
         return res;
     }
 
-    private IAttestationProvider get(String name) throws AttestationService.NotFound {
-        IAttestationProvider handle = this.protocols.get(name);
+    private ICoreAttestationService get(String name) throws AttestationService.NotFound {
+        ICoreAttestationService handle = this.protocols.get(name);
         if (handle != null) return handle;
         throw new AttestationService.NotFound(name);
     }
