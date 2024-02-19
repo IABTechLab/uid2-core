@@ -118,7 +118,7 @@ public class Main {
 
                 AttestationService attestationService = new AttestationService()
                         .with("trusted", new TrustedAttestationProvider())
-                        .with("aws-nitro", new NitroAttestationProvider(new InMemoryAWSCertificateStore()));
+                        .with("aws-nitro", new NitroAttestationProvider(new InMemoryAWSCertificateStore(), ConfigStore.Global.get(Const.Config.CorePublicUrlProp)));
 
                 // try read GoogleCredentials
                 GoogleCredentials googleCredentials = CloudUtils.getGoogleCredentialsFromConfig(config);

@@ -67,7 +67,7 @@ public class TestAttestation {
         final ICertificateProvider certStore = new InMemoryAWSCertificateStore();
 
         AttestationService attestationService = new AttestationService()
-            .with(protocol, new NitroAttestationProvider(certStore));
+            .with(protocol, new NitroAttestationProvider(certStore, "https://core.local/"));
 
         // -- id check - disabled because certs in attestation request can expire. TODO: fix it
         /*attestationService.attest(protocol, nitroAttestationRequest, nitroPublicKey, ar -> {
@@ -76,7 +76,6 @@ public class TestAttestation {
             assertFalse(result.isSuccess(), "attestation succeed with unregistered enclave id");
             assertEquals(AttestationFailure.FORBIDDEN_ENCLAVE.explain(), result.getReason(), "attestation failed with wrong reason.");
         });*/
-
 
         attestationService.registerEnclave(protocol, identifierString);
 
@@ -115,8 +114,9 @@ public class TestAttestation {
                 return null;
             }
         }
+
         AttestationService badCertAttestationService = new AttestationService()
-                .with(protocol, new NitroAttestationProvider(new BadCertStore()));
+                .with(protocol, new NitroAttestationProvider(new BadCertStore(), "https://core.local/"));
         badCertAttestationService.attest(protocol, nitroAttestationRequest, "", ar -> {
             assertTrue(ar.succeeded());
             AttestationResult result = ar.result();
