@@ -3,7 +3,7 @@ package com.uid2.services;
 import com.uid2.shared.secure.AttestationFailure;
 import com.uid2.shared.secure.AttestationResult;
 import com.uid2.shared.secure.ICertificateProvider;
-import com.uid2.shared.secure.NitroAttestationProvider;
+import com.uid2.shared.secure.NitroCoreAttestationService;
 import com.uid2.shared.secure.nitro.InMemoryAWSCertificateStore;
 import com.uid2.core.service.AttestationService;
 import com.uid2.shared.attest.AttestationToken;
@@ -67,7 +67,7 @@ public class TestAttestation {
         final ICertificateProvider certStore = new InMemoryAWSCertificateStore();
 
         AttestationService attestationService = new AttestationService()
-            .with(protocol, new NitroAttestationProvider(certStore));
+            .with(protocol, new NitroCoreAttestationService(certStore, "https://core.local/"));
 
         // -- id check - disabled because certs in attestation request can expire. TODO: fix it
         /*attestationService.attest(protocol, nitroAttestationRequest, nitroPublicKey, ar -> {
@@ -76,7 +76,6 @@ public class TestAttestation {
             assertFalse(result.isSuccess(), "attestation succeed with unregistered enclave id");
             assertEquals(AttestationFailure.FORBIDDEN_ENCLAVE.explain(), result.getReason(), "attestation failed with wrong reason.");
         });*/
-
 
         attestationService.registerEnclave(protocol, identifierString);
 
@@ -115,8 +114,9 @@ public class TestAttestation {
                 return null;
             }
         }
+
         AttestationService badCertAttestationService = new AttestationService()
-                .with(protocol, new NitroAttestationProvider(new BadCertStore()));
+                .with(protocol, new NitroCoreAttestationService(new BadCertStore(), "https://core.local/"));
         badCertAttestationService.attest(protocol, nitroAttestationRequest, "", ar -> {
             assertTrue(ar.succeeded());
             AttestationResult result = ar.result();

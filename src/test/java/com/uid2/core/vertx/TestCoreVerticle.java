@@ -13,7 +13,7 @@ import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.secure.AttestationException;
 import com.uid2.shared.secure.AttestationFailure;
 import com.uid2.shared.secure.AttestationResult;
-import com.uid2.shared.secure.IAttestationProvider;
+import com.uid2.shared.secure.ICoreAttestationService;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
@@ -47,7 +47,7 @@ public class TestCoreVerticle {
     @Mock
     private IAuthorizableProvider authProvider;
     @Mock
-    private IAttestationProvider attestationProvider;
+    private ICoreAttestationService attestationProvider;
     @Mock
     private IAttestationTokenService attestationTokenService;
     @Mock
