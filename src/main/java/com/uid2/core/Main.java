@@ -115,10 +115,10 @@ public class Main {
                 EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
                 enclaveRotatingVerticle = new RotatingStoreVerticle("enclaves", 60000, enclaveIdProvider);
 
-
+                String corePublicUrl = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
                 AttestationService attestationService = new AttestationService()
                         .with("trusted", new TrustedCoreAttestationService())
-                        .with("aws-nitro", new NitroCoreAttestationService(new InMemoryAWSCertificateStore(), ConfigStore.Global.get(Const.Config.CorePublicUrlProp)));
+                        .with("aws-nitro", new NitroCoreAttestationService(new InMemoryAWSCertificateStore(), corePublicUrl));
 
                 // try read GoogleCredentials
                 GoogleCredentials googleCredentials = CloudUtils.getGoogleCredentialsFromConfig(config);
@@ -137,7 +137,7 @@ public class Main {
                 var maaServerBaseUrl = ConfigStore.Global.getOrDefault(com.uid2.core.Const.Config.MaaServerBaseUrlProp, "https://sharedeus.eus.attest.azure.net");
                 attestationService.with("azure-cc", new AzureCCCoreAttestationService(maaServerBaseUrl));
 
-                attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService());
+                attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(corePublicUrl));
 
                 OperatorJWTTokenProvider operatorJWTTokenProvider = new OperatorJWTTokenProvider(config);
                 
