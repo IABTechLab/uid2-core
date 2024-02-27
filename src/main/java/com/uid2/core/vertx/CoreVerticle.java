@@ -247,6 +247,7 @@ public class CoreVerticle extends AbstractVerticle {
                     String attestationToken = encodeAttestationToken(rc, attestationResult, encryptedAttestationToken.getEncodedAttestationToken());
                     responseObj.put("attestation_token", attestationToken);
                     responseObj.put("expiresAt", encryptedAttestationToken.getExpiresAt());
+                    responseObj.put("optout_url", ConfigStore.Global.get(Const.Config.OptOutUrlProp));
 
                     try {
                         Map.Entry<String, String> tokens = getJWTTokens(rc, profile, operator, attestationResult.getEnclaveId(), encryptedAttestationToken.getExpiresAt());
