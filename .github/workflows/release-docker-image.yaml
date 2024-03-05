@@ -57,6 +57,6 @@ jobs:
       core_branch: ${{ github.ref_name }}
       optout_branch: ${{ inputs.optout_branch }}
       admin_branch: ${{ inputs.admin_branch }}
-      operator_branch: ${{ github.ref }}
+      operator_branch: ${{ inputs.operator_branch }}
     secrets: inherit
   
