@@ -11,7 +11,31 @@ on:
         - Minor
         - Patch
         - Snapshot
-
+      operator_image_version:
+        description: 'Image: Use this Operator image version'
+        type: string
+        default: latest
+      optout_image_version:
+        description: 'Image: Use this Optout image version'
+        type: string
+        default: latest
+      e2e_image_version:
+        description: 'Image: Use this E2E image version'
+        type: string
+        default: latest
+      optout_branch:
+        description: 'Config: use this branch for Optout config'
+        type: string
+        default: main
+      admin_branch:
+        description: 'Config: use this branch for Admin config'
+        type: string
+        default: main
+      operator_branch:
+        description: 'Config: use this branch for Operator config'
+        type: string
+        default: main
+  
 jobs:
   Image:
     uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-publish-docker-versioned.yaml@v2
@@ -19,3 +43,20 @@ jobs:
       release_type: ${{ inputs.release_type }}
       cloud_provider: 'default'
     secrets: inherit
+
+  e2e-test:
+    name: E2E Test
+    uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-run-e2e-tests.yaml@v2
+    needs: Image
+    with:
+      operator_type: public
+      operator_image_version: ${{ inputs.operator_image_version }}
+      core_image_version: ${{ needs.image.outputs.image_tag }}
+      optout_image_version: ${{ inputs.optout_image_version }}
+      e2e_image_version: ${{ inputs.e2e_image_version }}
+      core_branch: ${{ github.ref_name }}
+      optout_branch: ${{ inputs.optout_branch }}
+      admin_branch: ${{ inputs.admin_branch }}
+      operator_branch: ${{ github.ref }}
+    secrets: inherit
+  
