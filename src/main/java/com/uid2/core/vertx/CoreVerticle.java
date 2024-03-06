@@ -227,18 +227,17 @@ public class CoreVerticle extends AbstractVerticle {
         String clientPublicKey = json.getString("public_key", "");
 
         try {
+            try {
+                AttestationRequest aReq = AttestationRequest.createFrom(Base64.getDecoder().decode(request));
+                AttestationDocument aDoc = aReq.getAttestationDocument();
+                NitroEnclaveIdentifier id = NitroEnclaveIdentifier.fromRaw(aDoc.getPcr(0));
+                logger.info("Request enclave ID: {}", id);
+                logger.info("Expected enclave IDs: {}", attestationService.listEnclaves());
+            } catch (BadFormatException e) {
+            }
+
             attestationService.attest(protocol, request, clientPublicKey, ar -> {
                 if (!ar.succeeded()) {
-                    try {
-                        AttestationRequest aReq = AttestationRequest.createFrom(Base64.getDecoder().decode(request));
-                        AttestationDocument aDoc = aReq.getAttestationDocument();
-                        NitroEnclaveIdentifier id = NitroEnclaveIdentifier.fromRaw(aDoc.getPcr(0));
-                        logger.info("Request enclave ID: {}", id);
-                        logger.info("Expected enclave IDs: {}", attestationService.listEnclaves());
-                    } catch (BadFormatException e) {
-                        throw new RuntimeException(e);
-                    }
-
                     setAttestationFailureReason(rc, AttestationFailureReason.ATTESTATION_FAILURE, Collections.singletonMap("cause", ar.cause().getMessage()));
                     logger.warn("attestation failure: ", ar.cause());
                     Error("attestation failure", 500, rc, null);
