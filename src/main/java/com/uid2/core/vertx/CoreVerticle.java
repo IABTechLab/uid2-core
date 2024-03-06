@@ -18,6 +18,8 @@ import com.uid2.shared.health.HealthManager;
 import com.uid2.shared.middleware.AttestationMiddleware;
 import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.secure.*;
+import com.uid2.shared.secure.nitro.AttestationDocument;
+import com.uid2.shared.secure.nitro.AttestationRequest;
 import com.uid2.shared.vertx.RequestCapturingHandler;
 import com.uid2.shared.vertx.VertxUtils;
 import io.vertx.core.AbstractVerticle;
@@ -227,6 +229,16 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             attestationService.attest(protocol, request, clientPublicKey, ar -> {
                 if (!ar.succeeded()) {
+                    try {
+                        AttestationRequest aReq = AttestationRequest.createFrom(Base64.getDecoder().decode(request));
+                        AttestationDocument aDoc = aReq.getAttestationDocument();
+                        NitroEnclaveIdentifier id = NitroEnclaveIdentifier.fromRaw(aDoc.getPcr(0));
+                        logger.info("Request enclave ID: {}", id);
+                        logger.info("Expected enclave IDs: {}", attestationService.listEnclaves());
+                    } catch (BadFormatException e) {
+                        throw new RuntimeException(e);
+                    }
+
                     setAttestationFailureReason(rc, AttestationFailureReason.ATTESTATION_FAILURE, Collections.singletonMap("cause", ar.cause().getMessage()));
                     logger.warn("attestation failure: ", ar.cause());
                     Error("attestation failure", 500, rc, null);
