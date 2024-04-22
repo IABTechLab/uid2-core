@@ -45,7 +45,7 @@ on:
 
 jobs:
   Image:
-    uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-publish-java-to-docker-versioned.yaml@v2
+    uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-publish-java-to-docker-versioned.yaml@tjm-UID2-1405-remove-hash-from-version
     with: 
       release_type: ${{ inputs.release_type }}
       cloud_provider: default
