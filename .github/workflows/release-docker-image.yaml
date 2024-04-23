@@ -7,10 +7,10 @@ on:
         type: choice
         description: The type of release
         options:
-        - Major
-        - Minor
-        - Patch
         - Snapshot
+        - Patch
+        - Minor
+        - Major
       operator_image_version:
         description: 'Image: Operator image version'
         type: string
@@ -48,7 +48,6 @@ jobs:
     uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-publish-java-to-docker-versioned.yaml@v2
     with: 
       release_type: ${{ inputs.release_type }}
-      cloud_provider: default
       vulnerability_severity: ${{ inputs.vulnerability_severity }}
     secrets: inherit
 
