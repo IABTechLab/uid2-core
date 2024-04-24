@@ -195,4 +195,3 @@ secrets.*.json
 
 dependencies/
 conf/*.json
-.pre-commit-trivy-cache/
