@@ -1,6 +1,7 @@
 package com.uid2.core.vertx;
 
 import com.uid2.core.handler.AttestationFailureHandler;
+import com.uid2.core.handler.ExceptionFilterBodyHandler;
 import com.uid2.core.handler.GenericFailureHandler;
 import com.uid2.core.model.ConfigStore;
 import com.uid2.core.service.*;
@@ -147,7 +148,7 @@ public class CoreVerticle extends AbstractVerticle {
     private Router createRoutesSetup() {
         final Router router = Router.router(vertx);
 
-        router.route().handler(BodyHandler.create());
+        router.route().handler(new ExceptionFilterBodyHandler());
         router.route().handler(new RequestCapturingHandler());
         router.route().handler(CorsHandler.create()
                 .addRelativeOrigin(".*.")
