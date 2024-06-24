@@ -98,6 +98,16 @@ public class TestCoreVerticle {
         }
     }
 
+    private void post(Vertx vertx, String endpoint, MultiMap form, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
+        WebClient client = WebClient.create(vertx);
+        client.postAbs(getUrlForEndpoint(endpoint)).putHeader("content-type", "multipart/form-data").sendForm(form, handler);
+    }
+
+    private void get(Vertx vertx, String endpoint, MultiMap form, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
+        WebClient client = WebClient.create(vertx);
+        client.getAbs(getUrlForEndpoint(endpoint)).putHeader("content-type", "multipart/form-data").sendForm(form, handler);
+    }
+
     private void addAttestationProvider(String protocol) {
         attestationService.with(protocol, attestationProvider);
     }
@@ -399,6 +409,44 @@ public class TestCoreVerticle {
                 testContext.failNow(e);
             }
 
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void multipartRequestWrongMethodForMultipart(Vertx vertx, VertxTestContext testContext) {
+        MultiMap form = MultiMap.caseInsensitiveMultiMap();
+        form.set("firstValue", "value1");
+        form.set("secondValue", "value2");
+
+        get(vertx, "/sites/refresh", form, (ar) -> {
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            assertEquals("Content-Type \"multipart/*\" Not Allowed\"", response.bodyAsString());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void multipartRequestWrongMethodForEndpoint(Vertx vertx, VertxTestContext testContext) {
+        MultiMap form = MultiMap.caseInsensitiveMultiMap();
+        form.set("firstValue", "value1");
+        form.set("secondValue", "value2");
+
+        post(vertx, "/sites/refresh", form, (ar) -> {
+            HttpResponse response = ar.result();
+            assertEquals(405, response.statusCode());
+            assertEquals("Method Not Allowed", response.statusMessage());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void wrongMethodForEndpoint(Vertx vertx, VertxTestContext testContext) {
+        post(vertx, "/sites/refresh", makeAttestationRequestJson(null, null), ar -> {
+            HttpResponse response = ar.result();
+            assertEquals(405, response.statusCode());
+            assertEquals("Method Not Allowed", response.statusMessage());
             testContext.completeNow();
         });
     }
