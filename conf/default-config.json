@@ -16,5 +16,6 @@
     "partners_metadata_path": null,
     "att_token_enc_key": null,
     "att_token_enc_salt": null,
-    "enforceJwt": false
+    "enforceJwt": false,
+    "s3_encryption_keys_metadata_path": null
 }
