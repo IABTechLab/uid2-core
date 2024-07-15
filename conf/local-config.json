@@ -18,5 +18,6 @@
     "att_token_enc_key": "<key-for-attestation-token>",
     "att_token_enc_salt": "<salt-for-attestation-token>",
     "provide_private_site_data": true,
-    "enforceJwt": false
+    "enforceJwt": false,
+    "s3_encryption_keys_metadata_path": "/com.uid2.core/test/s3encryption_keys/metadata.json"
 }

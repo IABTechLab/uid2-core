@@ -14,6 +14,8 @@ import com.uid2.shared.attest.IAttestationTokenService;
 import com.uid2.shared.attest.JwtService;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.model.S3Key;
 import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.EmbeddedResourceStorage;
 import com.uid2.shared.cloud.ICloudStorage;
@@ -104,6 +106,7 @@ public class Main {
 
             RotatingStoreVerticle enclaveRotatingVerticle = null;
             RotatingStoreVerticle operatorRotatingVerticle = null;
+            RotatingStoreVerticle s3KeyRotatingVerticle = null;
             CoreVerticle coreVerticle = null;
             try {
                 CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
@@ -114,6 +117,11 @@ public class Main {
                 String enclaveMetadataPath = SecretStore.Global.get(EnclaveIdentifierProvider.ENCLAVES_METADATA_PATH);
                 EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
                 enclaveRotatingVerticle = new RotatingStoreVerticle("enclaves", 60000, enclaveIdProvider);
+
+                CloudPath s3KeyMetadataPath = new CloudPath(config.getString("s3_encryption_keys_metadata_path"));
+                GlobalScope s3KeyScope = new GlobalScope(s3KeyMetadataPath);
+                RotatingS3KeyProvider s3KeyProvider = new RotatingS3KeyProvider(cloudStorage, s3KeyScope);
+                s3KeyRotatingVerticle = new RotatingStoreVerticle("s3encryption_keys", 60000, s3KeyProvider);
 
                 String corePublicUrl = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
                 AttestationService attestationService = new AttestationService()
@@ -157,6 +165,7 @@ public class Main {
 
             vertx.deployVerticle(enclaveRotatingVerticle);
             vertx.deployVerticle(operatorRotatingVerticle);
+            vertx.deployVerticle(s3KeyRotatingVerticle);
             vertx.deployVerticle(coreVerticle);
         });
     }
