@@ -1,4 +1,4 @@
-package com.uid2.core.vertx;
+ package com.uid2.core.vertx;
 
 import com.uid2.core.handler.AttestationFailureHandler;
 import com.uid2.core.handler.GenericFailureHandler;
@@ -77,6 +77,8 @@ public class CoreVerticle extends AbstractVerticle {
     private final IPartnerMetadataProvider partnerMetadataProvider;
     private final OperatorJWTTokenProvider operatorJWTTokenProvider;
     private final JwtService jwtService;
+    private final IS3EncryptionKeyMetadataProvider s3EncryptionKeyMetadataProvider;
+
 
     public CoreVerticle(ICloudStorage cloudStorage,
                         IAuthorizableProvider authProvider,
@@ -117,6 +119,7 @@ public class CoreVerticle extends AbstractVerticle {
         this.keysetMetadataProvider = new KeysetMetadataProvider(cloudStorage);
         this.keysetKeyMetadataProvider = new KeysetKeysMetadataProvider(cloudStorage);
         this.clientSideKeypairMetadataProvider = new ClientSideKeypairMetadataProvider(cloudStorage);
+        this.s3EncryptionKeyMetadataProvider = new S3EncryptionKeyMetadataProvider(cloudStorage);
         this.serviceMetadataProvider = new ServiceMetadataProvider(cloudStorage);
         this.serviceLinkMetadataProvider = new ServiceLinkMetadataProvider(cloudStorage);
     }
@@ -177,7 +180,7 @@ public class CoreVerticle extends AbstractVerticle {
         router.get("/operators/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleOperatorRefresh), Role.OPTOUT_SERVICE));
         router.get("/partners/refresh").handler(auth.handle(attestationMiddleware.handle(this::handlePartnerRefresh), Role.OPTOUT_SERVICE));
         router.get("/ops/healthcheck").handler(this::handleHealthCheck);
-
+        router.get("/s3encryption_keys/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleS3EncryptionKeyRefresh), Role.OPERATOR));
         if (Optional.ofNullable(ConfigStore.Global.getBoolean("enable_test_endpoints")).orElse(false)) {
             router.route("/attest/get_token").handler(auth.handle(this::handleTestGetAttestationToken, Role.OPERATOR));
         }
@@ -596,6 +599,24 @@ public class CoreVerticle extends AbstractVerticle {
             Error("error", 500, rc, "error getting enclave lists");
         }
     }
+
+    private void handleS3EncryptionKeyRefresh(RoutingContext rc) {
+        logger.debug("handleS3EncryptionKeyRefresh: Start");
+        try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+
+            String metadata = s3EncryptionKeyMetadataProvider.getMetadata(info);
+
+            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(metadata);
+        } catch (Exception e) {
+            logger.warn("Exception in handleS3EncryptionKeyRefresh: {}", e.getMessage(), e);
+            Error("error", 500, rc, "error processing S3 encryption key refresh"+e.getMessage());
+        }
+        logger.debug("handleS3EncryptionKeyRefresh: End");
+    }
+
+
     //endregion test endpoints
 
     public static void Success(RoutingContext rc, Object body) {

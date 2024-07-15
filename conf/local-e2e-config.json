@@ -15,6 +15,7 @@
     "client_side_keypairs_metadata_path": "client_side_keypairs/metadata.json",
     "services_metadata_path": "services/metadata.json",
     "service_links_metadata_path": "service_links/metadata.json",
+    "s3_encryption_keys_metadata_path": "s3encryption_keys/metadata.json",
     "keys_metadata_path": "keys/metadata.json",
     "keys_acl_metadata_path": "keys_acl/metadata.json",
     "keysets_metadata_path": "keysets/metadata.json",

@@ -43,6 +43,8 @@ import io.vertx.micrometer.backends.BackendRegistries;
 import javax.management.*;
 import java.lang.management.ManagementFactory;
 import java.util.*;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 public class Main {
 
@@ -101,7 +103,6 @@ public class Main {
                 int expiryInSeconds = ConfigStore.Global.getInteger("pre_signed_url_expiry");
                 cloudStorage.setPreSignedUrlExpiry(expiryInSeconds);
             }
-
             RotatingStoreVerticle enclaveRotatingVerticle = null;
             RotatingStoreVerticle operatorRotatingVerticle = null;
             CoreVerticle coreVerticle = null;
@@ -160,6 +161,8 @@ public class Main {
             vertx.deployVerticle(coreVerticle);
         });
     }
+
+
 
     private static void setupMetrics(MicrometerMetricsOptions metricOptions) {
         BackendRegistries.setupBackend(metricOptions);
