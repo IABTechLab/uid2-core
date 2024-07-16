@@ -118,7 +118,7 @@ public class Main {
                 EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
                 enclaveRotatingVerticle = new RotatingStoreVerticle("enclaves", 60000, enclaveIdProvider);
 
-                CloudPath s3KeyMetadataPath = new CloudPath(config.getString("s3_encryption_keys_metadata_path"));
+                CloudPath s3KeyMetadataPath = new CloudPath(config.getString(Const.Config.S3keysMetadataPathProp));
                 GlobalScope s3KeyScope = new GlobalScope(s3KeyMetadataPath);
                 RotatingS3KeyProvider s3KeyProvider = new RotatingS3KeyProvider(cloudStorage, s3KeyScope);
                 s3KeyRotatingVerticle = new RotatingStoreVerticle("s3encryption_keys", 60000, s3KeyProvider);
