@@ -53,8 +53,6 @@ import java.util.*;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.model.S3Key;
 
-
-
 import static com.uid2.shared.Const.Config.EnforceJwtProp;
 
 public class CoreVerticle extends AbstractVerticle {
