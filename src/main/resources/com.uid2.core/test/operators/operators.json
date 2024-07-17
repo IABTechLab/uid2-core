@@ -1,5 +1,22 @@
 [
   {
+  "key": "UID2-O-L-999-dp9Dt0.JVoGpynN4J8nMA7FxmzsavxJa8B9H74y9xdEE=",
+  "name": "Special",
+  "contact": "Special",
+  "protocol": "trusted",
+  "created": 1701210253,
+  "disabled": false,
+  "roles": [
+    "OPERATOR",
+    "OPTOUT"
+  ],
+  "site_id": 999,
+  "operator_type": "PUBLIC",
+  "key_hash": "rTD7MpJn5/j4G6N+Ph659F4FGtiJy7MLNtfVA7XUdu6cYC9ok6EwGeI2upyDOvxvPkOCUn7HBKay8ubPQmRc0A==",
+  "key_salt": "ZpqdDFksFeWx/ouPAoWi39TVuGrSGwijfCN4f0pAl2Y=",
+  "key_id": "UID2-O-L-999-dp9Dt"
+},
+  {
     "key": "test-partner-key",
     "name": "partner@uid2.com",
     "contact": "partner@uid2.com",

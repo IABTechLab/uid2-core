@@ -50,6 +50,10 @@ import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.*;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.model.S3Key;
+
+
 
 import static com.uid2.shared.Const.Config.EnforceJwtProp;
 
@@ -78,6 +82,7 @@ public class CoreVerticle extends AbstractVerticle {
     private final IPartnerMetadataProvider partnerMetadataProvider;
     private final OperatorJWTTokenProvider operatorJWTTokenProvider;
     private final JwtService jwtService;
+    private final RotatingS3KeyProvider s3KeyProvider;
 
     public CoreVerticle(ICloudStorage cloudStorage,
                         IAuthorizableProvider authProvider,
@@ -85,7 +90,8 @@ public class CoreVerticle extends AbstractVerticle {
                         IAttestationTokenService attestationTokenService,
                         IEnclaveIdentifierProvider enclaveIdentifierProvider,
                         OperatorJWTTokenProvider operatorJWTTokenProvider,
-                        JwtService jwtService) throws Exception {
+                        JwtService jwtService,
+                        RotatingS3KeyProvider s3KeyProvider) throws Exception {
         this.operatorJWTTokenProvider = operatorJWTTokenProvider;
         this.healthComponent.setHealthStatus(false, "not started");
 
@@ -96,6 +102,8 @@ public class CoreVerticle extends AbstractVerticle {
         this.jwtService = jwtService;
         this.enclaveIdentifierProvider = enclaveIdentifierProvider;
         this.enclaveIdentifierProvider.addListener(this.attestationService);
+        this.s3KeyProvider = s3KeyProvider;
+
 
         final String jwtAudience = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
         final String jwtIssuer = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
@@ -166,6 +174,7 @@ public class CoreVerticle extends AbstractVerticle {
                 .handler(new AttestationFailureHandler())
                 .handler(auth.handle(this::handleAttestAsync, Role.OPERATOR, Role.OPTOUT_SERVICE));
         router.get("/sites/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleSiteRefresh), Role.OPERATOR));
+        router.get("/s3encryption_keys/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleRefreshS3Keys), Role.OPERATOR));
         router.get("/key/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeyRefresh), Role.OPERATOR));
         router.get("/key/acl/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeyAclRefresh), Role.OPERATOR));
         router.get("/key/keyset/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeysetRefresh), Role.OPERATOR));
@@ -565,6 +574,42 @@ public class CoreVerticle extends AbstractVerticle {
         handleEnclaveChange(rc, true);
     }
 
+    private void handleRefreshS3Keys(RoutingContext rc) {
+        try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+            int siteId = info.getSiteId();
+
+            List<S3Key> s3Keys = s3KeyProvider.siteToKeysMap.get(siteId);
+
+            if (s3Keys == null || s3Keys.isEmpty()) {
+                Error("No S3 keys found", 404, rc, "No S3 keys found for siteId: " + siteId);
+                return;
+            }
+
+            JsonArray s3KeysArray = new JsonArray();
+            for (S3Key key : s3Keys) {
+                JsonObject keyJson = new JsonObject()
+                        .put("id", key.getId())
+                        .put("siteId", key.getSiteId())
+                        .put("activates", key.getActivates())
+                        .put("created", key.getCreated())
+                        .put("secret", key.getSecret());
+                s3KeysArray.add(keyJson);
+            }
+
+            JsonObject response = new JsonObject();
+            response.put("siteId", siteId);
+            response.put("s3Keys", s3KeysArray);
+
+            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(response.encode());
+        } catch (Exception e) {
+            logger.error("Error in handleRefreshS3Keys: ", e);
+            e.printStackTrace(); // Print stack trace to console for debugging
+            Error("Internal Server Error", 500, rc, "Error processing S3 key refresh HELLO"+ e.getMessage());
+        }
+    }
+
     //region test endpoints
     private void handleTestGetAttestationToken(RoutingContext rc) {
         HttpMethod method = rc.request().method();
@@ -611,15 +656,12 @@ public class CoreVerticle extends AbstractVerticle {
     }
 
     public static void Error(String errorStatus, int statusCode, RoutingContext rc, String message) {
-        final JsonObject json = new JsonObject(new HashMap<String, Object>() {
-            {
-                put("status", errorStatus);
-            }
-        });
-        if (message != null) {
-            json.put("message", message);
-        }
-        rc.response().setStatusCode(statusCode).putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+        final JsonObject json = new JsonObject()
+                .put("status", errorStatus)
+                .put("message", message);
+        System.out.println("Error Status: " + errorStatus + ", Message: " + message);
+        rc.response().setStatusCode(statusCode)
+                .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
     }
 }
