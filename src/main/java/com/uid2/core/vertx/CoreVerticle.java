@@ -130,6 +130,16 @@ public class CoreVerticle extends AbstractVerticle {
         this.serviceLinkMetadataProvider = new ServiceLinkMetadataProvider(cloudStorage);
     }
 
+    public CoreVerticle(ICloudStorage cloudStorage,
+                        IAuthorizableProvider authorizableProvider,
+                        AttestationService attestationService,
+                        IAttestationTokenService attestationTokenService,
+                        IEnclaveIdentifierProvider enclaveIdentifierProvider,
+                        OperatorJWTTokenProvider jwtTokenProvider,
+                        JwtService jwtService) throws Exception {
+        this(cloudStorage, authorizableProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, jwtTokenProvider, jwtService, null);
+    }
+
     @Override
     public void start(Promise<Void> startPromise) {
         this.healthComponent.setHealthStatus(false, "still starting");
@@ -656,12 +666,15 @@ public class CoreVerticle extends AbstractVerticle {
     }
 
     public static void Error(String errorStatus, int statusCode, RoutingContext rc, String message) {
-        final JsonObject json = new JsonObject()
-                .put("status", errorStatus)
-                .put("message", message);
-        System.out.println("Error Status: " + errorStatus + ", Message: " + message);
-        rc.response().setStatusCode(statusCode)
-                .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+        final JsonObject json = new JsonObject(new HashMap<String, Object>() {
+            {
+                put("status", errorStatus);
+            }
+        });
+        if (message != null) {
+            json.put("message", message);
+        }
+        rc.response().setStatusCode(statusCode).putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
     }
 }
