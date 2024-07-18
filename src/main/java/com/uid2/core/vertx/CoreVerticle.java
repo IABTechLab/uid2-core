@@ -181,8 +181,8 @@ public class CoreVerticle extends AbstractVerticle {
         router.post("/attest")
                 .handler(new AttestationFailureHandler())
                 .handler(auth.handle(this::handleAttestAsync, Role.OPERATOR, Role.OPTOUT_SERVICE));
+        router.get("/s3encryption_keys/retrieve").handler(auth.handle(attestationMiddleware.handle(this::handleRefreshS3Keys), Role.OPERATOR));
         router.get("/sites/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleSiteRefresh), Role.OPERATOR));
-        router.get("/s3encryption_keys/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleRefreshS3Keys), Role.OPERATOR));
         router.get("/key/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeyRefresh), Role.OPERATOR));
         router.get("/key/acl/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeyAclRefresh), Role.OPERATOR));
         router.get("/key/keyset/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeysetRefresh), Role.OPERATOR));
