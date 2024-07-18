@@ -613,8 +613,7 @@ public class CoreVerticle extends AbstractVerticle {
                     .end(response.encode());
         } catch (Exception e) {
             logger.error("Error in handleRefreshS3Keys: ", e);
-            e.printStackTrace(); // Print stack trace to console for debugging
-            Error("Internal Server Error", 500, rc, "Error processing S3 key refresh HELLO"+ e.getMessage());
+            Error("error", 500, rc, "error generating attestation token");
         }
     }
 
