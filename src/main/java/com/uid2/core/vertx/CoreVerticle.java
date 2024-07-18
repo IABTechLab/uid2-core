@@ -590,24 +590,12 @@ public class CoreVerticle extends AbstractVerticle {
             List<S3Key> s3Keys = s3KeyProvider.siteToKeysMap.get(siteId);
 
             if (s3Keys == null || s3Keys.isEmpty()) {
-                Error("No S3 keys found", 404, rc, "No S3 keys found for siteId: " + siteId);
+                Error("No S3 keys found", 500, rc, "No S3 keys found for siteId: " + siteId);
                 return;
             }
 
-            JsonArray s3KeysArray = new JsonArray();
-            for (S3Key key : s3Keys) {
-                JsonObject keyJson = new JsonObject()
-                        .put("id", key.getId())
-                        .put("siteId", key.getSiteId())
-                        .put("activates", key.getActivates())
-                        .put("created", key.getCreated())
-                        .put("secret", key.getSecret());
-                s3KeysArray.add(keyJson);
-            }
-
-            JsonObject response = new JsonObject();
-            response.put("siteId", siteId);
-            response.put("s3Keys", s3KeysArray);
+            JsonObject response = new JsonObject()
+                    .put("s3Keys", new JsonArray(s3Keys));
 
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(response.encode());
