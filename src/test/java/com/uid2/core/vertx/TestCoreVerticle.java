@@ -62,8 +62,6 @@ public class TestCoreVerticle {
     private OperatorJWTTokenProvider operatorJWTTokenProvider;
     @Mock
     private JwtService jwtService;
-    @Mock
-    private RotatingS3KeyProvider s3KeyProvider;
 
     private AttestationService attestationService;
 
@@ -81,10 +79,7 @@ public class TestCoreVerticle {
         attestationService = new AttestationService();
         MockitoAnnotations.initMocks(this);
 
-        s3KeyProvider.siteToKeysMap = new HashMap<>();
-        s3KeyProvider.siteToKeysMap.put(1, List.of(new S3Key(1, 88,100,1,"key1")));
-
-        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, s3KeyProvider);
+        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
     }
 
