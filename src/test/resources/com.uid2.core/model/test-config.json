@@ -22,5 +22,6 @@
     "att_token_enc_key": "<key-for-attestation-token>",
     "att_token_enc_salt": "<salt-for-attestation-token>",
     "att_token_lifetime_seconds": 120,
-    "provide_private_site_data": true
+    "provide_private_site_data": true,
+    "s3_keys_metadata_path": "s3encryption_keys/metadata.json"
 }

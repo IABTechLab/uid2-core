@@ -14,8 +14,10 @@ import com.uid2.shared.secure.AttestationException;
 import com.uid2.shared.secure.AttestationFailure;
 import com.uid2.shared.secure.AttestationResult;
 import com.uid2.shared.secure.ICoreAttestationService;
+import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
@@ -38,6 +40,10 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+import com.uid2.shared.model.S3Key;
+import java.util.Arrays;
+import java.util.HashMap;
+
 import static org.mockito.Mockito.*;
 
 @ExtendWith(VertxExtension.class)
@@ -56,6 +62,8 @@ public class TestCoreVerticle {
     private OperatorJWTTokenProvider operatorJWTTokenProvider;
     @Mock
     private JwtService jwtService;
+    @Mock
+    private RotatingS3KeyProvider s3KeyProvider;
 
     private AttestationService attestationService;
 
@@ -72,7 +80,11 @@ public class TestCoreVerticle {
 
         attestationService = new AttestationService();
         MockitoAnnotations.initMocks(this);
-        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService);
+
+        s3KeyProvider.siteToKeysMap = new HashMap<>();
+        s3KeyProvider.siteToKeysMap.put(1, List.of(new S3Key(1, 88,100,1,"key1")));
+
+        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, s3KeyProvider);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
     }
 
@@ -444,6 +456,16 @@ public class TestCoreVerticle {
     @Test
     void wrongMethodForEndpoint(Vertx vertx, VertxTestContext testContext) {
         post(vertx, "/sites/refresh", makeAttestationRequestJson(null, null), ar -> {
+            HttpResponse response = ar.result();
+            assertEquals(405, response.statusCode());
+            assertEquals("Method Not Allowed", response.statusMessage());
+            testContext.completeNow();
+        });
+    }
+
+    @Test
+    void wrongMethodForEndpointS3(Vertx vertx, VertxTestContext testContext) {
+        post(vertx, "/s3encryption_keys/retrieve", makeAttestationRequestJson(null, null), ar -> {
             HttpResponse response = ar.result();
             assertEquals(405, response.statusCode());
             assertEquals("Method Not Allowed", response.statusMessage());

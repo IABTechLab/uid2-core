@@ -582,7 +582,7 @@ public class CoreVerticle extends AbstractVerticle {
         handleEnclaveChange(rc, true);
     }
 
-    private void handleS3EncryptionKeysRetrieval(RoutingContext rc) {
+    void handleS3EncryptionKeysRetrieval(RoutingContext rc) {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             int siteId = info.getSiteId();
