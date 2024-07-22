@@ -28,6 +28,7 @@ public final class MetadataHelper {
         StoreScope store;
         Boolean providePrivateSiteData = ConfigStore.Global.getBoolean("provide_private_site_data");
         // need a logic to know if operator can decrypt stuff or not
+        Boolean canDecrypt = false;
         if (canDecrypt){
             if (operatorType == OperatorType.PUBLIC){
                 store = new EncryptedScope(new CloudPath(metadataPathName),siteId, true);
@@ -43,8 +44,8 @@ public final class MetadataHelper {
             {
                 store = new SiteScope(new CloudPath(metadataPathName), siteId);
             }
-            return store.getMetadataPath().toString();
         }
+        return store.getMetadataPath().toString();
     }
 
     public static String readToEndAsString(InputStream stream) throws IOException {
