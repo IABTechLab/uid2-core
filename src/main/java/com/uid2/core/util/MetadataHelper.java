@@ -4,6 +4,7 @@ import com.uid2.core.model.ConfigStore;
 import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.store.CloudPath;
+import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
 import com.uid2.shared.store.scope.StoreScope;
@@ -26,15 +27,24 @@ public final class MetadataHelper {
     {
         StoreScope store;
         Boolean providePrivateSiteData = ConfigStore.Global.getBoolean("provide_private_site_data");
-        if (operatorType == OperatorType.PUBLIC || (providePrivateSiteData == null || !providePrivateSiteData.booleanValue()))
-        {
-            store = new GlobalScope(new CloudPath(metadataPathName));
+        // need a logic to know if operator can decrypt stuff or not
+        if (canDecrypt){
+            if (operatorType == OperatorType.PUBLIC){
+                store = new EncryptedScope(new CloudPath(metadataPathName),siteId, true);
+            }else{
+                store = new EncryptedScope(new CloudPath(metadataPathName),siteId, false);
+            }
+        }else{
+            if (operatorType == OperatorType.PUBLIC || (providePrivateSiteData == null || !providePrivateSiteData.booleanValue()))
+            {
+                store = new GlobalScope(new CloudPath(metadataPathName));
+            }
+            else //PRIVATE
+            {
+                store = new SiteScope(new CloudPath(metadataPathName), siteId);
+            }
+            return store.getMetadataPath().toString();
         }
-        else //PRIVATE
-        {
-            store = new SiteScope(new CloudPath(metadataPathName), siteId);
-        }
-        return store.getMetadataPath().toString();
     }
 
     public static String readToEndAsString(InputStream stream) throws IOException {
