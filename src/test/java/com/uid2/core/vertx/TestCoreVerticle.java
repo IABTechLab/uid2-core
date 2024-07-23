@@ -528,4 +528,96 @@ public class TestCoreVerticle {
     }
 
 
+    @Tag("dontForceJwt")
+    @Test
+    void s3encryptionKeyRetrieveSuccessWithThreeKeys(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(attestationProtocolPublic, Role.OPERATOR);
+        addAttestationProvider(attestationProtocolPublic);
+        onHandleAttestationRequest(() -> {
+            byte[] resultPublicKey = null;
+            return Future.succeededFuture(new AttestationResult(resultPublicKey, "test"));
+        });
+
+        // Create 3 S3Key objects
+        S3Key key1 = new S3Key(1, 88, 1687635529, 1687808329, "secret1");
+        S3Key key2 = new S3Key(2, 88, 1687635530, 1687808330, "secret2");
+        S3Key key3 = new S3Key(3, 88, 1687635531, 1687808331, "secret3");
+
+        List<S3Key> keys = Arrays.asList(key1, key2, key3);
+        when(s3KeyProvider.getKeysForSiteFromMap(88)).thenReturn(keys);
+
+        get(vertx, "s3encryption_keys/retrieve", ar -> {
+            if (ar.succeeded()) {
+                HttpResponse<Buffer> response = ar.result();
+                assertEquals(200, response.statusCode());
+
+                JsonObject json = response.bodyAsJsonObject();
+                JsonArray s3KeysArray = json.getJsonArray("s3Keys");
+
+                assertNotNull(s3KeysArray);
+                assertEquals(3, s3KeysArray.size());
+
+                for (int i = 0; i < 3; i++) {
+                    JsonObject s3KeyJson = s3KeysArray.getJsonObject(i);
+                    assertEquals(i + 1, s3KeyJson.getInteger("id"));
+                    assertEquals(88, s3KeyJson.getInteger("siteId"));
+                    assertEquals(1687635529 + i, s3KeyJson.getLong("activates"));
+                    assertEquals(1687808329 + i, s3KeyJson.getLong("created"));
+                    assertEquals("secret" + (i + 1), s3KeyJson.getString("secret"));
+                }
+
+                testContext.completeNow();
+            } else {
+                testContext.failNow(ar.cause());
+            }
+        });
+    }
+
+    @Tag("dontForceJwt")
+    @Test
+    void s3encryptionKeyRetrieveNoKeysOrError(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(attestationProtocolPublic, Role.OPERATOR);
+        addAttestationProvider(attestationProtocolPublic);
+        onHandleAttestationRequest(() -> {
+            byte[] resultPublicKey = null;
+            return Future.succeededFuture(new AttestationResult(resultPublicKey, "test"));
+        });
+
+        // Test case 1: No keys found
+        when(s3KeyProvider.getKeysForSiteFromMap(anyInt())).thenReturn(Collections.emptyList());
+
+        get(vertx, "s3encryption_keys/retrieve", ar -> {
+            if (ar.succeeded()) {
+                HttpResponse<Buffer> response = ar.result();
+                assertEquals(500, response.statusCode());
+
+                JsonObject json = response.bodyAsJsonObject();
+                assertEquals("No S3 keys found", json.getString("status"));
+                assertTrue(json.getString("message").contains("No S3 keys found for siteId:"));
+
+                // Test case 2: Exception thrown
+                when(s3KeyProvider.getKeysForSiteFromMap(anyInt())).thenThrow(new RuntimeException("Test exception"));
+
+                get(vertx, "s3encryption_keys/retrieve", ar2 -> {
+                    if (ar2.succeeded()) {
+                        HttpResponse<Buffer> response2 = ar2.result();
+                        assertEquals(500, response2.statusCode());
+
+                        JsonObject json2 = response2.bodyAsJsonObject();
+                        System.out.println(json2);
+                        assertEquals("error", json2.getString("status"));
+                        assertEquals("error generating attestation token", json2.getString("message"));
+
+                        testContext.completeNow();
+                    } else {
+                        testContext.failNow(ar2.cause());
+                    }
+                });
+            } else {
+                testContext.failNow(ar.cause());
+            }
+        });
+    }
+
+
 }
