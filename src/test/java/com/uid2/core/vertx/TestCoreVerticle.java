@@ -27,7 +27,9 @@ import io.vertx.junit5.VertxTestContext;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -43,6 +45,7 @@ import java.util.concurrent.Callable;
 import com.uid2.shared.model.S3Key;
 import java.util.Arrays;
 import java.util.HashMap;
+import software.amazon.awssdk.services.kms.endpoints.internal.Value;
 
 import static org.mockito.Mockito.*;
 
@@ -62,24 +65,31 @@ public class TestCoreVerticle {
     private OperatorJWTTokenProvider operatorJWTTokenProvider;
     @Mock
     private JwtService jwtService;
+    @Mock
+    private RotatingS3KeyProvider s3KeyProvider;
 
     private AttestationService attestationService;
 
     private static final String attestationProtocol = "test-attestation-protocol";
+    private static final String attestationProtocolPublic = "trusted";
 
     @BeforeEach
-    void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
+    void deployVerticle(TestInfo info, Vertx vertx, VertxTestContext testContext) throws Throwable {
         JsonObject config = new JsonObject();
         config.put(Const.Config.OptOutUrlProp, "test_optout_url");
         config.put(Const.Config.CorePublicUrlProp, "test_core_url");
         config.put(Const.Config.AwsKmsJwtSigningKeyIdProp, "test_aws_kms_keyId");
-        config.put(Const.Config.EnforceJwtProp, true);
+        if (info.getTags().contains("dontForceJwt")) {
+            config.put(Const.Config.EnforceJwtProp, false);
+        } else {
+            config.put(Const.Config.EnforceJwtProp, true);
+        }
         ConfigStore.Global.load(config);
 
         attestationService = new AttestationService();
         MockitoAnnotations.initMocks(this);
 
-        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService);
+        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, s3KeyProvider);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
     }
 
@@ -88,6 +98,10 @@ public class TestCoreVerticle {
     }
 
     private void fakeAuth(Role... roles) {
+        this.fakeAuth(attestationProtocol, roles);
+    }
+
+    private void fakeAuth(String attestationProtocol, Role... roles) {
         OperatorKey operatorKey = new OperatorKey("test-key-hash", "test-key-salt", "test-name", "test-contact", attestationProtocol, 0, false, 88, new HashSet<>(Arrays.asList(roles)), OperatorType.PRIVATE,  "test-key-id");
         when(authProvider.get(any())).thenReturn(operatorKey);
     }
@@ -113,6 +127,11 @@ public class TestCoreVerticle {
     private void get(Vertx vertx, String endpoint, MultiMap form, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
         WebClient client = WebClient.create(vertx);
         client.getAbs(getUrlForEndpoint(endpoint)).putHeader("content-type", "multipart/form-data").sendForm(form, handler);
+    }
+
+    private void get(Vertx vertx, String endpoint, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
+        WebClient client = WebClient.create(vertx);
+        client.getAbs(getUrlForEndpoint(endpoint)).send(handler);
     }
 
     private void addAttestationProvider(String protocol) {
@@ -467,4 +486,46 @@ public class TestCoreVerticle {
             testContext.completeNow();
         });
     }
+
+    @Tag("dontForceJwt")
+    @Test
+    void s3encryptionKeyRetrieveSuccess(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(attestationProtocolPublic, Role.OPERATOR);
+        addAttestationProvider(attestationProtocolPublic);
+        onHandleAttestationRequest(() -> {
+            byte[] resultPublicKey = null;
+            return Future.succeededFuture(new AttestationResult(resultPublicKey, "test"));
+        });
+
+        S3Key key = new S3Key(1, 88, 1687635529, 1687808329, "newSecret");
+
+        List<S3Key> keys = Arrays.asList(key);
+        when(s3KeyProvider.getKeysForSiteFromMap(88)).thenReturn(keys);
+
+        get(vertx, "s3encryption_keys/retrieve", ar -> {
+            if (ar.succeeded()) {
+                HttpResponse<Buffer> response = ar.result();
+                assertEquals(200, response.statusCode());
+
+                JsonObject json = response.bodyAsJsonObject();
+                JsonArray s3KeysArray = json.getJsonArray("s3Keys");
+
+                assertNotNull(s3KeysArray);
+                assertEquals(1, s3KeysArray.size());
+
+                JsonObject s3KeyJson = s3KeysArray.getJsonObject(0);
+                assertEquals(1, s3KeyJson.getInteger("id"));
+                assertEquals(88, s3KeyJson.getInteger("siteId"));
+                assertEquals(1687635529, s3KeyJson.getLong("activates"));
+                assertEquals(1687808329, s3KeyJson.getLong("created"));
+                assertEquals("newSecret", s3KeyJson.getString("secret"));
+
+                testContext.completeNow();
+            } else {
+                testContext.failNow(ar.cause());
+            }
+        });
+    }
+
+
 }
