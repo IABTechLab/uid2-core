@@ -4,5 +4,5 @@ import com.uid2.core.util.OperatorInfo;
 import com.uid2.shared.auth.OperatorType;
 
 public interface IKeyAclMetadataProvider {
-    String getMetadata(OperatorInfo info) throws Exception;
+    String getMetadata(OperatorInfo info, boolean includeEncrypted) throws Exception;
 }

@@ -78,6 +78,7 @@ public class CoreVerticle extends AbstractVerticle {
     private final IPartnerMetadataProvider partnerMetadataProvider;
     private final OperatorJWTTokenProvider operatorJWTTokenProvider;
     private final JwtService jwtService;
+    private static final String ENCRYPTION_SUPPORT_VERSION = "2.3"; // Set this to the appropriate version later
 
     public CoreVerticle(ICloudStorage cloudStorage,
                         IAuthorizableProvider authProvider,
@@ -362,8 +363,9 @@ public class CoreVerticle extends AbstractVerticle {
     private void handleKeyRefresh(RoutingContext rc) {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+            boolean includeEncrypted = isEncryptionSupported(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(keyMetadataProvider.getMetadata(info));
+                    .end(keyMetadataProvider.getMetadata(info, includeEncrypted));
         } catch (Exception e) {
             logger.warn("exception in handleKeyRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing key refresh");
@@ -373,8 +375,9 @@ public class CoreVerticle extends AbstractVerticle {
     private void handleKeyAclRefresh(RoutingContext rc) {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+            boolean includeEncrypted = isEncryptionSupported(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(keyAclMetadataProvider.getMetadata(info));
+                    .end(keyAclMetadataProvider.getMetadata(info, includeEncrypted));
         } catch (Exception e) {
             logger.warn("exception in handleKeyAclRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing key acl refresh");
@@ -384,8 +387,9 @@ public class CoreVerticle extends AbstractVerticle {
     private void handleKeysetRefresh(RoutingContext rc) {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+            boolean includeEncrypted = isEncryptionSupported(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(keysetMetadataProvider.getMetadata(info));
+                    .end(keysetMetadataProvider.getMetadata(info, includeEncrypted));
         } catch (Exception e) {
             logger.warn("exception in handleKeysetRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing key refresh");
@@ -395,8 +399,9 @@ public class CoreVerticle extends AbstractVerticle {
     private void handleKeysetKeyRefresh(RoutingContext rc) {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+            boolean includeEncrypted = isEncryptionSupported(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(keysetKeyMetadataProvider.getMetadata(info));
+                    .end(keysetKeyMetadataProvider.getMetadata(info, includeEncrypted));
         } catch (Exception e) {
             logger.warn("exception in handleKeysetKeyRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing key refresh");
@@ -406,8 +411,9 @@ public class CoreVerticle extends AbstractVerticle {
     private void handleClientRefresh(RoutingContext rc) {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+            boolean includeEncrypted = isEncryptionSupported(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(clientMetadataProvider.getMetadata(info));
+                    .end(clientMetadataProvider.getMetadata(info, includeEncrypted));
         } catch (Exception e) {
             logger.warn("exception in handleClientRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing client refresh");
@@ -621,5 +627,24 @@ public class CoreVerticle extends AbstractVerticle {
         }
         rc.response().setStatusCode(statusCode).putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .end(json.encode());
+    }
+
+    private boolean isEncryptionSupported(RoutingContext context) {
+        String appVersion = context.request().getHeader(Const.Http.AppVersionHeader);
+        if (appVersion == null) return false;
+        return compareVersions(appVersion, ENCRYPTION_SUPPORT_VERSION) >= 0;
+    }
+
+    private int compareVersions(String v1, String v2) {
+        String[] parts1 = v1.split("\\.");
+        String[] parts2 = v2.split("\\.");
+        int length = Math.max(parts1.length, parts2.length);
+        for (int i = 0; i < length; i++) {
+            int part1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
+            int part2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+            if (part1 < part2) return -1;
+            if (part1 > part2) return 1;
+        }
+        return 0;
     }
 }
