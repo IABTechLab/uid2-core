@@ -23,27 +23,29 @@ public final class MetadataHelper {
         return SiteSpecificDataSubDirPath +siteId + metadataPathName;
     }
 
+    public static String getEncryptedMetadataPathName(OperatorType operatorType, int siteId, String metadataPathName) {
+        StoreScope store;
+
+        if (operatorType == OperatorType.PUBLIC) {
+            store = new EncryptedScope(new CloudPath(metadataPathName), siteId, true);
+        } else {
+            store = new EncryptedScope(new CloudPath(metadataPathName), siteId, false);
+        }
+
+        return store.getMetadataPath().toString();
+    }
+
     public static String getMetadataPathName(OperatorType operatorType, int siteId, String metadataPathName)
     {
         StoreScope store;
         Boolean providePrivateSiteData = ConfigStore.Global.getBoolean("provide_private_site_data");
-        // need a logic to know if operator can decrypt stuff or not
-        Boolean canDecrypt = false;
-        if (canDecrypt){
-            if (operatorType == OperatorType.PUBLIC){
-                store = new EncryptedScope(new CloudPath(metadataPathName),siteId, true);
-            }else{
-                store = new EncryptedScope(new CloudPath(metadataPathName),siteId, false);
-            }
-        }else{
-            if (operatorType == OperatorType.PUBLIC || (providePrivateSiteData == null || !providePrivateSiteData.booleanValue()))
-            {
-                store = new GlobalScope(new CloudPath(metadataPathName));
-            }
-            else //PRIVATE
-            {
-                store = new SiteScope(new CloudPath(metadataPathName), siteId);
-            }
+        if (operatorType == OperatorType.PUBLIC || (providePrivateSiteData == null || !providePrivateSiteData.booleanValue()))
+        {
+            store = new GlobalScope(new CloudPath(metadataPathName));
+        }
+        else //PRIVATE
+        {
+            store = new SiteScope(new CloudPath(metadataPathName), siteId);
         }
         return store.getMetadataPath().toString();
     }

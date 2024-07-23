@@ -7,9 +7,7 @@ import com.uid2.core.model.SecretStore;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 
-
-import static com.uid2.core.util.MetadataHelper.getMetadataPathName;
-import static com.uid2.core.util.MetadataHelper.readToEndAsString;
+import static com.uid2.core.util.MetadataHelper.*;
 
 public class KeysetKeysMetadataProvider implements IKeysetKeyMetadataProvider {
     private final ICloudStorage metadataStreamProvider;
@@ -22,6 +20,16 @@ public class KeysetKeysMetadataProvider implements IKeysetKeyMetadataProvider {
     @Override
     public String getMetadata(OperatorInfo info) throws Exception {
         String pathname = getMetadataPathName(info.getOperatorType(), info.getSiteId(), SecretStore.Global.get(Const.Config.KeysetKeysMetadataPathProp));
+        String original = readToEndAsString(metadataStreamProvider.download(pathname));
+        JsonObject main = (JsonObject) Json.decodeValue(original);
+        JsonObject obj = main.getJsonObject("keyset_keys");
+        String location = obj.getString("location");
+        obj.put("location", downloadUrlGenerator.preSignUrl(location).toString());
+        return main.encode();
+    }
+
+    public String getEncryptedMetadata(OperatorInfo info) throws Exception {
+        String pathname = getEncryptedMetadataPathName(info.getOperatorType(), info.getSiteId(), SecretStore.Global.get(Const.Config.KeysetKeysMetadataPathProp));
         String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonObject obj = main.getJsonObject("keyset_keys");

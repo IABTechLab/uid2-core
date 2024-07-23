@@ -178,6 +178,12 @@ public class CoreVerticle extends AbstractVerticle {
         router.get("/operators/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleOperatorRefresh), Role.OPTOUT_SERVICE));
         router.get("/partners/refresh").handler(auth.handle(attestationMiddleware.handle(this::handlePartnerRefresh), Role.OPTOUT_SERVICE));
         router.get("/ops/healthcheck").handler(this::handleHealthCheck);
+        // New encrypted scope endpoints
+        router.get("/encrypted/key/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleEncryptedKeyRefresh), Role.OPERATOR));
+        router.get("/encrypted/key/acl/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleEncryptedKeyAclRefresh), Role.OPERATOR));
+        router.get("/encrypted/key/keyset/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleEncryptedKeysetRefresh), Role.OPERATOR));
+        router.get("/encrypted/key/keyset-keys/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleEncryptedKeysetKeyRefresh), Role.OPERATOR));
+        router.get("/encrypted/clients/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleEncryptedClientRefresh), Role.OPERATOR));
 
         if (Optional.ofNullable(ConfigStore.Global.getBoolean("enable_test_endpoints")).orElse(false)) {
             router.route("/attest/get_token").handler(auth.handle(this::handleTestGetAttestationToken, Role.OPERATOR));
@@ -370,11 +376,33 @@ public class CoreVerticle extends AbstractVerticle {
         }
     }
 
+    private void handleEncryptedKeyRefresh(RoutingContext rc) {
+        try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(keyMetadataProvider.getEncryptedMetadata(info));
+        } catch (Exception e) {
+            logger.warn("exception in handleKeyRefresh: " + e.getMessage(), e);
+            Error("error", 500, rc, "error processing key refresh");
+        }
+    }
+
     private void handleKeyAclRefresh(RoutingContext rc) {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(keyAclMetadataProvider.getMetadata(info));
+        } catch (Exception e) {
+            logger.warn("exception in handleKeyAclRefresh: " + e.getMessage(), e);
+            Error("error", 500, rc, "error processing key acl refresh");
+        }
+    }
+
+    private void handleEncryptedKeyAclRefresh(RoutingContext rc) {
+        try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(keyAclMetadataProvider.getEncryptedMetadata(info));
         } catch (Exception e) {
             logger.warn("exception in handleKeyAclRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing key acl refresh");
@@ -392,6 +420,16 @@ public class CoreVerticle extends AbstractVerticle {
         }
     }
 
+    private void handleEncryptedKeysetRefresh(RoutingContext rc) {
+        try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(keysetMetadataProvider.getEncryptedMetadata(info));
+        } catch (Exception e) {
+            logger.warn("exception in handleKeysetRefresh: " + e.getMessage(), e);
+            Error("error", 500, rc, "error processing key refresh");
+        }
+    }
     private void handleKeysetKeyRefresh(RoutingContext rc) {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
@@ -403,11 +441,33 @@ public class CoreVerticle extends AbstractVerticle {
         }
     }
 
+    private void handleEncryptedKeysetKeyRefresh(RoutingContext rc) {
+        try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(keysetKeyMetadataProvider.getEncryptedMetadata(info));
+        } catch (Exception e) {
+            logger.warn("exception in handleKeysetKeyRefresh: " + e.getMessage(), e);
+            Error("error", 500, rc, "error processing key refresh");
+        }
+    }
+
     private void handleClientRefresh(RoutingContext rc) {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(clientMetadataProvider.getMetadata(info));
+        } catch (Exception e) {
+            logger.warn("exception in handleClientRefresh: " + e.getMessage(), e);
+            Error("error", 500, rc, "error processing client refresh");
+        }
+    }
+
+    private void handleEncryptedClientRefresh(RoutingContext rc) {
+        try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
+            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .end(clientMetadataProvider.getEncryptedMetadata(info));
         } catch (Exception e) {
             logger.warn("exception in handleClientRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing client refresh");

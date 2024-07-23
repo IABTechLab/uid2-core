@@ -4,6 +4,8 @@ import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.OperatorType;
 import io.vertx.ext.web.RoutingContext;
 
+import java.util.Map;
+
 import static com.uid2.shared.middleware.AuthMiddleware.API_CLIENT_PROP;
 
 /**

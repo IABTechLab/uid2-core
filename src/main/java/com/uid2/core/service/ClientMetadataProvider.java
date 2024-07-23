@@ -11,8 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import static com.uid2.core.util.MetadataHelper.getMetadataPathName;
-import static com.uid2.core.util.MetadataHelper.readToEndAsString;
+import static com.uid2.core.util.MetadataHelper.*;
 
 public class ClientMetadataProvider implements IClientMetadataProvider {
 
@@ -24,6 +23,16 @@ public class ClientMetadataProvider implements IClientMetadataProvider {
     @Override
     public String getMetadata(OperatorInfo info) throws Exception {
         String pathname = getMetadataPathName(info.getOperatorType(), info.getSiteId(), SecretStore.Global.get(ClientsMetadataPathName));
+        String original = readToEndAsString(metadataStreamProvider.download(pathname));
+        JsonObject main = (JsonObject) Json.decodeValue(original);
+        JsonObject obj = main.getJsonObject("client_keys");
+        String location = obj.getString("location");
+        obj.put("location", downloadUrlGenerator.preSignUrl(location).toString());
+        return main.encode();
+    }
+
+    public String getEncryptedMetadata(OperatorInfo info) throws Exception {
+        String pathname = getEncryptedMetadataPathName(info.getOperatorType(), info.getSiteId(), SecretStore.Global.get(ClientsMetadataPathName));
         String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonObject obj = main.getJsonObject("client_keys");
