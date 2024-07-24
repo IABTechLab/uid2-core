@@ -8,4 +8,6 @@ public class SecretStore extends ConfigStore {
     public String getPrintable(String key) {
         return "{" + key + ":********}";
     }
+
+
 }

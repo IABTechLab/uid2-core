@@ -672,18 +672,30 @@ public class CoreVerticle extends AbstractVerticle {
     private boolean isEncryptionSupported(RoutingContext context) {
         String appVersion = context.request().getHeader(Const.Http.AppVersionHeader);
         if (appVersion == null) return false;
-        return compareVersions(appVersion, ENCRYPTION_SUPPORT_VERSION) >= 0;
+        String[] versions = appVersion.split(";");
+        for (String version : versions) {
+            if (version.startsWith("uid2-operator=")) {
+                String operatorVersion = version.substring("uid2-operator=".length());
+                return compareVersions(operatorVersion, ENCRYPTION_SUPPORT_VERSION) >= 0;
+            }
+        }
+        return false;
     }
 
     private int compareVersions(String v1, String v2) {
+        // Remove any non-numeric suffixes (like -SNAPSHOT)
+        v1 = v1.split("-")[0];
+        v2 = v2.split("-")[0];
+
         String[] parts1 = v1.split("\\.");
         String[] parts2 = v2.split("\\.");
         int length = Math.max(parts1.length, parts2.length);
         for (int i = 0; i < length; i++) {
-            int part1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
-            int part2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
-            if (part1 < part2) return -1;
-            if (part1 > part2) return 1;
+            int p1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
+            int p2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+            if (p1 != p2) {
+                return p1 - p2;
+            }
         }
         return 0;
     }
