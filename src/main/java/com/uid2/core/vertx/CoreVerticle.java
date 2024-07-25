@@ -102,7 +102,6 @@ public class CoreVerticle extends AbstractVerticle {
         this.enclaveIdentifierProvider.addListener(this.attestationService);
         this.s3KeyProvider = s3KeyProvider;
 
-
         final String jwtAudience = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
         final String jwtIssuer = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
         Boolean enforceJwt = ConfigStore.Global.getBoolean(Const.Config.EnforceJwtProp);
