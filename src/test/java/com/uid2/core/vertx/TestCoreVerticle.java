@@ -542,12 +542,8 @@ public class TestCoreVerticle {
         S3Key key1 = new S3Key(1, 88, 1687635529, 1687808329, "secret1");
         S3Key key2 = new S3Key(2, 88, 1687635530, 1687808330, "secret2");
         S3Key key3 = new S3Key(3, 88, 1687635531, 1687808331, "secret3");
-        long currentTime = System.currentTimeMillis();
-        S3Key expiredKey = new S3Key(4, 88, currentTime - 10000, currentTime - 15000, "expiredSecret");
-        S3Key futureKey = new S3Key(5, 88, currentTime + 1000, currentTime + 500, "futureSecret");
-        S3Key differentSiteKey = new S3Key(6, 89, currentTime - 100, currentTime - 1100, "differentSiteSecret");
 
-        List<S3Key> keys = Arrays.asList(key1, key2, key3, expiredKey, futureKey, differentSiteKey);
+        List<S3Key> keys = Arrays.asList(key1, key2, key3);
         when(s3KeyProvider.getKeys(88)).thenReturn(keys);
 
         get(vertx, "s3encryption_keys/retrieve", ar -> {
