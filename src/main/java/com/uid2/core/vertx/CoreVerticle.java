@@ -685,7 +685,15 @@ public class CoreVerticle extends AbstractVerticle {
         return false;
     }
 
-    private boolean isVersionGreaterOrEqual(String v1, String v2) {
+    private boolean isVersionGreaterOrEqual(String fullVersionString, String minVersion) {
+        // Extract uid2-operator version
+        String v1 = extractOperatorVersion(fullVersionString);
+        String v2 = minVersion;
+
+        // Remove -SNAPSHOT or any other suffixes
+        v1 = v1.split("-")[0];
+        v2 = v2.split("-")[0];
+
         Pattern pattern = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+)");
         Matcher m1 = pattern.matcher(v1);
         Matcher m2 = pattern.matcher(v2);
@@ -705,5 +713,15 @@ public class CoreVerticle extends AbstractVerticle {
         }
 
         return true; // Versions are equal
+    }
+
+    private String extractOperatorVersion(String fullVersionString) {
+        String[] parts = fullVersionString.split(";");
+        for (String part : parts) {
+            if (part.startsWith("uid2-operator=")) {
+                return part.substring("uid2-operator=".length());
+            }
+        }
+        return "";
     }
 }
