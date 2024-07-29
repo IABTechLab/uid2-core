@@ -685,7 +685,6 @@ public class CoreVerticle extends AbstractVerticle {
     }
 
     private boolean isVersionGreaterOrEqual(String v1, String v2) {
-        // Regex pattern to extract numeric parts of the version
         Pattern pattern = Pattern.compile("(\\d+)(?:\\.(\\d+))?(?:\\.(\\d+))?");
 
         Matcher m1 = pattern.matcher(v1);
@@ -694,16 +693,15 @@ public class CoreVerticle extends AbstractVerticle {
         int[] parts1 = extractParts(m1);
         int[] parts2 = extractParts(m2);
 
-        // Compare each part of the version
         for (int i = 0; i < Math.max(parts1.length, parts2.length); i++) {
             int p1 = i < parts1.length ? parts1[i] : 0;
             int p2 = i < parts2.length ? parts2[i] : 0;
             if (p1 != p2) {
-                return p1 > p2; // Return true if v1 > v2, false otherwise
+                return p1 > p2;
             }
         }
 
-        return true; // Versions are identical
+        return true;
     }
 
     private int[] extractParts(Matcher matcher) {
