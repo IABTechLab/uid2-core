@@ -530,7 +530,7 @@ public class TestCoreVerticle {
 
     @Tag("dontForceJwt")
     @Test
-    void s3encryptionKeyRetrieveSuccessWithNOt (Vertx vertx, VertxTestContext testContext) {
+    void s3encryptionKeyRetrieveSuccessWithThreeKeys(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(attestationProtocolPublic, Role.OPERATOR);
         addAttestationProvider(attestationProtocolPublic);
         onHandleAttestationRequest(() -> {
@@ -538,20 +538,17 @@ public class TestCoreVerticle {
             return Future.succeededFuture(new AttestationResult(resultPublicKey, "test"));
         });
 
+        // Create 3 S3Key objects
+        S3Key key1 = new S3Key(1, 88, 1687635529, 1687808329, "secret1");
+        S3Key key2 = new S3Key(2, 88, 1687635530, 1687808330, "secret2");
+        S3Key key3 = new S3Key(3, 88, 1687635531, 1687808331, "secret3");
         long currentTime = System.currentTimeMillis();
-
-        // Create 3 S3Key objects that should be returned
-        S3Key key1 = new S3Key(1, 88, currentTime - 1000, currentTime - 2000, "secret1");
-        S3Key key2 = new S3Key(2, 88, currentTime - 500, currentTime - 1500, "secret2");
-        S3Key key3 = new S3Key(3, 88, currentTime, currentTime - 1000, "secret3");
-
-        // Create additional keys that should not be returned
         S3Key expiredKey = new S3Key(4, 88, currentTime - 10000, currentTime - 15000, "expiredSecret");
         S3Key futureKey = new S3Key(5, 88, currentTime + 1000, currentTime + 500, "futureSecret");
         S3Key differentSiteKey = new S3Key(6, 89, currentTime - 100, currentTime - 1100, "differentSiteSecret");
 
-        List<S3Key> allKeys = Arrays.asList(key1, key2, key3, expiredKey, futureKey, differentSiteKey);
-        when(s3KeyProvider.getKeys(88)).thenReturn(allKeys);
+        List<S3Key> keys = Arrays.asList(key1, key2, key3, expiredKey, futureKey, differentSiteKey);
+        when(s3KeyProvider.getKeys(88)).thenReturn(keys);
 
         get(vertx, "s3encryption_keys/retrieve", ar -> {
             if (ar.succeeded()) {
@@ -562,26 +559,15 @@ public class TestCoreVerticle {
                 JsonArray s3KeysArray = json.getJsonArray("s3Keys");
 
                 assertNotNull(s3KeysArray);
-                assertEquals(3, s3KeysArray.size(), "Only 3 keys should be returned");
+                assertEquals(3, s3KeysArray.size());
 
-                List<Integer> expectedIds = Arrays.asList(1, 2, 3);
                 for (int i = 0; i < 3; i++) {
                     JsonObject s3KeyJson = s3KeysArray.getJsonObject(i);
-                    assertTrue(expectedIds.contains(s3KeyJson.getInteger("id")), "Unexpected key ID returned");
+                    assertEquals(i + 1, s3KeyJson.getInteger("id"));
                     assertEquals(88, s3KeyJson.getInteger("siteId"));
-                    assertTrue(s3KeyJson.getLong("activates") <= currentTime, "Returned key should not be a future key");
-                    assertTrue(s3KeyJson.getString("secret").startsWith("secret"), "Unexpected secret value");
-                }
-
-                // Additional checks to ensure unwanted keys are not included
-                for (Object obj : s3KeysArray) {
-                    JsonObject keyJson = (JsonObject) obj;
-                    assertNotEquals(4, keyJson.getInteger("id"), "Expired key should not be returned");
-                    assertNotEquals(5, keyJson.getInteger("id"), "Future key should not be returned");
-                    assertNotEquals(6, keyJson.getInteger("id"), "Key from different site should not be returned");
-                    assertNotEquals("expiredSecret", keyJson.getString("secret"), "Expired key secret should not be returned");
-                    assertNotEquals("futureSecret", keyJson.getString("secret"), "Future key secret should not be returned");
-                    assertNotEquals("differentSiteSecret", keyJson.getString("secret"), "Different site key secret should not be returned");
+                    assertEquals(1687635529 + i, s3KeyJson.getLong("activates"));
+                    assertEquals(1687808329 + i, s3KeyJson.getLong("created"));
+                    assertEquals("secret" + (i + 1), s3KeyJson.getString("secret"));
                 }
 
                 testContext.completeNow();
