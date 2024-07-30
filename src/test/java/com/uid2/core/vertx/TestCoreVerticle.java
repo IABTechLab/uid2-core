@@ -544,7 +544,7 @@ public class TestCoreVerticle {
         S3Key key3 = new S3Key(3, 88, 1687635531, 1687808331, "secret3");
 
         List<S3Key> keys = Arrays.asList(key1, key2, key3);
-        when(s3KeyProvider.getKeys(88)).thenReturn(keys);
+        when(s3KeyProvider.getMostRecentKeysForSite(88)).thenReturn(keys);
 
         get(vertx, "s3encryption_keys/retrieve", ar -> {
             if (ar.succeeded()) {

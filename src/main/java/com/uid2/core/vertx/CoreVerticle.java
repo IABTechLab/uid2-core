@@ -586,7 +586,7 @@ public class CoreVerticle extends AbstractVerticle {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             int siteId = info.getSiteId();
 
-            List<S3Key> s3Keys = s3KeyProvider.getKeys(siteId);
+            List<S3Key> s3Keys = s3KeyProvider.getMostRecentKeysForSite(siteId);
 
             if (s3Keys == null || s3Keys.isEmpty()) {
                 Error("No S3 keys found", 500, rc, "No S3 keys found for siteId: " + siteId);
