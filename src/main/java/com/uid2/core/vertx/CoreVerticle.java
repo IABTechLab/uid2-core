@@ -83,7 +83,7 @@ public class CoreVerticle extends AbstractVerticle {
     private final OperatorJWTTokenProvider operatorJWTTokenProvider;
     private final JwtService jwtService;
     private final RotatingS3KeyProvider s3KeyProvider;
-    private static final String ENCRYPTION_SUPPORT_VERSION = "2.3"; // Set this to the appropriate version later
+    private static final String ENCRYPTION_SUPPORT_VERSION = "3.0"; // Set this to the appropriate version later
 
     public CoreVerticle(ICloudStorage cloudStorage,
                         IAuthorizableProvider authProvider,

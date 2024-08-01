@@ -690,7 +690,6 @@ public class TestCoreVerticle {
     @Tag("dontForceJwt")
     @Test
     void keysRefreshSuccessLowerVersion(Vertx vertx, VertxTestContext testContext) throws Exception {
-        // Arrange
         fakeAuth(attestationProtocolPublic, Role.OPERATOR);
         addAttestationProvider(attestationProtocolPublic);
         onHandleAttestationRequest(() -> {
