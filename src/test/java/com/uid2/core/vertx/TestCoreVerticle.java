@@ -4,7 +4,6 @@ import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.*;
 import com.uid2.core.util.OperatorInfo;
-import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.JWTTokenProvider;
 import com.uid2.core.service.OperatorJWTTokenProvider;
 import com.uid2.shared.Const;
@@ -79,12 +78,13 @@ public class TestCoreVerticle {
     private ICloudStorage metadataStreamProvider;
     @Mock
     private ICloudStorage downloadUrlGenerator;
+    private OperatorInfo operatorInfo;
 
     private AttestationService attestationService;
 
     private static final String attestationProtocol = "test-attestation-protocol";
     private static final String attestationProtocolPublic = "trusted";
-    private static final String ENCRYPTION_SUPPORT_VERSION = "2.6";
+    private static final String encryption_support_version = "2.6";
 
     @BeforeEach
     void deployVerticle(TestInfo info, Vertx vertx, VertxTestContext testContext) throws Throwable {
@@ -660,4 +660,59 @@ public class TestCoreVerticle {
             }
         });
     }
+
+    @Tag("dontForceJwt")
+    @Test
+    void keysRefreshSuccessHigherVersion(Vertx vertx, VertxTestContext testContext) throws Exception {
+        fakeAuth(attestationProtocolPublic, Role.OPERATOR);
+        addAttestationProvider(attestationProtocolPublic);
+        onHandleAttestationRequest(() -> {
+            byte[] resultPublicKey = null;
+            return Future.succeededFuture(new AttestationResult(resultPublicKey, "test"));
+        });
+
+        MultiMap headers = MultiMap.caseInsensitiveMultiMap();
+        headers.add(Const.Http.AppVersionHeader, "uid2-operator=3.7.16-SNAPSHOT;uid2-attestation-api=1.1.0;uid2-shared=2.7.0-3e279acefa");
+
+        getWithVersion(vertx, "key/refresh", headers, ar -> {
+            assertTrue(ar.succeeded());
+            if (ar.succeeded()) {
+                HttpResponse<Buffer> response = ar.result();
+                assertEquals(200, response.statusCode());
+                String responseBody = response.bodyAsString();
+                assertEquals("{\"keys\":{\"location\":\"http://encrypted_url\"}}", responseBody);
+                testContext.completeNow();
+            } else {
+                testContext.failNow(ar.cause());
+            }
+        });
+    }
+
+    @Tag("dontForceJwt")
+    @Test
+    void keysRefreshSuccessLowerVersion(Vertx vertx, VertxTestContext testContext) throws Exception {
+        fakeAuth(attestationProtocolPublic, Role.OPERATOR);
+        addAttestationProvider(attestationProtocolPublic);
+        onHandleAttestationRequest(() -> {
+            byte[] resultPublicKey = null;
+            return Future.succeededFuture(new AttestationResult(resultPublicKey, "test"));
+        });
+
+        MultiMap headers = MultiMap.caseInsensitiveMultiMap();
+        headers.add(Const.Http.AppVersionHeader, "uid2-operator=2.1.16-SNAPSHOT;uid2-attestation-api=1.1.0;uid2-shared=2.7.0-3e279acefa");
+
+        getWithVersion(vertx, "key/refresh", headers, ar -> {
+            if (ar.succeeded()) {
+                HttpResponse<Buffer> response = ar.result();
+                System.out.println(response.bodyAsString());
+                assertEquals(200, response.statusCode());
+                String responseBody = response.bodyAsString();
+                assertEquals("{\"keys\":{\"location\":\"http://default_url\"}}", responseBody);
+                testContext.completeNow();
+            } else {
+                testContext.failNow(ar.cause());
+            }
+        });
+    }
+
 }

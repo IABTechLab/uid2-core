@@ -7,6 +7,8 @@ import io.vertx.ext.web.RoutingContext;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import com.uid2.core.model.ConfigStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.uid2.shared.middleware.AuthMiddleware.API_CLIENT_PROP;
 
@@ -18,7 +20,10 @@ public class OperatorInfo {
     private final OperatorType operatorType;
     private final int siteId;
     private final boolean supportsEncryption;
-    private static final String ENCRYPTION_SUPPORT_VERSION = ConfigStore.Global.get("encryption_support_version");
+    static String ENCRYPTION_SUPPORT_VERSION = ConfigStore.Global.get("encryption_support_version");
+
+    static Logger logger = LoggerFactory.getLogger(OperatorInfo.class);
+
 
     public OperatorType getOperatorType() {
         return operatorType;
@@ -46,9 +51,12 @@ public class OperatorInfo {
         throw new Exception("Cannot determine the operator type and site id from the profile");
     }
 
-    private static boolean supportsEncryption(RoutingContext rc) {
+    static boolean supportsEncryption(RoutingContext rc) {
         String appVersion = rc.request().getHeader("AppVersion");
-        if (appVersion == null) return false;
+        if (appVersion == null) {
+            logger.warn("AppVersion header is missing.");
+            return false;
+        }
         String[] versions = appVersion.split(";");
         for (String version : versions) {
             if (version.startsWith("uid2-operator=")) {
@@ -59,7 +67,10 @@ public class OperatorInfo {
         return false;
     }
 
-    private static boolean isVersionGreaterOrEqual(String v1, String v2) {
+    static boolean isVersionGreaterOrEqual(String v1, String v2) {
+        System.out.println(v1 + "hello");
+        System.out.println(v2);
+        logger.info("info");
         Pattern pattern = Pattern.compile("(\\d+)(?:\\.(\\d+))?(?:\\.(\\d+))?");
         Matcher m1 = pattern.matcher(v1);
         Matcher m2 = pattern.matcher(v2);
