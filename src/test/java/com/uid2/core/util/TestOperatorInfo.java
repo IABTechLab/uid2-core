@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.uid2.core.util.OperatorInfo.ENCRYPTION_SUPPORT_VERSION;
+import static com.uid2.shared.Const.Http.AppVersionHeader;
 import static com.uid2.shared.middleware.AuthMiddleware.API_CLIENT_PROP;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -49,7 +50,7 @@ class OperatorInfoTest {
         Map<String, Object> data = new HashMap<>();
         data.put(API_CLIENT_PROP, mockOperatorKey);
         when(mockRoutingContext.data()).thenReturn(data);
-        when(mockRequest.getHeader("AppVersion")).thenReturn("uid2-operator=3.0.0");
+        when(mockRequest.getHeader(AppVersionHeader)).thenReturn("uid2-operator=3.0.0");
 
         OperatorInfo result = OperatorInfo.getOperatorInfo(mockRoutingContext);
 
@@ -70,19 +71,19 @@ class OperatorInfoTest {
 
     @Test
     void testSupportsEncryptionTrue() {
-        when(mockRequest.getHeader("AppVersion")).thenReturn("uid2-operator=3.0.0");
+        when(mockRequest.getHeader(AppVersionHeader)).thenReturn("uid2-operator=3.0.0");
         assertTrue(OperatorInfo.supportsEncryption(mockRoutingContext));
     }
 
     @Test
     void testSupportsEncryptionFalse() {
-        when(mockRequest.getHeader("AppVersion")).thenReturn("uid2-operator=1.0.0");
+        when(mockRequest.getHeader(AppVersionHeader)).thenReturn("uid2-operator=1.0.0");
         assertFalse(OperatorInfo.supportsEncryption(mockRoutingContext));
     }
 
     @Test
     void testSupportsEncryptionMissingHeader() {
-        when(mockRequest.getHeader("AppVersion")).thenReturn(null);
+        when(mockRequest.getHeader(AppVersionHeader)).thenReturn(null);
         assertFalse(OperatorInfo.supportsEncryption(mockRoutingContext));
     }
 

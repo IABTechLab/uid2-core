@@ -48,23 +48,15 @@ public class OperatorInfo {
         if (profile instanceof OperatorKey) {
             OperatorKey operatorKey = (OperatorKey) profile;
             boolean supportsEncryption = supportsEncryption(rc);
-            System.out.println(supportsEncryption);
             return new OperatorInfo(operatorKey.getOperatorType(), operatorKey.getSiteId(), supportsEncryption);
         }
         throw new Exception("Cannot determine the operator type and site id from the profile");
     }
 
     static boolean supportsEncryption(RoutingContext rc) {
-
-        HttpServerRequest request = rc.request();
-
-        // Log all headers
-        logger.info("Logging all request headers:");
-        request.headers().forEach(header -> logger.info("{}: {}", header.getKey(), header.getValue()));
-
         String appVersion = rc.request().getHeader(AppVersionHeader);
         if (appVersion == null) {
-            logger.warn("AppVersion header is missing:");
+            logger.warn("AppVersion header is missing.");
             return false;
         }
         String[] versions = appVersion.split(";");
@@ -78,9 +70,6 @@ public class OperatorInfo {
     }
 
     static boolean isVersionGreaterOrEqual(String v1, String v2) {
-        System.out.println(v1 + "hello");
-        System.out.println(v2);
-        logger.info("info");
         Pattern pattern = Pattern.compile("(\\d+)(?:\\.(\\d+))?(?:\\.(\\d+))?");
         Matcher m1 = pattern.matcher(v1);
         Matcher m2 = pattern.matcher(v2);
