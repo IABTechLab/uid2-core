@@ -3,7 +3,6 @@ package com.uid2.core.vertx;
 import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.*;
-import com.uid2.core.util.OperatorInfo;
 import com.uid2.core.service.JWTTokenProvider;
 import com.uid2.core.service.OperatorJWTTokenProvider;
 import com.uid2.shared.Const;
@@ -40,8 +39,6 @@ import org.mockito.MockitoAnnotations;
 
 import javax.crypto.Cipher;
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -73,13 +70,6 @@ public class TestCoreVerticle {
     private JwtService jwtService;
     @Mock
     private RotatingS3KeyProvider s3KeyProvider;
-    @Mock
-    private IKeyMetadataProvider keyMetadataProvider;
-    @Mock
-    private ICloudStorage metadataStreamProvider;
-    @Mock
-    private ICloudStorage downloadUrlGenerator;
-    private OperatorInfo operatorInfo;
 
     private AttestationService attestationService;
 
