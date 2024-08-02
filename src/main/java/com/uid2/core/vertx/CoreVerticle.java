@@ -52,8 +52,6 @@ import java.time.Instant;
 import java.util.*;
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.model.S3Key;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.uid2.shared.Const.Config.EnforceJwtProp;
 
@@ -83,7 +81,6 @@ public class CoreVerticle extends AbstractVerticle {
     private final OperatorJWTTokenProvider operatorJWTTokenProvider;
     private final JwtService jwtService;
     private final RotatingS3KeyProvider s3KeyProvider;
-    private static final String ENCRYPTION_SUPPORT_VERSION = "3.0"; // Set this to the appropriate version later
 
     public CoreVerticle(ICloudStorage cloudStorage,
                         IAuthorizableProvider authProvider,
