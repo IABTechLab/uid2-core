@@ -2,6 +2,7 @@ package com.uid2.core.util;
 import com.uid2.shared.auth.IAuthorizable;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.OperatorType;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.web.RoutingContext;
 
 import java.util.regex.Matcher;
@@ -10,6 +11,7 @@ import com.uid2.core.model.ConfigStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.uid2.shared.Const.Http.AppVersionHeader;
 import static com.uid2.shared.middleware.AuthMiddleware.API_CLIENT_PROP;
 
 /**
@@ -20,7 +22,7 @@ public class OperatorInfo {
     private final OperatorType operatorType;
     private final int siteId;
     private final boolean supportsEncryption;
-    static String ENCRYPTION_SUPPORT_VERSION = ConfigStore.Global.get("encryption_support_version");
+    public static String ENCRYPTION_SUPPORT_VERSION = ConfigStore.Global.get("encryption_support_version");
 
     static Logger logger = LoggerFactory.getLogger(OperatorInfo.class);
 
@@ -46,15 +48,23 @@ public class OperatorInfo {
         if (profile instanceof OperatorKey) {
             OperatorKey operatorKey = (OperatorKey) profile;
             boolean supportsEncryption = supportsEncryption(rc);
+            System.out.println(supportsEncryption);
             return new OperatorInfo(operatorKey.getOperatorType(), operatorKey.getSiteId(), supportsEncryption);
         }
         throw new Exception("Cannot determine the operator type and site id from the profile");
     }
 
     static boolean supportsEncryption(RoutingContext rc) {
-        String appVersion = rc.request().getHeader("AppVersion");
+
+        HttpServerRequest request = rc.request();
+
+        // Log all headers
+        logger.info("Logging all request headers:");
+        request.headers().forEach(header -> logger.info("{}: {}", header.getKey(), header.getValue()));
+
+        String appVersion = rc.request().getHeader(AppVersionHeader);
         if (appVersion == null) {
-            logger.warn("AppVersion header is missing.");
+            logger.warn("AppVersion header is missing:");
             return false;
         }
         String[] versions = appVersion.split(";");

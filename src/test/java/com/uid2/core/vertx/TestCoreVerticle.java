@@ -27,6 +27,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 
 import static com.uid2.core.service.KeyMetadataProvider.KeysMetadataPathName;
+import static com.uid2.core.util.OperatorInfo.ENCRYPTION_SUPPORT_VERSION;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -108,6 +109,7 @@ public class TestCoreVerticle {
         // Mock download method for different paths
         when(cloudStorage.download(anyString())).thenAnswer(invocation -> {
             String path = invocation.getArgument(0);
+            System.out.println(path);
             if (path.contains("encrypted")) {
                 return new ByteArrayInputStream("{ \"keys\": { \"location\": \"encrypted-location\" } }".getBytes());
             } else {
@@ -127,6 +129,8 @@ public class TestCoreVerticle {
 
         CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, s3KeyProvider);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
+
+        ENCRYPTION_SUPPORT_VERSION = "2.6";
     }
 
     private String getUrlForEndpoint(String endpoint) {
@@ -680,6 +684,7 @@ public class TestCoreVerticle {
                 HttpResponse<Buffer> response = ar.result();
                 assertEquals(200, response.statusCode());
                 String responseBody = response.bodyAsString();
+                System.out.println(responseBody);
                 assertEquals("{\"keys\":{\"location\":\"http://encrypted_url\"}}", responseBody);
                 testContext.completeNow();
             } else {
