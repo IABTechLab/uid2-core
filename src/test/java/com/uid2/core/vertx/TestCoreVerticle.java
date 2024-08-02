@@ -5,6 +5,8 @@ import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.*;
 import com.uid2.core.util.OperatorInfo;
 import com.uid2.core.model.SecretStore;
+import com.uid2.core.service.JWTTokenProvider;
+import com.uid2.core.service.OperatorJWTTokenProvider;
 import com.uid2.shared.Const;
 import com.uid2.shared.attest.EncryptedAttestationToken;
 import com.uid2.shared.attest.IAttestationTokenService;
@@ -50,8 +52,6 @@ import java.util.concurrent.Callable;
 
 import com.uid2.shared.model.S3Key;
 import java.util.Arrays;
-import java.util.HashMap;
-import software.amazon.awssdk.services.kms.endpoints.internal.Value;
 
 import static org.mockito.Mockito.*;
 
@@ -543,7 +543,7 @@ public class TestCoreVerticle {
         S3Key key = new S3Key(1, 88, 1687635529, 1687808329, "newSecret");
 
         List<S3Key> keys = Arrays.asList(key);
-        when(s3KeyProvider.getKeysForSiteFromMap(88)).thenReturn(keys);
+        when(s3KeyProvider.getKeys(88)).thenReturn(keys);
 
         get(vertx, "s3encryption_keys/retrieve", ar -> {
             if (ar.succeeded()) {
@@ -587,7 +587,7 @@ public class TestCoreVerticle {
         S3Key key3 = new S3Key(3, 88, 1687635531, 1687808331, "secret3");
 
         List<S3Key> keys = Arrays.asList(key1, key2, key3);
-        when(s3KeyProvider.getKeysForSiteFromMap(88)).thenReturn(keys);
+        when(s3KeyProvider.getKeys(88)).thenReturn(keys);
 
         get(vertx, "s3encryption_keys/retrieve", ar -> {
             if (ar.succeeded()) {
@@ -627,7 +627,7 @@ public class TestCoreVerticle {
         });
 
         // Test case 1: No keys found
-        when(s3KeyProvider.getKeysForSiteFromMap(anyInt())).thenReturn(Collections.emptyList());
+        when(s3KeyProvider.getKeys(anyInt())).thenReturn(Collections.emptyList());
 
         get(vertx, "s3encryption_keys/retrieve", ar -> {
             if (ar.succeeded()) {
@@ -639,7 +639,7 @@ public class TestCoreVerticle {
                 assertTrue(json.getString("message").contains("No S3 keys found for siteId:"));
 
                 // Test case 2: Exception thrown
-                when(s3KeyProvider.getKeysForSiteFromMap(anyInt())).thenThrow(new RuntimeException("Test exception"));
+                when(s3KeyProvider.getKeys(anyInt())).thenThrow(new RuntimeException("Test exception"));
 
                 get(vertx, "s3encryption_keys/retrieve", ar2 -> {
                     if (ar2.succeeded()) {
