@@ -1,5 +1,4 @@
 package com.uid2.core.vertx;
-
 import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.*;
