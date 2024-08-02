@@ -26,7 +26,6 @@ public class OperatorInfo {
 
     static Logger logger = LoggerFactory.getLogger(OperatorInfo.class);
 
-
     public OperatorType getOperatorType() {
         return operatorType;
     }
