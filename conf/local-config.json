@@ -20,5 +20,5 @@
     "provide_private_site_data": true,
     "enforceJwt": false,
     "s3_keys_metadata_path": "/com.uid2.core/test/s3encryption_keys/metadata.json",
-    "encryption_support_version": "3.0"
+    "encryption_support_version": "888"
 }
