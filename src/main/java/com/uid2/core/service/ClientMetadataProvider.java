@@ -22,8 +22,8 @@ public class ClientMetadataProvider implements IClientMetadataProvider {
     private final ICloudStorage downloadUrlGenerator;
 
     @Override
-    public String getMetadata(OperatorInfo info,boolean includeEncrypted) throws Exception {
-        String pathname = getMetadataPathName(info.getOperatorType(), info.getSiteId(), SecretStore.Global.get(ClientsMetadataPathName),includeEncrypted);
+    public String getMetadata(OperatorInfo info) throws Exception {
+        String pathname = getMetadataPathName(info.getOperatorType(), info.getSiteId(), SecretStore.Global.get(ClientsMetadataPathName),info.getSupportsEncryption());
         String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonObject obj = main.getJsonObject("client_keys");
