@@ -17,6 +17,5 @@
     "att_token_enc_key": null,
     "att_token_enc_salt": null,
     "enforceJwt": false,
-    "s3_keys_metadata_path": null,
-    "encryption_support_version": "888"
+    "s3_keys_metadata_path": null
 }

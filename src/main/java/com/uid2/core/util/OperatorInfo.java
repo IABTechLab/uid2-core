@@ -47,6 +47,8 @@ public class OperatorInfo {
         if (profile instanceof OperatorKey) {
             OperatorKey operatorKey = (OperatorKey) profile;
             boolean supportsEncryption = supportsEncryption(rc);
+            System.out.println(supportsEncryption);
+            logger.info(supportsEncryption+"supportsEncryption");
             return new OperatorInfo(operatorKey.getOperatorType(), operatorKey.getSiteId(), supportsEncryption);
         }
         throw new Exception("Cannot determine the operator type and site id from the profile");
@@ -69,6 +71,11 @@ public class OperatorInfo {
     }
 
     static boolean isVersionGreaterOrEqual(String v1, String v2) {
+        System.out.println(v1+"supportsEncryption");
+        System.out.println(v2+ "supportsEncryption");
+        logger.info(v1);
+        logger.info(v2);
+
         Pattern pattern = Pattern.compile("(\\d+)(?:\\.(\\d+))?(?:\\.(\\d+))?");
         Matcher m1 = pattern.matcher(v1);
         Matcher m2 = pattern.matcher(v2);
