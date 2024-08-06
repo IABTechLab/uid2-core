@@ -22,7 +22,7 @@ public class OperatorInfo {
     private final OperatorType operatorType;
     private final int siteId;
     private final boolean supportsEncryption;
-    public static String ENCRYPTION_SUPPORT_VERSION = ConfigStore.Global.getOrDefault("encryption_support_version", "9999");
+    private static String ENCRYPTION_SUPPORT_VERSION = ConfigStore.Global.getOrDefault("encryption_support_version", "9999");
 
     static Logger logger = LoggerFactory.getLogger(OperatorInfo.class);
 

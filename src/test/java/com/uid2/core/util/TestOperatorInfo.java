@@ -1,8 +1,10 @@
 package com.uid2.core.util;
 
+import com.uid2.core.model.ConfigStore;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.OperatorType;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,7 +14,6 @@ import org.mockito.MockitoAnnotations;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.uid2.core.util.OperatorInfo.ENCRYPTION_SUPPORT_VERSION;
 import static com.uid2.shared.Const.Http.AppVersionHeader;
 import static com.uid2.shared.middleware.AuthMiddleware.API_CLIENT_PROP;
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,7 +31,7 @@ class OperatorInfoTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         when(mockRoutingContext.request()).thenReturn(mockRequest);
-        ENCRYPTION_SUPPORT_VERSION = "2.6";
+        ConfigStore.Global.load(new JsonObject().put("encryption_support_version", "2.6"));
     }
 
     @Test

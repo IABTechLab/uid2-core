@@ -25,7 +25,6 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 
 import static com.uid2.core.service.KeyMetadataProvider.KeysMetadataPathName;
-import static com.uid2.core.util.OperatorInfo.ENCRYPTION_SUPPORT_VERSION;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -74,7 +73,7 @@ public class TestCoreVerticle {
 
     private static final String attestationProtocol = "test-attestation-protocol";
     private static final String attestationProtocolPublic = "trusted";
-    private static final String encryption_support_version = "2.6";
+    private static final String encryptionSupportVersion = "encryption_support_version";
 
     @BeforeEach
     void deployVerticle(TestInfo info, Vertx vertx, VertxTestContext testContext) throws Throwable {
@@ -83,7 +82,7 @@ public class TestCoreVerticle {
         config.put(Const.Config.CorePublicUrlProp, "test_core_url");
         config.put(Const.Config.AwsKmsJwtSigningKeyIdProp, "test_aws_kms_keyId");
         config.put(KeysMetadataPathName, "keys/metadata.json");
-
+        config.put(encryptionSupportVersion, "2.6");
         if (info.getTags().contains("dontForceJwt")) {
             config.put(Const.Config.EnforceJwtProp, false);
         } else {
@@ -119,7 +118,6 @@ public class TestCoreVerticle {
         CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, s3KeyProvider);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
 
-        ENCRYPTION_SUPPORT_VERSION = "2.6";
     }
 
     private String getUrlForEndpoint(String endpoint) {
