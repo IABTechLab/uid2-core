@@ -23,7 +23,7 @@ public class KeyMetadataProvider implements IKeyMetadataProvider {
 
     @Override
     public String getMetadata(OperatorInfo info) throws Exception {
-        String pathname = getMetadataPathName(info.getOperatorType(), info.getSiteId(), SecretStore.Global.get(KeysMetadataPathName),info.getSupportsEncryption());
+        String pathname = getMetadataPathName(info.getOperatorType(), info.getSiteId(), SecretStore.Global.get(KeysMetadataPathName));
         String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonObject obj = main.getJsonObject("keys");

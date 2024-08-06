@@ -21,7 +21,7 @@ public class KeyAclMetadataProvider implements IKeyAclMetadataProvider {
 
     @Override
     public String getMetadata(OperatorInfo info) throws Exception {
-        String pathname = getMetadataPathName(info.getOperatorType(), info.getSiteId(), SecretStore.Global.get(Const.Config.KeysAclMetadataPathProp), info.getSupportsEncryption());
+        String pathname = getMetadataPathName(info.getOperatorType(), info.getSiteId(), SecretStore.Global.get(Const.Config.KeysAclMetadataPathProp));
         String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonObject obj = main.getJsonObject("keys_acl");

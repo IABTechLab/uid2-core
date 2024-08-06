@@ -22,7 +22,7 @@ public class OperatorInfo {
     private final OperatorType operatorType;
     private final int siteId;
     private final boolean supportsEncryption;
-    private static final String ENCRYPTION_SUPPORT_VERSION = ConfigStore.Global.getOrDefault("encryption_support_version", "9999");
+    private static final String encryptionSupportVersion = ConfigStore.Global.getOrDefault("encryption_support_version", "9999");
 
     static Logger logger = LoggerFactory.getLogger(OperatorInfo.class);
 
@@ -63,9 +63,9 @@ public class OperatorInfo {
         for (String version : versions) {
             if (version.startsWith("uid2-operator=")) {
                 String operatorVersion = version.substring("uid2-operator=".length());
-                boolean isSupported = isVersionGreaterOrEqual(operatorVersion, ENCRYPTION_SUPPORT_VERSION);
+                boolean isSupported = isVersionGreaterOrEqual(operatorVersion, encryptionSupportVersion);
                 logger.info("Operator version: {}, Required version for encryption: {}, Result: {}",
-                        operatorVersion, ENCRYPTION_SUPPORT_VERSION, isSupported ? "Supports encryption" : "Does not support encryption");
+                        operatorVersion, encryptionSupportVersion, isSupported ? "Supports encryption" : "Does not support encryption");
                 return isSupported;
             }
         }
