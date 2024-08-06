@@ -26,12 +26,13 @@ class OperatorInfoTest {
 
     @Mock
     private HttpServerRequest mockRequest;
+    private static final String encryptionSupportVersion = "encryption_support_version";
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
         when(mockRoutingContext.request()).thenReturn(mockRequest);
-        ConfigStore.Global.load(new JsonObject().put("encryption_support_version", "2.6"));
+        ConfigStore.Global.load(new JsonObject().put(encryptionSupportVersion, "2.6"));
     }
 
     @Test
