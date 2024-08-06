@@ -31,8 +31,8 @@ class OperatorInfoTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        when(mockRoutingContext.request()).thenReturn(mockRequest);
         ConfigStore.Global.load(new JsonObject().put(encryptionSupportVersion, "2.6"));
+        when(mockRoutingContext.request()).thenReturn(mockRequest);
     }
 
     @Test
