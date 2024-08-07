@@ -1,4 +1,5 @@
 package com.uid2.core.util;
+import com.uid2.core.Const;
 import com.uid2.shared.auth.IAuthorizable;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.auth.OperatorType;
@@ -22,7 +23,7 @@ public class OperatorInfo {
     private final OperatorType operatorType;
     private final int siteId;
     private final boolean supportsEncryption;
-    private static final String encryptionSupportVersion = ConfigStore.Global.getOrDefault("encryption_support_version", "9999");
+    private static final String encryptionSupportVersion = ConfigStore.Global.getOrDefault(Const.Config.encryptionSupportVersion, "9999");
 
     static Logger logger = LoggerFactory.getLogger(OperatorInfo.class);
 
