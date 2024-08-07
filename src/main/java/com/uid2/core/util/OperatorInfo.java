@@ -12,6 +12,7 @@ import com.uid2.core.model.ConfigStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.uid2.shared.Const.Config.encryptionSupportVersion;
 import static com.uid2.shared.Const.Http.AppVersionHeader;
 import static com.uid2.shared.middleware.AuthMiddleware.API_CLIENT_PROP;
 
@@ -23,7 +24,6 @@ public class OperatorInfo {
     private final OperatorType operatorType;
     private final int siteId;
     private final boolean supportsEncryption;
-    private static final String encryptionSupportVersion = ConfigStore.Global.getOrDefault(Const.Config.encryptionSupportVersion, "9999");
 
     static Logger logger = LoggerFactory.getLogger(OperatorInfo.class);
 
@@ -64,7 +64,7 @@ public class OperatorInfo {
         for (String version : versions) {
             if (version.startsWith("uid2-operator=")) {
                 String operatorVersion = version.substring("uid2-operator=".length());
-                boolean isSupported = isVersionGreaterOrEqual(operatorVersion, encryptionSupportVersion);
+                boolean isSupported = isVersionGreaterOrEqual(operatorVersion, ConfigStore.Global.getOrDefault(encryptionSupportVersion, "9999"));
                 logger.info("Operator version: {}, Required version for encryption: {}, Result: {}",
                         operatorVersion, encryptionSupportVersion, isSupported ? "Supports encryption" : "Does not support encryption");
                 return isSupported;
