@@ -27,6 +27,11 @@ public final class MetadataHelper {
         return getMetadataPathName(operatorType, siteId, metadataPathName, false);
     }
 
+    public static String getMetadataPathName(OperatorInfo info, String metadataPathName) {
+        return getMetadataPathName(info.getOperatorType(), info.getSiteId(), metadataPathName, info.getSupportsEncryption());
+    }
+
+
     public static String getMetadataPathName(OperatorType operatorType, int siteId, String metadataPathName, Boolean canDecrypt) {
         StoreScope store;
         Boolean providePrivateSiteData = ConfigStore.Global.getBoolean("provide_private_site_data");

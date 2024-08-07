@@ -20,7 +20,7 @@ public class KeysetMetadataProvider implements IKeysetMetadataProvider{
 
     @Override
     public String getMetadata(OperatorInfo info) throws Exception {
-        String pathname = getMetadataPathName(info.getOperatorType(), info.getSiteId(), SecretStore.Global.get(Const.Config.KeysetsMetadataPathProp), info.getSupportsEncryption());
+        String pathname = getMetadataPathName(info, SecretStore.Global.get(Const.Config.KeysetsMetadataPathProp));
         String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonObject obj = main.getJsonObject("keysets");
