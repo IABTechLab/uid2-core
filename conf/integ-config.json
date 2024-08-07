@@ -19,5 +19,5 @@
     "salts_metadata_path": "uid2/salts/metadata.json",
     "enforceJwt": false,
     "s3_keys_metadata_path": "uid2/s3encryption_keys/metadata.json",
-    "encryption_support_version": "8888"
+    "encryption_support_version": "5"
 }

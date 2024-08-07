@@ -33,5 +33,5 @@
   "core_public_url": "http://core:8088",
   "optout_url": "http://optout:8081",
   "s3_keys_metadata_path": "s3encryption_keys/metadata.json",
-  "encryption_support_version": "8888"
+  "encryption_support_version": "5"
 }
