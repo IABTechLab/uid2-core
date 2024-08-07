@@ -23,7 +23,7 @@ public class ClientMetadataProvider implements IClientMetadataProvider {
 
     @Override
     public String getMetadata(OperatorInfo info) throws Exception {
-        String pathname = getMetadataPathName(info.getOperatorType(), info.getSiteId(), SecretStore.Global.get(ClientsMetadataPathName),info.getSupportsEncryption());
+        String pathname = getMetadataPathName(info.getOperatorType(), info.getSiteId(), SecretStore.Global.get(ClientsMetadataPathName));
         String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonObject obj = main.getJsonObject("client_keys");

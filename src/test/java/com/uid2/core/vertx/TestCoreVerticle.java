@@ -25,6 +25,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 
 import static com.uid2.core.service.KeyMetadataProvider.KeysMetadataPathName;
+import static com.uid2.shared.Const.Config.KeysetsMetadataPathProp;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -81,7 +82,7 @@ public class TestCoreVerticle {
         config.put(Const.Config.OptOutUrlProp, "test_optout_url");
         config.put(Const.Config.CorePublicUrlProp, "test_core_url");
         config.put(Const.Config.AwsKmsJwtSigningKeyIdProp, "test_aws_kms_keyId");
-        config.put(KeysMetadataPathName, "keys/metadata.json");
+        config.put(Const.Config.KeysetsMetadataPathProp, "keysets/metadata.json");
         config.put(encryptionSupportVersion, "2.6");
         if (info.getTags().contains("dontForceJwt")) {
             config.put(Const.Config.EnforceJwtProp, false);
@@ -99,9 +100,9 @@ public class TestCoreVerticle {
             String path = invocation.getArgument(0);
             System.out.println(path);
             if (path.contains("encrypted")) {
-                return new ByteArrayInputStream("{ \"keys\": { \"location\": \"encrypted-location\" } }".getBytes());
+                return new ByteArrayInputStream("{ \"keysets\": { \"location\": \"encrypted-location\" } }".getBytes());
             } else {
-                return new ByteArrayInputStream("{ \"keys\": { \"location\": \"default-location\" } }".getBytes());
+                return new ByteArrayInputStream("{ \"keysets\": { \"location\": \"default-location\" } }".getBytes());
             }
         });
 
@@ -654,7 +655,7 @@ public class TestCoreVerticle {
 
     @Tag("dontForceJwt")
     @Test
-    void keysRefreshSuccessHigherVersion(Vertx vertx, VertxTestContext testContext) throws Exception {
+    void keysetRefreshSuccessHigherVersion(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(attestationProtocolPublic, Role.OPERATOR);
         addAttestationProvider(attestationProtocolPublic);
         onHandleAttestationRequest(() -> {
@@ -665,14 +666,14 @@ public class TestCoreVerticle {
         MultiMap headers = MultiMap.caseInsensitiveMultiMap();
         headers.add(Const.Http.AppVersionHeader, "uid2-operator=3.7.16-SNAPSHOT;uid2-attestation-api=1.1.0;uid2-shared=2.7.0-3e279acefa");
 
-        getWithVersion(vertx, "key/refresh", headers, ar -> {
+        getWithVersion(vertx, "key/keyset/refresh", headers, ar -> {
             assertTrue(ar.succeeded());
             if (ar.succeeded()) {
                 HttpResponse<Buffer> response = ar.result();
                 assertEquals(200, response.statusCode());
                 String responseBody = response.bodyAsString();
                 System.out.println(responseBody);
-                assertEquals("{\"keys\":{\"location\":\"http://encrypted_url\"}}", responseBody);
+                assertEquals("{\"keysets\":{\"location\":\"http://encrypted_url\"}}", responseBody);
                 testContext.completeNow();
             } else {
                 testContext.failNow(ar.cause());
