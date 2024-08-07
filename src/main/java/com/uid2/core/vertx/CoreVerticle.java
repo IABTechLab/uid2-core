@@ -358,7 +358,7 @@ public class CoreVerticle extends AbstractVerticle {
                 return;
             }
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(siteMetadataProvider.getMetadata());
+                    .end(siteMetadataProvider.getMetadata(info));
         } catch (Exception e) {
             logger.warn("exception in handleSiteRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing sites refresh");
