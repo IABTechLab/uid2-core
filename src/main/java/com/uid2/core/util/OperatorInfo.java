@@ -47,9 +47,7 @@ public class OperatorInfo {
         IAuthorizable profile = (IAuthorizable) rc.data().get(API_CLIENT_PROP);
         if (profile instanceof OperatorKey) {
             OperatorKey operatorKey = (OperatorKey) profile;
-            boolean supportsEncryption = supportsEncryption(rc);
-            logger.info("Operator supports encryption: {}", supportsEncryption);
-            return new OperatorInfo(operatorKey.getOperatorType(), operatorKey.getSiteId(), supportsEncryption);
+            return new OperatorInfo(operatorKey.getOperatorType(), operatorKey.getSiteId(), supportsEncryption(rc));
         }
         throw new Exception("Cannot determine the operator type and site id from the profile");
     }
@@ -65,8 +63,8 @@ public class OperatorInfo {
             if (version.startsWith("uid2-operator=")) {
                 String operatorVersion = version.substring("uid2-operator=".length());
                 boolean isSupported = isVersionGreaterOrEqual(operatorVersion, ConfigStore.Global.getOrDefault(encryptionSupportVersion, "9999"));
-                logger.info("Operator version: {}, Required version for encryption: {}, Result: {}",
-                        operatorVersion, encryptionSupportVersion, isSupported ? "Supports encryption" : "Does not support encryption");
+                logger.info("Operator version: {}, {}",
+                        operatorVersion, isSupported ? "Supports encryption" : "Does not support encryption");
                 return isSupported;
             }
         }
