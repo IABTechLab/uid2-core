@@ -74,7 +74,6 @@ public class TestCoreVerticle {
 
     private static final String attestationProtocol = "test-attestation-protocol";
     private static final String attestationProtocolPublic = "trusted";
-    private static final String encryptionSupportVersion = "encryption_support_version";
 
     @BeforeEach
     void deployVerticle(TestInfo info, Vertx vertx, VertxTestContext testContext) throws Throwable {
@@ -83,7 +82,7 @@ public class TestCoreVerticle {
         config.put(Const.Config.CorePublicUrlProp, "test_core_url");
         config.put(Const.Config.AwsKmsJwtSigningKeyIdProp, "test_aws_kms_keyId");
         config.put(Const.Config.KeysetsMetadataPathProp, "keysets/metadata.json");
-        config.put(encryptionSupportVersion, "2.6");
+        config.put(Const.Config.encryptionSupportVersion, "2.6");
         if (info.getTags().contains("dontForceJwt")) {
             config.put(Const.Config.EnforceJwtProp, false);
         } else {
@@ -694,13 +693,13 @@ public class TestCoreVerticle {
         MultiMap headers = MultiMap.caseInsensitiveMultiMap();
         headers.add(Const.Http.AppVersionHeader, "uid2-operator=2.1.16-SNAPSHOT;uid2-attestation-api=1.1.0;uid2-shared=2.7.0-3e279acefa");
 
-        getWithVersion(vertx, "key/refresh", headers, ar -> {
+        getWithVersion(vertx, "key/keyset/refresh", headers, ar -> {
             if (ar.succeeded()) {
                 HttpResponse<Buffer> response = ar.result();
                 System.out.println(response.bodyAsString());
                 assertEquals(200, response.statusCode());
                 String responseBody = response.bodyAsString();
-                assertEquals("{\"keys\":{\"location\":\"http://default_url\"}}", responseBody);
+                assertEquals("{\"keysets\":{\"location\":\"http://default_url\"}}", responseBody);
                 testContext.completeNow();
             } else {
                 testContext.failNow(ar.cause());
