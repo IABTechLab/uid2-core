@@ -63,7 +63,7 @@ public class OperatorInfo {
             if (version.startsWith("uid2-operator=")) {
                 String operatorVersion = version.substring("uid2-operator=".length());
                 boolean isSupported = isVersionGreaterOrEqual(operatorVersion, ConfigStore.Global.getOrDefault(encryptionSupportVersion, "9999"));
-                logger.info("Operator version: {}, {}",
+                logger.debug("Operator version: {}, {}",
                         operatorVersion, isSupported ? "Supports encryption" : "Does not support encryption");
                 return isSupported;
             }
