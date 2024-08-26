@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="uid2-core - standalone (local-config.json)" type="MavenRunConfiguration" factoryName="Maven">
+  <configuration default="false" name="uid2-core - integrated (integ-config.json)" type="MavenRunConfiguration" factoryName="Maven">
     <MavenSettings>
       <option name="myGeneralSettings" />
       <option name="myRunnerSettings" />
