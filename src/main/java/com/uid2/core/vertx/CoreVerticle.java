@@ -33,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
 
 import javax.crypto.BadPaddingException;
@@ -228,6 +227,12 @@ public class CoreVerticle extends AbstractVerticle {
         } catch (DecodeException e) {
             setAttestationFailureReason(rc, AttestationFailureReason.REQUEST_BODY_IS_NOT_VALID_JSON);
             Error("request body is not a valid json", 400, rc, null);
+            return;
+        }
+
+        if (!operator.getOperatorType().name().equalsIgnoreCase(json.getString("operator_type"))) {
+            setAttestationFailureReason(rc, AttestationFailureReason.INCORRECT_OPERATOR_TYPE);
+            Error("incorrect operator type", 400, rc, null);
             return;
         }
 

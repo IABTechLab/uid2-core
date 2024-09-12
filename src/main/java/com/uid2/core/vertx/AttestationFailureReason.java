@@ -26,4 +26,9 @@ public enum AttestationFailureReason {
      * Internal server error
      */
     INTERNAL_ERROR,
+
+    /**
+     * Internal server error
+     */
+    INCORRECT_OPERATOR_TYPE
 }
