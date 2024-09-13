@@ -230,12 +230,6 @@ public class CoreVerticle extends AbstractVerticle {
             return;
         }
 
-        if (!operator.getOperatorType().name().equalsIgnoreCase(json.getString("operator_type"))) {
-            setAttestationFailureReason(rc, AttestationFailureReason.INCORRECT_OPERATOR_TYPE);
-            Error("incorrect operator type", 400, rc, null);
-            return;
-        }
-
         String request = json == null ? null : json.getString("attestation_request");
 
         if (request == null || request.isEmpty()) {
@@ -259,6 +253,12 @@ public class CoreVerticle extends AbstractVerticle {
                 if (!attestationResult.isSuccess()) {
                     setAttestationFailureReason(rc, AttestationFailureReason.ATTESTATION_FAILURE, Collections.singletonMap("reason", attestationResult.getReason()));
                     Error(attestationResult.getReason(), 401, rc, null);
+                    return;
+                }
+
+                if (!operator.getOperatorType().name().equalsIgnoreCase(json.getString("operator_type"))) {
+                    setAttestationFailureReason(rc, AttestationFailureReason.ATTESTATION_FAILURE);
+                    Error("attestation failure", 400, rc, null);
                     return;
                 }
 
