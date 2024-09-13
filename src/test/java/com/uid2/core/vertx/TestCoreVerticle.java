@@ -31,6 +31,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -99,9 +101,13 @@ public class TestCoreVerticle {
         this.fakeAuth(attestationProtocol, roles);
     }
 
-    private void fakeAuth(String attestationProtocol, Role... roles) {
-        OperatorKey operatorKey = new OperatorKey("test-key-hash", "test-key-salt", "test-name", "test-contact", attestationProtocol, 0, false, 88, new HashSet<>(Arrays.asList(roles)), OperatorType.PRIVATE,  "test-key-id");
+    private void fakeAuth(String attestationProtocol, boolean publicOperator, Role... roles) {
+        OperatorKey operatorKey = new OperatorKey("test-key-hash", "test-key-salt", "test-name", "test-contact", attestationProtocol, 0, false, 88, new HashSet<>(Arrays.asList(roles)), publicOperator ? OperatorType.PUBLIC : OperatorType.PRIVATE,  "test-key-id");
         when(authProvider.get(any())).thenReturn(operatorKey);
+    }
+
+    private void fakeAuth(String attestationProtocol, Role... roles) {
+        fakeAuth(attestationProtocol, false, roles);
     }
 
     private void post(Vertx vertx, String endpoint, String body, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
@@ -145,8 +151,8 @@ public class TestCoreVerticle {
 
     }
 
-    private static String makeAttestationRequestJson(String attestationRequest, String publicKey) {
-        JsonObject json = new JsonObject();
+    private static String makeAttestationRequestJson(String attestationRequest, String publicKey, boolean publicOperator) {
+        JsonObject json = new JsonObject().put("operator_type", publicOperator ? "public" : "private");
         if (attestationRequest != null) {
             json.put("attestation_request", attestationRequest);
         }
@@ -154,6 +160,10 @@ public class TestCoreVerticle {
             json.put("public_key", publicKey);
         }
         return json.toString();
+    }
+
+    private static String makeAttestationRequestJson(String attestationRequest, String publicKey) {
+        return makeAttestationRequestJson(attestationRequest, publicKey, false);
     }
 
     @Test
@@ -239,9 +249,10 @@ public class TestCoreVerticle {
         });
     }
 
-    @Test
-    void attestSuccessNoEncryption(Vertx vertx, VertxTestContext testContext) {
-        fakeAuth(Role.OPERATOR);
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void attestSuccessNoEncryption(boolean publicOperator, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(attestationProtocol, publicOperator, Role.OPERATOR);
         addAttestationProvider(attestationProtocol);
         onHandleAttestationRequest(() -> {
             byte[] resultPublicKey = null;
@@ -249,7 +260,7 @@ public class TestCoreVerticle {
         });
         EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestation-token", Instant.ofEpochMilli(111));
         when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
-        post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy"), ar -> {
+        post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy", publicOperator), ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -262,21 +273,43 @@ public class TestCoreVerticle {
         });
     }
 
-    @Test
-    void attestSuccessWithEncryption(Vertx vertx, VertxTestContext testContext) throws Throwable {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void attestOperatorTypeMismatchNoEncryption(boolean publicOperator, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(attestationProtocol, publicOperator, Role.OPERATOR);
+        addAttestationProvider(attestationProtocol);
+        onHandleAttestationRequest(() -> {
+            byte[] resultPublicKey = null;
+            return Future.succeededFuture(new AttestationResult(resultPublicKey, "test"));
+        });
+        EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestation-token", Instant.ofEpochMilli(111));
+        when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
+        post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy", !publicOperator), ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            JsonObject json = response.bodyAsJsonObject();
+            assertEquals("attestation failure", json.getString("status"));
+            testContext.completeNow();
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void attestSuccessWithEncryption(boolean publicOperator, Vertx vertx, VertxTestContext testContext) throws Throwable {
         KeyPairGenerator gen = KeyPairGenerator.getInstance(Const.Name.AsymetricEncryptionKeyClass);
         gen.initialize(2048, new SecureRandom());
         KeyPair keyPair = gen.generateKeyPair();
         byte[] publicKey = keyPair.getPublic().getEncoded();
 
-        fakeAuth(Role.OPERATOR);
+        fakeAuth(attestationProtocol, publicOperator, Role.OPERATOR);
         addAttestationProvider(attestationProtocol);
         onHandleAttestationRequest(() -> {
             return Future.succeededFuture(new AttestationResult(publicKey, "test"));
         });
         EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestation-token", Instant.ofEpochMilli(111));
         when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
-        post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy"), ar -> {
+        post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy", publicOperator), ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
             assertEquals(200, response.statusCode());
@@ -294,6 +327,32 @@ public class TestCoreVerticle {
 
             assertEquals("test-attestation-token", decryptedAttestationToken[0]);
 
+            testContext.completeNow();
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void attestOperatorTypeMismatchWithEncryption(boolean publicOperator, Vertx vertx, VertxTestContext testContext) throws Throwable {
+        KeyPairGenerator gen = KeyPairGenerator.getInstance(Const.Name.AsymetricEncryptionKeyClass);
+        gen.initialize(2048, new SecureRandom());
+        KeyPair keyPair = gen.generateKeyPair();
+        byte[] publicKey = keyPair.getPublic().getEncoded();
+
+        fakeAuth(attestationProtocol, publicOperator, Role.OPERATOR);
+
+        addAttestationProvider(attestationProtocol);
+        onHandleAttestationRequest(() -> {
+            return Future.succeededFuture(new AttestationResult(publicKey, "test"));
+        });
+        EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestation-token", Instant.ofEpochMilli(111));
+        when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
+        post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy", !publicOperator), ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(400, response.statusCode());
+            JsonObject json = response.bodyAsJsonObject();
+            assertEquals("attestation failure", json.getString("status"));
             testContext.completeNow();
         });
     }
