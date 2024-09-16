@@ -256,9 +256,9 @@ public class CoreVerticle extends AbstractVerticle {
                     return;
                 }
 
-                if (!operator.getOperatorType().name().equalsIgnoreCase(json.getString("operator_type"))) {
+                if (json.containsKey("operator_type") && !operator.getOperatorType().name().equalsIgnoreCase(json.getString("operator_type"))) {
                     setAttestationFailureReason(rc, AttestationFailureReason.ATTESTATION_FAILURE);
-                    Error("attestation failure", 400, rc, null);
+                    Error("attestation failure; invalid operator type", 400, rc, null);
                     return;
                 }
 
