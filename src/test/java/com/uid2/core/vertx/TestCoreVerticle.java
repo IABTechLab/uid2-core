@@ -156,7 +156,7 @@ public class TestCoreVerticle {
 
     private static String makeAttestationRequestJson(String attestationRequest, String publicKey, String operatorType) {
         JsonObject json = new JsonObject();
-        if(!operatorType.equals("")) {
+        if(!operatorType.isEmpty()) {
             json.put("operator_type", operatorType);
         }
         if (attestationRequest != null) {
