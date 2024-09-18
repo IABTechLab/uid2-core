@@ -33,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
 
 import javax.crypto.BadPaddingException;
@@ -254,6 +253,12 @@ public class CoreVerticle extends AbstractVerticle {
                 if (!attestationResult.isSuccess()) {
                     setAttestationFailureReason(rc, AttestationFailureReason.ATTESTATION_FAILURE, Collections.singletonMap("reason", attestationResult.getReason()));
                     Error(attestationResult.getReason(), 401, rc, null);
+                    return;
+                }
+
+                if (json.containsKey("operator_type") && !operator.getOperatorType().name().equalsIgnoreCase(json.getString("operator_type"))) {
+                    setAttestationFailureReason(rc, AttestationFailureReason.ATTESTATION_FAILURE);
+                    Error("attestation failure; invalid operator type", 400, rc, null);
                     return;
                 }
 
