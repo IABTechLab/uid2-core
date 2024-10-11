@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -220,7 +221,7 @@ public class TestCoreVerticle {
         post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy"), ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
-            assertEquals(500, response.statusCode());
+            assertEquals(403, response.statusCode());
             testContext.completeNow();
         });
     }
@@ -240,17 +241,34 @@ public class TestCoreVerticle {
         });
     }
 
-    @Test
-    void attestFailureWithResult(Vertx vertx, VertxTestContext testContext) {
+    @ParameterizedTest
+    @EnumSource(value = AttestationFailure.class, names = {"UNKNOWN_ATTESTATION_URL", "FORBIDDEN_ENCLAVE", "BAD_FORMAT", "INVALID_PROTOCOL", "BAD_CERTIFICATE", "BAD_PAYLOAD"})
+    void attestFailureWithResultClientError(AttestationFailure failure, Vertx vertx, VertxTestContext testContext) {
         fakeAuth(Role.OPERATOR);
         addAttestationProvider(attestationProtocol);
         onHandleAttestationRequest(() -> {
-            return Future.succeededFuture(new AttestationResult(AttestationFailure.BAD_PAYLOAD));
+            return Future.succeededFuture(new AttestationResult(failure));
         });
         post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy"), ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
-            assertEquals(401, response.statusCode());
+            assertEquals(403, response.statusCode());
+            testContext.completeNow();
+        });
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = AttestationFailure.class, names = {"UNKNOWN", "INTERNAL_ERROR"})
+    void attestFailureWithResultServerError(AttestationFailure failure, Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.OPERATOR);
+        addAttestationProvider(attestationProtocol);
+        onHandleAttestationRequest(() -> {
+            return Future.succeededFuture(new AttestationResult(failure));
+        });
+        post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy"), ar -> {
+            assertTrue(ar.succeeded());
+            HttpResponse response = ar.result();
+            assertEquals(500, response.statusCode());
             testContext.completeNow();
         });
     }
@@ -293,7 +311,7 @@ public class TestCoreVerticle {
         post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy", operatorType.equalsIgnoreCase("public") ? "private" : "public"), ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
-            assertEquals(400, response.statusCode());
+            assertEquals(403, response.statusCode());
             JsonObject json = response.bodyAsJsonObject();
             assertEquals("attestation failure; invalid operator type", json.getString("status"));
             testContext.completeNow();
@@ -356,7 +374,7 @@ public class TestCoreVerticle {
         post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy", operatorType.equalsIgnoreCase("public") ? "private" : "public"), ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
-            assertEquals(400, response.statusCode());
+            assertEquals(403, response.statusCode());
             JsonObject json = response.bodyAsJsonObject();
             assertEquals("attestation failure; invalid operator type", json.getString("status"));
             testContext.completeNow();
