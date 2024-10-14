@@ -243,6 +243,13 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             attestationService.attest(protocol, request, clientPublicKey, ar -> {
                 if (!ar.succeeded()) {
+                    if (ar.cause() instanceof AttestationClientException ace && ace.IsClientError()) {
+                        setAttestationFailureReason(rc, ace.getAttestationFailure(), Collections.singletonMap("reason", ace.getAttestationFailure().explain()));
+                        logger.warn("attestation failure: ", ace);
+                        Error("attestation failure", 400, rc, ace.getAttestationFailure().explain());
+                        return;
+                    }
+
                     // 500 is only for unknown errors in the attestation processing
                     setAttestationFailureReason(rc, AttestationFailure.INTERNAL_ERROR, Collections.singletonMap("cause", ar.cause().getMessage()));
                     logger.warn("attestation failure: ", ar.cause());
@@ -254,12 +261,12 @@ public class CoreVerticle extends AbstractVerticle {
                 if (!attestationResult.isSuccess()) {
                     AttestationFailure failure = attestationResult.getFailure();
                     switch (failure) {
-                        case AttestationFailure.UNKNOWN_ATTESTATION_URL:
-                        case AttestationFailure.FORBIDDEN_ENCLAVE:
                         case AttestationFailure.BAD_FORMAT:
                         case AttestationFailure.INVALID_PROTOCOL:
                         case AttestationFailure.BAD_CERTIFICATE:
                         case AttestationFailure.BAD_PAYLOAD:
+                        case AttestationFailure.UNKNOWN_ATTESTATION_URL:
+                        case AttestationFailure.FORBIDDEN_ENCLAVE:
                             setAttestationFailureReason(rc, failure, Collections.singletonMap("reason", attestationResult.getReason()));
                             Error(attestationResult.getReason(), 403, rc, failure.explain());
                             return;
