@@ -79,7 +79,6 @@ public class CoreVerticle extends AbstractVerticle {
     private final ISaltMetadataProvider saltMetadataProvider;
     private final IPartnerMetadataProvider partnerMetadataProvider;
     private final OperatorJWTTokenProvider operatorJWTTokenProvider;
-    //private final JwtService jwtService;
     private final RotatingS3KeyProvider s3KeyProvider;
 
     public CoreVerticle(ICloudStorage cloudStorage,
@@ -103,7 +102,7 @@ public class CoreVerticle extends AbstractVerticle {
 
         final String jwtAudience = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
         final String jwtIssuer = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
-        Boolean enforceJwt = ConfigStore.Global.getBoolean(EnforceJwtProp);
+        Boolean enforceJwt = ConfigStore.Global.getBoolean(Const.Config.EnforceJwtProp);
         if (enforceJwt == null) {
             enforceJwt = false;
         }
