@@ -1,10 +1,10 @@
 package com.uid2.core.handler;
 
 import com.uid2.core.Const;
-import com.uid2.core.vertx.AttestationFailureReason;
 import com.uid2.shared.auth.IAuthorizable;
 import com.uid2.shared.auth.OperatorKey;
 import com.uid2.shared.middleware.AuthMiddleware;
+import com.uid2.shared.secure.AttestationFailure;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.SocketAddress;
@@ -40,14 +40,14 @@ public class AttestationFailureHandler implements Handler<RoutingContext> {
             return;
         }
 
-        final AttestationFailureReason attestationFailureReason = context.get(Const.RoutingContextData.ATTESTATION_FAILURE_REASON_PROP);
+        final AttestationFailure attestationFailure = context.get(Const.RoutingContextData.ATTESTATION_FAILURE_REASON_PROP);
         final String attestationFailureDataJson = getAttestationFailureDataJson(context);
 
         final String originatingIpAddress = getOriginatingIpAddress(context);
 
         LOG.warn("Attestation failed. StatusCode={} Reason={} Data={} OperatorKeyHash={} OperatorKeyName={} SiteId={} Protocol={} OperatorType={} OriginatingIpAddress={}",
                 context.response().getStatusCode(),
-                attestationFailureReason,
+                attestationFailure,
                 attestationFailureDataJson,
                 operatorKey.getKeyHash(),
                 operatorKey.getName(),
