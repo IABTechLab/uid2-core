@@ -72,6 +72,9 @@ public class OperatorInfo {
         return false;
     }
 
+    /*
+    Returns if the version of a semvar v1 is greater or equal to v2
+     */
     static boolean isVersionGreaterOrEqual(String v1, String v2) {
         Pattern pattern = Pattern.compile("(\\d+)(?:\\.(\\d+))?(?:\\.(\\d+))?");
         Matcher m1 = pattern.matcher(v1);
