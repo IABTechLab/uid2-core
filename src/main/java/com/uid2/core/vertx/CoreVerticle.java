@@ -33,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
 
 import javax.crypto.BadPaddingException;
@@ -50,6 +49,7 @@ import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.*;
+
 import com.uid2.shared.store.reader.RotatingS3KeyProvider;
 import com.uid2.shared.model.S3Key;
 
@@ -79,7 +79,6 @@ public class CoreVerticle extends AbstractVerticle {
     private final ISaltMetadataProvider saltMetadataProvider;
     private final IPartnerMetadataProvider partnerMetadataProvider;
     private final OperatorJWTTokenProvider operatorJWTTokenProvider;
-    private final JwtService jwtService;
     private final RotatingS3KeyProvider s3KeyProvider;
 
     public CoreVerticle(ICloudStorage cloudStorage,
@@ -97,7 +96,6 @@ public class CoreVerticle extends AbstractVerticle {
 
         this.attestationService = attestationService;
         this.attestationTokenService = attestationTokenService;
-        this.jwtService = jwtService;
         this.enclaveIdentifierProvider = enclaveIdentifierProvider;
         this.enclaveIdentifierProvider.addListener(this.attestationService);
         this.s3KeyProvider = s3KeyProvider;
@@ -109,7 +107,7 @@ public class CoreVerticle extends AbstractVerticle {
             enforceJwt = false;
         }
 
-        this.attestationMiddleware = new AttestationMiddleware(this.attestationTokenService, this.jwtService, jwtAudience, jwtIssuer, enforceJwt);
+        this.attestationMiddleware = new AttestationMiddleware(this.attestationTokenService, jwtService, jwtAudience, jwtIssuer, enforceJwt);
 
         this.auth = new AuthMiddleware(authProvider);
 
@@ -226,7 +224,7 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             json = rc.body().asJsonObject();
         } catch (DecodeException e) {
-            setAttestationFailureReason(rc, AttestationFailureReason.REQUEST_BODY_IS_NOT_VALID_JSON);
+            setAttestationFailureReason(rc, AttestationFailure.BAD_PAYLOAD, Collections.singletonMap("cause", AttestationFailure.BAD_PAYLOAD.explain()));
             Error("request body is not a valid json", 400, rc, null);
             return;
         }
@@ -234,7 +232,7 @@ public class CoreVerticle extends AbstractVerticle {
         String request = json == null ? null : json.getString("attestation_request");
 
         if (request == null || request.isEmpty()) {
-            setAttestationFailureReason(rc, AttestationFailureReason.NO_ATTESTATION_REQUEST_ATTACHED);
+            setAttestationFailureReason(rc, AttestationFailure.BAD_PAYLOAD, Collections.singletonMap("cause", AttestationFailure.BAD_PAYLOAD.explain()));
             Error("no attestation_request attached", 400, rc, null);
             return;
         }
@@ -244,7 +242,15 @@ public class CoreVerticle extends AbstractVerticle {
         try {
             attestationService.attest(protocol, request, clientPublicKey, ar -> {
                 if (!ar.succeeded()) {
-                    setAttestationFailureReason(rc, AttestationFailureReason.ATTESTATION_FAILURE, Collections.singletonMap("cause", ar.cause().getMessage()));
+                    if (ar.cause() instanceof AttestationClientException ace && ace.IsClientError()) {
+                        setAttestationFailureReason(rc, ace.getAttestationFailure(), Collections.singletonMap("reason", ace.getAttestationFailure().explain()));
+                        logger.warn("attestation failure: ", ace);
+                        Error("attestation failure", 400, rc, ace.getAttestationFailure().explain());
+                        return;
+                    }
+
+                    // 500 is only for unknown errors in the attestation processing
+                    setAttestationFailureReason(rc, AttestationFailure.INTERNAL_ERROR, Collections.singletonMap("cause", ar.cause().getMessage()));
                     logger.warn("attestation failure: ", ar.cause());
                     Error("attestation failure", 500, rc, null);
                     return;
@@ -252,8 +258,28 @@ public class CoreVerticle extends AbstractVerticle {
 
                 final AttestationResult attestationResult = ar.result();
                 if (!attestationResult.isSuccess()) {
-                    setAttestationFailureReason(rc, AttestationFailureReason.ATTESTATION_FAILURE, Collections.singletonMap("reason", attestationResult.getReason()));
-                    Error(attestationResult.getReason(), 401, rc, null);
+                    AttestationFailure failure = attestationResult.getFailure();
+                    switch (failure) {
+                        case AttestationFailure.BAD_FORMAT:
+                        case AttestationFailure.INVALID_PROTOCOL:
+                        case AttestationFailure.BAD_CERTIFICATE:
+                        case AttestationFailure.BAD_PAYLOAD:
+                        case AttestationFailure.UNKNOWN_ATTESTATION_URL:
+                        case AttestationFailure.FORBIDDEN_ENCLAVE:
+                            setAttestationFailureReason(rc, failure, Collections.singletonMap("reason", attestationResult.getReason()));
+                            Error(attestationResult.getReason(), 403, rc, failure.explain());
+                            return;
+                        case AttestationFailure.UNKNOWN:
+                        case AttestationFailure.INTERNAL_ERROR:
+                            setAttestationFailureReason(rc, failure, Collections.singletonMap("reason", attestationResult.getReason()));
+                            Error(attestationResult.getReason(), 500, rc, failure.explain());
+                            return;
+                    }
+                }
+
+                if (json.containsKey("operator_type") && !operator.getOperatorType().name().equalsIgnoreCase(json.getString("operator_type"))) {
+                    setAttestationFailureReason(rc, AttestationFailure.INVALID_TYPE, Collections.singletonMap("reason", AttestationFailure.INVALID_TYPE.explain()));
+                    Error("attestation failure; invalid operator type", 403, rc, null);
                     return;
                 }
 
@@ -289,7 +315,7 @@ public class CoreVerticle extends AbstractVerticle {
                         }
                     }
                 } catch (Exception e) {
-                    Error("attestation failure", 500, rc, null);
+                    Error("attestation failure", 500, rc, AttestationFailure.INTERNAL_ERROR.explain());
                     return;
                 }
 
@@ -297,8 +323,8 @@ public class CoreVerticle extends AbstractVerticle {
                 Success(rc, responseObj);
             });
         } catch (AttestationService.NotFound e) {
-            setAttestationFailureReason(rc, AttestationFailureReason.INVALID_PROTOCOL);
-            Error("protocol not found", 500, rc, null);
+            setAttestationFailureReason(rc, AttestationFailure.INVALID_PROTOCOL, Collections.singletonMap("cause", AttestationFailure.INVALID_PROTOCOL.explain()));
+            Error("protocol not found", 403, rc, null);
         }
     }
 
@@ -311,7 +337,7 @@ public class CoreVerticle extends AbstractVerticle {
                 cipher.init(Cipher.ENCRYPT_MODE, publicKey);
                 return Base64.getEncoder().encodeToString(cipher.doFinal(encodedAttestationToken.getBytes(StandardCharsets.UTF_8)));
             } catch (Exception e) {
-                setAttestationFailureReason(rc, AttestationFailureReason.RESPONSE_ENCRYPTION_EXCEPTION, Collections.singletonMap("exception", e.getMessage()));
+                setAttestationFailureReason(rc, AttestationFailure.RESPONSE_ENCRYPTION_ERROR, Collections.singletonMap("exception", e.getMessage()));
                 logger.warn("attestation failure: exception while encrypting response", e);
                 throw e;
             }
@@ -328,10 +354,9 @@ public class CoreVerticle extends AbstractVerticle {
                 String optOutJwtToken = this.operatorJWTTokenProvider.getOptOutJWTToken(operator.getKeyHash(), operator.getName(), operator.getRoles(), operator.getSiteId(), enclaveId, operator.getProtocol(), clientVersion, expiresAt);
                 String coreJwtToken = this.operatorJWTTokenProvider.getCoreJWTToken(operator.getKeyHash(), operator.getName(), operator.getRoles(), operator.getSiteId(), enclaveId, operator.getProtocol(), clientVersion, expiresAt);
 
-                Map.Entry<String, String> tokens = new AbstractMap.SimpleEntry<>(optOutJwtToken, coreJwtToken);
-                return tokens;
+                return new AbstractMap.SimpleEntry<>(optOutJwtToken, coreJwtToken);
             } catch (JWTTokenProvider.JwtSigningException e) {
-                setAttestationFailureReason(rc, AttestationFailureReason.INTERNAL_ERROR, Collections.singletonMap("exception", e.getMessage()));
+                setAttestationFailureReason(rc, AttestationFailure.INTERNAL_ERROR, Collections.singletonMap("exception", e.getMessage()));
                 logger.error("OptOut JWT token generation failed", e);
                 throw e;
             }
@@ -341,11 +366,11 @@ public class CoreVerticle extends AbstractVerticle {
         return null;
     }
 
-    private static void setAttestationFailureReason(RoutingContext context, AttestationFailureReason reason) {
+    private static void setAttestationFailureReason(RoutingContext context, AttestationFailure reason) {
         setAttestationFailureReason(context, reason, null);
     }
 
-    private static void setAttestationFailureReason(RoutingContext context, AttestationFailureReason reason, Map<String, Object> data) {
+    private static void setAttestationFailureReason(RoutingContext context, AttestationFailure reason, Map<String, Object> data) {
         context.put(com.uid2.core.Const.RoutingContextData.ATTESTATION_FAILURE_REASON_PROP, reason);
         context.put(com.uid2.core.Const.RoutingContextData.ATTESTATION_FAILURE_DATA_PROP, data);
     }
@@ -518,14 +543,13 @@ public class CoreVerticle extends AbstractVerticle {
             }
 
             Object enclavesObj = main.getValue("enclaves");
-            if (!(enclavesObj instanceof JsonArray)) {
+            if (!(enclavesObj instanceof JsonArray enclaves)) {
                 logger.info("enclave register has been called without .enclaves key");
                 Error("error", 400, rc, ".enclaves needs to be an array");
                 return;
             }
 
             JsonArray res = new JsonArray();
-            JsonArray enclaves = (JsonArray) enclavesObj;
             for (int i = 0; i < enclaves.size(); i++) {
                 Result result = new Result();
                 JsonObject item = enclaves.getJsonObject(i);
@@ -568,7 +592,11 @@ public class CoreVerticle extends AbstractVerticle {
         String clientVersion = "unknown client version";
         if (rc.request().headers().contains(Const.Http.AppVersionHeader)) {
             var client = VertxUtils.parseClientAppVersion(rc.request().headers().get(Const.Http.AppVersionHeader));
-            clientVersion = profile.getContact() + "|" + client.getKey() + "|" + client.getValue();
+            if (client != null) {
+                clientVersion = profile.getContact() + "|" + client.getKey() + "|" + client.getValue();
+            } else {
+                clientVersion = profile.getContact() + "|null client key";
+            }
         }
         return clientVersion;
     }
