@@ -260,17 +260,17 @@ public class CoreVerticle extends AbstractVerticle {
                 if (!attestationResult.isSuccess()) {
                     AttestationFailure failure = attestationResult.getFailure();
                     switch (failure) {
-                        case AttestationFailure.BAD_FORMAT:
-                        case AttestationFailure.INVALID_PROTOCOL:
-                        case AttestationFailure.BAD_CERTIFICATE:
-                        case AttestationFailure.BAD_PAYLOAD:
-                        case AttestationFailure.UNKNOWN_ATTESTATION_URL:
-                        case AttestationFailure.FORBIDDEN_ENCLAVE:
+                        case BAD_FORMAT:
+                        case INVALID_PROTOCOL:
+                        case BAD_CERTIFICATE:
+                        case BAD_PAYLOAD:
+                        case UNKNOWN_ATTESTATION_URL:
+                        case FORBIDDEN_ENCLAVE:
                             setAttestationFailureReason(rc, failure, Collections.singletonMap("reason", attestationResult.getReason()));
                             Error(attestationResult.getReason(), 403, rc, failure.explain());
                             return;
-                        case AttestationFailure.UNKNOWN:
-                        case AttestationFailure.INTERNAL_ERROR:
+                        case UNKNOWN:
+                        case INTERNAL_ERROR:
                             setAttestationFailureReason(rc, failure, Collections.singletonMap("reason", attestationResult.getReason()));
                             Error(attestationResult.getReason(), 500, rc, failure.explain());
                             return;

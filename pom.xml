@@ -24,15 +24,9 @@
         <vertx.verticle>com.uid2.core.vertx.CoreVerticle</vertx.verticle>
         <launcher.class>io.vertx.core.Launcher</launcher.class>
 
-<<<<<<< HEAD
     <uid2-shared.version>7.21.0</uid2-shared.version>
     <image.version>${project.version}</image.version>
   </properties>
-=======
-        <uid2-shared.version>7.20.0</uid2-shared.version>
-        <image.version>${project.version}</image.version>
-    </properties>
->>>>>>> main
 
     <repositories>
         <repository>
@@ -183,121 +177,17 @@
             <version>5.12.0</version>
             <scope>test</scope>
         </dependency>
-
-    </dependencies>
-
-<<<<<<< HEAD
-  <dependencies>
-    <dependency>
-      <groupId>com.uid2</groupId>
-      <artifactId>uid2-shared</artifactId>
-      <version>${uid2-shared.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-config</artifactId>
-      <version>${vertx.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-web</artifactId>
-      <version>${vertx.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-web-client</artifactId>
-      <version>${vertx.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.auth</groupId>
-      <artifactId>google-auth-library-oauth2-http</artifactId>
-      <version>1.14.0</version>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-junit5</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <version>${junit-jupiter.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <version>${junit-jupiter.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-inline</artifactId>
-      <version>5.2.0</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>net.bytebuddy</groupId>
-      <artifactId>byte-buddy</artifactId>
-      <version>1.14.17</version>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-micrometer-metrics</artifactId>
-      <version>${vertx.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>co.nstant.in</groupId>
-      <artifactId>cbor</artifactId>
-      <version>0.9</version>
-    </dependency>
-    <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-s3</artifactId>
-      <version>1.12.701</version>
-    </dependency>
-    <dependency>
-      <groupId>io.micrometer</groupId>
-      <artifactId>micrometer-registry-prometheus</artifactId>
-      <version>${micrometer.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-core</artifactId>
-      <version>1.4.12</version>
-    </dependency>
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <version>1.4.12</version>
-    </dependency>
-    <dependency>
-      <groupId>com.github.loki4j</groupId>
-      <artifactId>loki-logback-appender</artifactId>
-      <version>1.2.0</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-codec</groupId>
-      <artifactId>commons-codec</artifactId>
-      <version>1.15</version>
-    </dependency>
-    <dependency>
-        <groupId>software.amazon.awssdk</groupId>
-        <artifactId>secretsmanager</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>software.amazon.awssdk</groupId>
-        <artifactId>kms</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>sts</artifactId>
-    </dependency>
-
+        <dependency>
+          <groupId>org.mockito</groupId>
+          <artifactId>mockito-inline</artifactId>
+          <version>5.2.0</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>net.bytebuddy</groupId>
+          <artifactId>byte-buddy</artifactId>
+          <version>1.14.17</version>
+        </dependency>
   </dependencies>
 
   <build>
@@ -319,8 +209,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.11.0</version>
         <configuration>
-          <source>11</source>
-          <target>11</target>
+          <source>16</source>
+          <target>16</target>
         </configuration>
       </plugin>
       <plugin>
@@ -422,134 +312,4 @@
       </plugin>
     </plugins>
   </build>
-=======
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.12</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.12.1</version>
-                <configuration>
-                    <source>21</source>
-                    <target>21</target>
-                    <release>21</release>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>3.2.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>io.reactiverse</groupId>
-                <artifactId>vertx-maven-plugin</artifactId>
-                <version>${vertx-maven-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>vmp</id>
-                        <goals>
-                            <goal>initialize</goal>
-                            <goal>package</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <redeploy>true</redeploy>
-                    <jvmArgs>
-                        <jvmArg>-Djava.security.egd=file:/dev/./urandom</jvmArg>
-                    </jvmArgs>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.3.0</version>
-                <configuration>
-                    <!-- get all project dependencies -->
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <!-- MainClass in manifest make a executable jar -->
-                    <archive>
-                        <manifest>
-                            <mainClass>com.uid2.core.Main</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>make-assembly</id>
-                        <!-- bind to the packaging phase -->
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>properties-maven-plugin</artifactId>
-                <version>1.0.0</version>
-                <executions>
-                    <execution>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>write-project-properties</goal>
-                        </goals>
-                        <configuration>
-                            <outputFile>${project.build.outputDirectory}/${project.artifactId}.properties</outputFile>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>${exec-maven-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>default-cli</id>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                        <configuration>
-                            <mainClass>com.uid2.core.Main</mainClass>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>${maven-surefire-plugin.version}</version>
-            </plugin>
-            <plugin>
-                <groupId>com.azure.tools</groupId>
-                <artifactId>azure-sdk-build-tool</artifactId>
-                <version>1.0.0</version>
-            </plugin>
-        </plugins>
-    </build>
->>>>>>> main
 </project>
