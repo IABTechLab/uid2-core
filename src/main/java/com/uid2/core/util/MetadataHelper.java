@@ -32,10 +32,10 @@ public final class MetadataHelper {
     }
 
 
-    public static String getMetadataPathName(OperatorType operatorType, int siteId, String metadataPathName, Boolean canDecrypt) {
+    public static String getMetadataPathName(OperatorType operatorType, int siteId, String metadataPathName, Boolean supportsDecryption) {
         StoreScope store;
         Boolean providePrivateSiteData = ConfigStore.Global.getBoolean("provide_private_site_data");
-        if (canDecrypt) { // Check if decryption is possible
+        if (supportsDecryption) { // Check if decryption is possible
             if (operatorType == OperatorType.PUBLIC ) //siteId_public folder
             {
                 store = new EncryptedScope(new CloudPath(metadataPathName), siteId, true);

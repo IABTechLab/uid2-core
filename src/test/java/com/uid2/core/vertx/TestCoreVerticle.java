@@ -707,4 +707,29 @@ public class TestCoreVerticle {
         });
     }
 
+    @Tag("dontForceJwt")
+    @Test
+    void keysRefreshSuccessNoHeaderVersion(Vertx vertx, VertxTestContext testContext) throws Exception {
+        fakeAuth(attestationProtocolPublic, Role.OPERATOR);
+        addAttestationProvider(attestationProtocolPublic);
+        onHandleAttestationRequest(() -> {
+            byte[] resultPublicKey = null;
+            return Future.succeededFuture(new AttestationResult(resultPublicKey, "test"));
+        });
+
+        MultiMap headers = MultiMap.caseInsensitiveMultiMap();
+
+        getWithVersion(vertx, "key/keyset/refresh", headers, ar -> {
+            if (ar.succeeded()) {
+                HttpResponse<Buffer> response = ar.result();
+                System.out.println(response.bodyAsString());
+                assertEquals(200, response.statusCode());
+                String responseBody = response.bodyAsString();
+                assertEquals("{\"keysets\":{\"location\":\"http://default_url\"}}", responseBody);
+                testContext.completeNow();
+            } else {
+                testContext.failNow(ar.cause());
+            }
+        });
+    }
 }
