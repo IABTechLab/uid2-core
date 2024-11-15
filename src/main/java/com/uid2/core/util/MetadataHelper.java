@@ -4,6 +4,7 @@ import com.uid2.core.model.ConfigStore;
 import com.uid2.shared.auth.OperatorType;
 import com.uid2.shared.auth.Role;
 import com.uid2.shared.store.CloudPath;
+import com.uid2.shared.store.scope.EncryptedScope;
 import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.store.scope.SiteScope;
 import com.uid2.shared.store.scope.StoreScope;
@@ -22,17 +23,34 @@ public final class MetadataHelper {
         return SiteSpecificDataSubDirPath +siteId + metadataPathName;
     }
 
-    public static String getMetadataPathName(OperatorType operatorType, int siteId, String metadataPathName)
-    {
+    public static String getMetadataPathName(OperatorType operatorType, int siteId, String metadataPathName) {
+        return getMetadataPathName(operatorType, siteId, metadataPathName, false);
+    }
+
+    public static String getMetadataPathName(OperatorInfo info, String metadataPathName) {
+        return getMetadataPathName(info.getOperatorType(), info.getSiteId(), metadataPathName, info.getSupportsEncryption());
+    }
+
+
+    public static String getMetadataPathName(OperatorType operatorType, int siteId, String metadataPathName, Boolean supportsDecryption) {
         StoreScope store;
         Boolean providePrivateSiteData = ConfigStore.Global.getBoolean("provide_private_site_data");
-        if (operatorType == OperatorType.PUBLIC || (providePrivateSiteData == null || !providePrivateSiteData.booleanValue()))
-        {
-            store = new GlobalScope(new CloudPath(metadataPathName));
-        }
-        else //PRIVATE
-        {
-            store = new SiteScope(new CloudPath(metadataPathName), siteId);
+        if (supportsDecryption) { // Check if decryption is possible
+            if (operatorType == OperatorType.PUBLIC ) //siteId_public folder
+            {
+                store = new EncryptedScope(new CloudPath(metadataPathName), siteId, true);
+            } else //siteId_private folder
+            {
+                store = new EncryptedScope(new CloudPath(metadataPathName), siteId, false);
+            }
+        } else {
+            if (operatorType == OperatorType.PUBLIC || (providePrivateSiteData == null || !providePrivateSiteData.booleanValue()))
+            {
+                store = new GlobalScope(new CloudPath(metadataPathName));
+            } else //PRIVATE
+            {
+                store = new SiteScope(new CloudPath(metadataPathName), siteId);
+            }
         }
         return store.getMetadataPath().toString();
     }
