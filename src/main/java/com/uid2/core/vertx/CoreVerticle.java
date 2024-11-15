@@ -50,8 +50,9 @@ import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.*;
 
-import com.uid2.shared.store.reader.RotatingS3KeyProvider;
-import com.uid2.shared.model.S3Key;
+import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
+import com.uid2.shared.model.CloudEncryptionKey;
+
 
 import static com.uid2.shared.Const.Config.EnforceJwtProp;
 
@@ -79,7 +80,7 @@ public class CoreVerticle extends AbstractVerticle {
     private final ISaltMetadataProvider saltMetadataProvider;
     private final IPartnerMetadataProvider partnerMetadataProvider;
     private final OperatorJWTTokenProvider operatorJWTTokenProvider;
-    private final RotatingS3KeyProvider s3KeyProvider;
+    private final RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
 
     public CoreVerticle(ICloudStorage cloudStorage,
                         IAuthorizableProvider authProvider,
@@ -88,7 +89,7 @@ public class CoreVerticle extends AbstractVerticle {
                         IEnclaveIdentifierProvider enclaveIdentifierProvider,
                         OperatorJWTTokenProvider operatorJWTTokenProvider,
                         JwtService jwtService,
-                        RotatingS3KeyProvider s3KeyProvider) throws Exception {
+                        RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider) throws Exception {
         this.operatorJWTTokenProvider = operatorJWTTokenProvider;
         this.healthComponent.setHealthStatus(false, "not started");
 
@@ -98,7 +99,7 @@ public class CoreVerticle extends AbstractVerticle {
         this.attestationTokenService = attestationTokenService;
         this.enclaveIdentifierProvider = enclaveIdentifierProvider;
         this.enclaveIdentifierProvider.addListener(this.attestationService);
-        this.s3KeyProvider = s3KeyProvider;
+        this.cloudEncryptionKeyProvider = cloudEncryptionKeyProvider;
 
         final String jwtAudience = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
         final String jwtIssuer = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
@@ -178,7 +179,7 @@ public class CoreVerticle extends AbstractVerticle {
         router.post("/attest")
                 .handler(new AttestationFailureHandler())
                 .handler(auth.handle(this::handleAttestAsync, Role.OPERATOR, Role.OPTOUT_SERVICE));
-        router.get("/s3encryption_keys/retrieve").handler(auth.handle(attestationMiddleware.handle(this::handleS3EncryptionKeysRetrieval), Role.OPERATOR));
+        router.get("/cloud_encryption_keys/retrieve").handler(auth.handle(attestationMiddleware.handle(this::handleCloudEncryptionKeysRetrieval), Role.OPERATOR));
         router.get("/sites/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleSiteRefresh), Role.OPERATOR));
         router.get("/key/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeyRefresh), Role.OPERATOR));
         router.get("/key/acl/refresh").handler(auth.handle(attestationMiddleware.handle(this::handleKeyAclRefresh), Role.OPERATOR));
@@ -609,24 +610,24 @@ public class CoreVerticle extends AbstractVerticle {
         handleEnclaveChange(rc, true);
     }
 
-    void handleS3EncryptionKeysRetrieval(RoutingContext rc) {
+    void handleCloudEncryptionKeysRetrieval(RoutingContext rc) {
         try {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             int siteId = info.getSiteId();
-            List<S3Key> s3Keys = s3KeyProvider.getKeys(siteId);
+            List<CloudEncryptionKey> cloudEncryptionKeys = cloudEncryptionKeyProvider.getKeys(siteId);
 
-            if (s3Keys == null || s3Keys.isEmpty()) {
-                Error("No S3 keys found", 500, rc, "No S3 keys found for siteId: " + siteId);
+            if (cloudEncryptionKeys == null || cloudEncryptionKeys.isEmpty()) {
+                Error("No Cloud Encryption keys found", 500, rc, "No Cloud Encryption keys found for siteId: " + siteId);
                 return;
             }
 
             JsonObject response = new JsonObject()
-                    .put("s3Keys", new JsonArray(s3Keys));
+                    .put("cloudEncryptionKeys", new JsonArray(cloudEncryptionKeys));
 
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(response.encode());
         } catch (Exception e) {
-            logger.error("Error in handleRefreshS3Keys: ", e);
+            logger.error("Error in handleRefreshCloudEncryptionKeys: ", e);
             Error("error", 500, rc, "error generating attestation token");
         }
     }

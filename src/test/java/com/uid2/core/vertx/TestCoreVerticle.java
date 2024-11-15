@@ -14,7 +14,7 @@ import com.uid2.shared.secure.AttestationException;
 import com.uid2.shared.secure.AttestationFailure;
 import com.uid2.shared.secure.AttestationResult;
 import com.uid2.shared.secure.ICoreAttestationService;
-import com.uid2.shared.store.reader.RotatingS3KeyProvider;
+import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
@@ -45,7 +45,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.Callable;
 
-import com.uid2.shared.model.S3Key;
+import com.uid2.shared.model.CloudEncryptionKey;
 import java.util.Arrays;
 
 import static org.mockito.Mockito.*;
@@ -67,7 +67,7 @@ public class TestCoreVerticle {
     @Mock
     private JwtService jwtService;
     @Mock
-    private RotatingS3KeyProvider s3KeyProvider;
+    private RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
 
     private AttestationService attestationService;
 
@@ -90,7 +90,7 @@ public class TestCoreVerticle {
         attestationService = new AttestationService();
         MockitoAnnotations.initMocks(this);
 
-        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, s3KeyProvider);
+        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
     }
 
@@ -604,8 +604,8 @@ public class TestCoreVerticle {
     }
 
     @Test
-    void wrongMethodForEndpointS3(Vertx vertx, VertxTestContext testContext) {
-        post(vertx, "/s3encryption_keys/retrieve", makeAttestationRequestJson(null, null), ar -> {
+    void wrongMethodForEndpointCloudEncryption(Vertx vertx, VertxTestContext testContext) {
+        post(vertx, "/cloud_encryption_keys/retrieve", makeAttestationRequestJson(null, null), ar -> {
             try {
                 HttpResponse response = ar.result();
                 assertEquals(405, response.statusCode());
@@ -619,7 +619,7 @@ public class TestCoreVerticle {
 
     @Tag("dontForceJwt")
     @Test
-    void s3encryptionKeyRetrieveSuccess(Vertx vertx, VertxTestContext testContext) {
+    void cloudEncryptionKeyRetrieveSuccess(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(attestationProtocolPublic, Role.OPERATOR);
         addAttestationProvider(attestationProtocolPublic);
         onHandleAttestationRequest(() -> {
@@ -627,29 +627,29 @@ public class TestCoreVerticle {
             return Future.succeededFuture(new AttestationResult(resultPublicKey, "test"));
         });
 
-        S3Key key = new S3Key(1, 88, 1687635529, 1687808329, "newSecret");
+        CloudEncryptionKey key = new CloudEncryptionKey(1, 88, 1687635529, 1687808329, "newSecret");
 
-        List<S3Key> keys = Arrays.asList(key);
-        when(s3KeyProvider.getKeys(88)).thenReturn(keys);
+        List<CloudEncryptionKey> keys = Arrays.asList(key);
+        when(cloudEncryptionKeyProvider.getKeys(88)).thenReturn(keys);
 
-        get(vertx, "s3encryption_keys/retrieve", ar -> {
+        get(vertx, "cloud_encryption_keys/retrieve", ar -> {
             try {
                 if (ar.succeeded()) {
                     HttpResponse<Buffer> response = ar.result();
                     assertEquals(200, response.statusCode());
 
                     JsonObject json = response.bodyAsJsonObject();
-                    JsonArray s3KeysArray = json.getJsonArray("s3Keys");
+                    JsonArray cloudEncryptionKeysArray = json.getJsonArray("cloudEncryptionKeys");
 
-                    assertNotNull(s3KeysArray);
-                    assertEquals(1, s3KeysArray.size());
+                    assertNotNull(cloudEncryptionKeysArray);
+                    assertEquals(1, cloudEncryptionKeysArray.size());
 
-                    JsonObject s3KeyJson = s3KeysArray.getJsonObject(0);
-                    assertEquals(1, s3KeyJson.getInteger("id"));
-                    assertEquals(88, s3KeyJson.getInteger("siteId"));
-                    assertEquals(1687635529, s3KeyJson.getLong("activates"));
-                    assertEquals(1687808329, s3KeyJson.getLong("created"));
-                    assertEquals("newSecret", s3KeyJson.getString("secret"));
+                    JsonObject cloudEncryptionKeyJson = cloudEncryptionKeysArray.getJsonObject(0);
+                    assertEquals(1, cloudEncryptionKeyJson.getInteger("id"));
+                    assertEquals(88, cloudEncryptionKeyJson.getInteger("siteId"));
+                    assertEquals(1687635529, cloudEncryptionKeyJson.getLong("activates"));
+                    assertEquals(1687808329, cloudEncryptionKeyJson.getLong("created"));
+                    assertEquals("newSecret", cloudEncryptionKeyJson.getString("secret"));
 
                     testContext.completeNow();
                 } else {
@@ -664,7 +664,7 @@ public class TestCoreVerticle {
 
     @Tag("dontForceJwt")
     @Test
-    void s3encryptionKeyRetrieveSuccessWithThreeKeys(Vertx vertx, VertxTestContext testContext) {
+    void cloudEncryptionKeyRetrieveSuccessWithThreeKeys(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(attestationProtocolPublic, Role.OPERATOR);
         addAttestationProvider(attestationProtocolPublic);
         onHandleAttestationRequest(() -> {
@@ -672,33 +672,33 @@ public class TestCoreVerticle {
             return Future.succeededFuture(new AttestationResult(resultPublicKey, "test"));
         });
 
-        // Create 3 S3Key objects
-        S3Key key1 = new S3Key(1, 88, 1687635529, 1687808329, "secret1");
-        S3Key key2 = new S3Key(2, 88, 1687635530, 1687808330, "secret2");
-        S3Key key3 = new S3Key(3, 88, 1687635531, 1687808331, "secret3");
+        // Create 3 CloudEncryptionKey objects
+        CloudEncryptionKey key1 = new CloudEncryptionKey(1, 88, 1687635529, 1687808329, "secret1");
+        CloudEncryptionKey key2 = new CloudEncryptionKey(2, 88, 1687635530, 1687808330, "secret2");
+        CloudEncryptionKey key3 = new CloudEncryptionKey(3, 88, 1687635531, 1687808331, "secret3");
 
-        List<S3Key> keys = Arrays.asList(key1, key2, key3);
-        when(s3KeyProvider.getKeys(88)).thenReturn(keys);
+        List<CloudEncryptionKey> keys = Arrays.asList(key1, key2, key3);
+        when(cloudEncryptionKeyProvider.getKeys(88)).thenReturn(keys);
 
-        get(vertx, "s3encryption_keys/retrieve", ar -> {
+        get(vertx, "cloud_encryption_keys/retrieve", ar -> {
             try {
                 if (ar.succeeded()) {
                     HttpResponse<Buffer> response = ar.result();
                     assertEquals(200, response.statusCode());
 
                     JsonObject json = response.bodyAsJsonObject();
-                    JsonArray s3KeysArray = json.getJsonArray("s3Keys");
+                    JsonArray cloudEncryptionKeysArray = json.getJsonArray("cloudEncryptionKeys");
 
-                    assertNotNull(s3KeysArray);
-                    assertEquals(3, s3KeysArray.size());
+                    assertNotNull(cloudEncryptionKeysArray);
+                    assertEquals(3, cloudEncryptionKeysArray.size());
 
                     for (int i = 0; i < 3; i++) {
-                        JsonObject s3KeyJson = s3KeysArray.getJsonObject(i);
-                        assertEquals(i + 1, s3KeyJson.getInteger("id"));
-                        assertEquals(88, s3KeyJson.getInteger("siteId"));
-                        assertEquals(1687635529 + i, s3KeyJson.getLong("activates"));
-                        assertEquals(1687808329 + i, s3KeyJson.getLong("created"));
-                        assertEquals("secret" + (i + 1), s3KeyJson.getString("secret"));
+                        JsonObject cloudEncryptionKeyJson = cloudEncryptionKeysArray.getJsonObject(i);
+                        assertEquals(i + 1, cloudEncryptionKeyJson.getInteger("id"));
+                        assertEquals(88, cloudEncryptionKeyJson.getInteger("siteId"));
+                        assertEquals(1687635529 + i, cloudEncryptionKeyJson.getLong("activates"));
+                        assertEquals(1687808329 + i, cloudEncryptionKeyJson.getLong("created"));
+                        assertEquals("secret" + (i + 1), cloudEncryptionKeyJson.getString("secret"));
                     }
 
                     testContext.completeNow();
@@ -713,7 +713,7 @@ public class TestCoreVerticle {
 
     @Tag("dontForceJwt")
     @Test
-    void s3encryptionKeyRetrieveNoKeysOrError(Vertx vertx, VertxTestContext testContext) {
+    void cloudEncryptionKeyRetrieveNoKeysOrError(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(attestationProtocolPublic, Role.OPERATOR);
         addAttestationProvider(attestationProtocolPublic);
         onHandleAttestationRequest(() -> {
@@ -722,22 +722,22 @@ public class TestCoreVerticle {
         });
 
         // Test case 1: No keys found
-        when(s3KeyProvider.getKeys(anyInt())).thenReturn(Collections.emptyList());
+        when(cloudEncryptionKeyProvider.getKeys(anyInt())).thenReturn(Collections.emptyList());
 
-        get(vertx, "s3encryption_keys/retrieve", ar -> {
+        get(vertx, "cloud_encryption_keys/retrieve", ar -> {
             try {
                 if (ar.succeeded()) {
                     HttpResponse<Buffer> response = ar.result();
                     assertEquals(500, response.statusCode());
 
                     JsonObject json = response.bodyAsJsonObject();
-                    assertEquals("No S3 keys found", json.getString("status"));
-                    assertTrue(json.getString("message").contains("No S3 keys found for siteId:"));
+                    assertEquals("No Cloud Encryption keys found", json.getString("status"));
+                    assertTrue(json.getString("message").contains("No Cloud Encryption keys found for siteId:"));
 
                     // Test case 2: Exception thrown
-                    when(s3KeyProvider.getKeys(anyInt())).thenThrow(new RuntimeException("Test exception"));
+                    when(cloudEncryptionKeyProvider.getKeys(anyInt())).thenThrow(new RuntimeException("Test exception"));
 
-                    get(vertx, "s3encryption_keys/retrieve", ar2 -> {
+                    get(vertx, "cloud_encryption_keys/retrieve", ar2 -> {
                         if (ar2.succeeded()) {
                             HttpResponse<Buffer> response2 = ar2.result();
                             assertEquals(500, response2.statusCode());

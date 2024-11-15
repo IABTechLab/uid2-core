@@ -14,8 +14,8 @@ import com.uid2.shared.attest.IAttestationTokenService;
 import com.uid2.shared.attest.JwtService;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
-import com.uid2.shared.store.reader.RotatingS3KeyProvider;
-import com.uid2.shared.model.S3Key;
+import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
+import com.uid2.shared.model.CloudEncryptionKey;
 import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.EmbeddedResourceStorage;
 import com.uid2.shared.cloud.ICloudStorage;
@@ -106,7 +106,7 @@ public class Main {
 
             RotatingStoreVerticle enclaveRotatingVerticle = null;
             RotatingStoreVerticle operatorRotatingVerticle = null;
-            RotatingStoreVerticle s3KeyRotatingVerticle = null;
+            RotatingStoreVerticle cloudEncryptionKeyRotatingVerticle = null;
             CoreVerticle coreVerticle = null;
             try {
                 CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
@@ -118,10 +118,10 @@ public class Main {
                 EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
                 enclaveRotatingVerticle = new RotatingStoreVerticle("enclaves", 60000, enclaveIdProvider);
 
-                CloudPath s3KeyMetadataPath = new CloudPath(config.getString(Const.Config.S3keysMetadataPathProp));
-                GlobalScope s3KeyScope = new GlobalScope(s3KeyMetadataPath);
-                RotatingS3KeyProvider s3KeyProvider = new RotatingS3KeyProvider(cloudStorage, s3KeyScope);
-                s3KeyRotatingVerticle = new RotatingStoreVerticle("s3encryption_keys", 60000, s3KeyProvider);
+                CloudPath cloudEncryptionKeyMetadataPath = new CloudPath(config.getString(Const.Config.CloudEncryptionKeysMetadataPathProp));
+                GlobalScope cloudEncryptionKeyScope = new GlobalScope(cloudEncryptionKeyMetadataPath);
+                RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider = new RotatingCloudEncryptionKeyProvider(cloudStorage, cloudEncryptionKeyScope);
+                cloudEncryptionKeyRotatingVerticle = new RotatingStoreVerticle("cloud_encryption_keys", 60000, cloudEncryptionKeyProvider);
 
                 String corePublicUrl = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
                 AttestationService attestationService = new AttestationService()
@@ -157,7 +157,7 @@ public class Main {
 
                 JwtService jwtService = new JwtService(config);
 
-                coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, operatorJWTTokenProvider, jwtService, s3KeyProvider);
+                coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider);
             } catch (Exception e) {
                 System.out.println("failed to initialize core verticle: " + e.getMessage());
                 System.exit(-1);
@@ -165,7 +165,7 @@ public class Main {
 
             vertx.deployVerticle(enclaveRotatingVerticle);
             vertx.deployVerticle(operatorRotatingVerticle);
-            vertx.deployVerticle(s3KeyRotatingVerticle);
+            vertx.deployVerticle(cloudEncryptionKeyRotatingVerticle);
             vertx.deployVerticle(coreVerticle);
         });
     }
