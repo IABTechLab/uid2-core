@@ -638,7 +638,7 @@ public class TestCoreVerticle {
     }
 
     @Test
-    void wrongMethodForEndpointS3(Vertx vertx, VertxTestContext testContext) {
+    void wrongMethodForEndpointCloudEncryption(Vertx vertx, VertxTestContext testContext) {
         post(vertx, "/cloud_encryption_keys/retrieve", makeAttestationRequestJson(null, null), ar -> {
             try {
                 HttpResponse response = ar.result();
@@ -675,10 +675,10 @@ public class TestCoreVerticle {
                     JsonObject json = response.bodyAsJsonObject();
                     JsonArray cloudEncryptionKeysArray = json.getJsonArray("cloudEncryptionKeys");
 
-                    assertNotNull( cloudEncryptionKeysArray);
-                    assertEquals(1,  cloudEncryptionKeysArray.size());
+                    assertNotNull(cloudEncryptionKeysArray);
+                    assertEquals(1, cloudEncryptionKeysArray.size());
 
-                    JsonObject cloudEncryptionKeyJson =  cloudEncryptionKeysArray.getJsonObject(0);
+                    JsonObject cloudEncryptionKeyJson = cloudEncryptionKeysArray.getJsonObject(0);
                     assertEquals(1, cloudEncryptionKeyJson.getInteger("id"));
                     assertEquals(88, cloudEncryptionKeyJson.getInteger("siteId"));
                     assertEquals(1687635529, cloudEncryptionKeyJson.getLong("activates"));
@@ -698,7 +698,7 @@ public class TestCoreVerticle {
 
     @Tag("dontForceJwt")
     @Test
-    void cloudEncryptionencryptionKeyRetrieveSuccessWithThreeKeys(Vertx vertx, VertxTestContext testContext) {
+    void cloudEncryptionKeyRetrieveSuccessWithThreeKeys(Vertx vertx, VertxTestContext testContext) {
         fakeAuth(attestationProtocolPublic, Role.OPERATOR);
         addAttestationProvider(attestationProtocolPublic);
         onHandleAttestationRequest(() -> {
