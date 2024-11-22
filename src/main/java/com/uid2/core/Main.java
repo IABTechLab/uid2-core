@@ -171,7 +171,7 @@ public class Main {
     }
 
     private static void setupMetrics(MicrometerMetricsOptions metricOptions) {
-        BackendRegistries.setupBackend(metricOptions);
+        BackendRegistries.setupBackend(metricOptions, null);
 
         // As of now default backend registry should have been created
         if (BackendRegistries.getDefaultNow() instanceof PrometheusMeterRegistry) {
