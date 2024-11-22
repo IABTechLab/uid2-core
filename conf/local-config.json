@@ -20,5 +20,5 @@
     "provide_private_site_data": true,
     "enforceJwt": false,
     "cloud_encryption_keys_metadata_path": "/com.uid2.core/test/cloud_encryption_keys/metadata.json",
-    "encryption_support_version": "5"
+    "encryption_support_version": "9999"
 }

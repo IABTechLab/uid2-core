@@ -19,5 +19,5 @@
     "salts_metadata_path": "uid2/salts/metadata.json",
     "enforceJwt": false,
     "cloud_encryption_keys_metadata_path": "uid2/cloud_encryption_keys/metadata.json",
-    "encryption_support_version": "5"
+    "encryption_support_version": "9999"
 }
