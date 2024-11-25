@@ -7,6 +7,7 @@ import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.AttestationService;
 import com.uid2.core.service.OperatorJWTTokenProvider;
 import com.uid2.core.vertx.CoreVerticle;
+import com.uid2.core.vertx.Endpoints;
 import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import com.uid2.shared.attest.AttestationTokenService;
@@ -171,7 +172,7 @@ public class Main {
     }
 
     private static void setupMetrics(MicrometerMetricsOptions metricOptions) {
-        BackendRegistries.setupBackend(metricOptions);
+        BackendRegistries.setupBackend(metricOptions, null);
 
         // As of now default backend registry should have been created
         if (BackendRegistries.getDefaultNow() instanceof PrometheusMeterRegistry) {
@@ -183,7 +184,8 @@ public class Main {
                     .meterFilter(new PrometheusRenameFilter())
                     .meterFilter(MeterFilter.replaceTagValues(Label.HTTP_PATH.toString(), actualPath -> {
                         try {
-                            return HttpUtils.normalizePath(actualPath).split("\\?")[0];
+                            String normalized = HttpUtils.normalizePath(actualPath).split("\\?")[0];
+                            return Endpoints.pathSet().contains(normalized) ? normalized : "/unknown";
                         } catch (IllegalArgumentException e) {
                             return actualPath;
                         }
