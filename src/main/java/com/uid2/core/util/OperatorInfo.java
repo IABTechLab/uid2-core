@@ -68,7 +68,6 @@ public class OperatorInfo {
                 return isSupported;
             }
         }
-        logger.warn("No operator version found in AppVersion header.");
         return false;
     }
 
