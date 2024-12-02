@@ -53,7 +53,6 @@ import java.util.*;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.model.CloudEncryptionKey;
 
-
 import static com.uid2.shared.Const.Config.EnforceJwtProp;
 
 public class CoreVerticle extends AbstractVerticle {
@@ -261,17 +260,17 @@ public class CoreVerticle extends AbstractVerticle {
                 if (!attestationResult.isSuccess()) {
                     AttestationFailure failure = attestationResult.getFailure();
                     switch (failure) {
-                        case AttestationFailure.BAD_FORMAT:
-                        case AttestationFailure.INVALID_PROTOCOL:
-                        case AttestationFailure.BAD_CERTIFICATE:
-                        case AttestationFailure.BAD_PAYLOAD:
-                        case AttestationFailure.UNKNOWN_ATTESTATION_URL:
-                        case AttestationFailure.FORBIDDEN_ENCLAVE:
+                        case BAD_FORMAT:
+                        case INVALID_PROTOCOL:
+                        case BAD_CERTIFICATE:
+                        case BAD_PAYLOAD:
+                        case UNKNOWN_ATTESTATION_URL:
+                        case FORBIDDEN_ENCLAVE:
                             setAttestationFailureReason(rc, failure, Collections.singletonMap("reason", attestationResult.getReason()));
                             Error(attestationResult.getReason(), 403, rc, failure.explain());
                             return;
-                        case AttestationFailure.UNKNOWN:
-                        case AttestationFailure.INTERNAL_ERROR:
+                        case UNKNOWN:
+                        case INTERNAL_ERROR:
                             setAttestationFailureReason(rc, failure, Collections.singletonMap("reason", attestationResult.getReason()));
                             Error(attestationResult.getReason(), 500, rc, failure.explain());
                             return;
@@ -384,7 +383,7 @@ public class CoreVerticle extends AbstractVerticle {
                 return;
             }
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(siteMetadataProvider.getMetadata());
+                    .end(siteMetadataProvider.getMetadata(info));
         } catch (Exception e) {
             logger.warn("exception in handleSiteRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing sites refresh");

@@ -1,7 +1,7 @@
 package com.uid2.core.vertx;
-
 import com.uid2.core.model.ConfigStore;
-import com.uid2.core.service.AttestationService;
+import com.uid2.core.model.SecretStore;
+import com.uid2.core.service.*;
 import com.uid2.core.service.JWTTokenProvider;
 import com.uid2.core.service.OperatorJWTTokenProvider;
 import com.uid2.shared.Const;
@@ -38,6 +38,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import javax.crypto.Cipher;
+import java.io.ByteArrayInputStream;
+import java.net.URL;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
@@ -80,18 +82,43 @@ public class TestCoreVerticle {
         config.put(Const.Config.OptOutUrlProp, "test_optout_url");
         config.put(Const.Config.CorePublicUrlProp, "test_core_url");
         config.put(Const.Config.AwsKmsJwtSigningKeyIdProp, "test_aws_kms_keyId");
+        config.put(Const.Config.KeysetsMetadataPathProp, "keysets/metadata.json");
+        config.put(Const.Config.encryptionSupportVersion, "2.6");
         if (info.getTags().contains("dontForceJwt")) {
             config.put(Const.Config.EnforceJwtProp, false);
         } else {
             config.put(Const.Config.EnforceJwtProp, true);
         }
         ConfigStore.Global.load(config);
+        SecretStore.Global.load(config);
 
         attestationService = new AttestationService();
         MockitoAnnotations.initMocks(this);
 
+        // Mock download method for different paths
+        when(cloudStorage.download(anyString())).thenAnswer(invocation -> {
+            String path = invocation.getArgument(0);
+            System.out.println(path);
+            if (path.contains("encrypted")) {
+                return new ByteArrayInputStream("{ \"keysets\": { \"location\": \"encrypted-location\" } }".getBytes());
+            } else {
+                return new ByteArrayInputStream("{ \"keysets\": { \"location\": \"default-location\" } }".getBytes());
+            }
+        });
+
+        // Mock preSignUrl method for different paths
+        when(cloudStorage.preSignUrl(anyString())).thenAnswer(invocation -> {
+            String path = invocation.getArgument(0);
+            if (path.contains("encrypted")) {
+                return new URL("http://encrypted_url");
+            }else {
+                return new URL("http://default_url");
+            }
+        });
+
         CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
+
     }
 
     private String getUrlForEndpoint(String endpoint) {
@@ -140,6 +167,13 @@ public class TestCoreVerticle {
     private void get(Vertx vertx, String endpoint, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
         WebClient client = WebClient.create(vertx);
         client.getAbs(getUrlForEndpoint(endpoint)).send(handler);
+    }
+
+    private void getWithVersion(Vertx vertx, String endpoint, MultiMap headers, Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
+        WebClient client = WebClient.create(vertx);
+        client.getAbs(getUrlForEndpoint(endpoint))
+                .putHeaders(headers)
+                .send(handler);
     }
 
     private void addAttestationProvider(String protocol) {
@@ -743,7 +777,6 @@ public class TestCoreVerticle {
                             assertEquals(500, response2.statusCode());
 
                             JsonObject json2 = response2.bodyAsJsonObject();
-                            System.out.println(json2);
                             assertEquals("error", json2.getString("status"));
                             assertEquals("error generating attestation token", json2.getString("message"));
 
@@ -757,6 +790,87 @@ public class TestCoreVerticle {
                 }
             } catch (Throwable ex) {
                 testContext.failNow(ex);
+            }
+        });
+    }
+
+    @Tag("dontForceJwt")
+    @Test
+    void keysetRefreshSuccessHigherVersion(Vertx vertx, VertxTestContext testContext) throws Exception {
+        fakeAuth(attestationProtocolPublic, Role.OPERATOR);
+        addAttestationProvider(attestationProtocolPublic);
+        onHandleAttestationRequest(() -> {
+            byte[] resultPublicKey = null;
+            return Future.succeededFuture(new AttestationResult(resultPublicKey, "test"));
+        });
+
+        MultiMap headers = MultiMap.caseInsensitiveMultiMap();
+        headers.add(Const.Http.AppVersionHeader, "uid2-operator=3.7.16-SNAPSHOT;uid2-attestation-api=1.1.0;uid2-shared=2.7.0-3e279acefa");
+
+        getWithVersion(vertx, "key/keyset/refresh", headers, ar -> {
+            assertTrue(ar.succeeded());
+            if (ar.succeeded()) {
+                HttpResponse<Buffer> response = ar.result();
+                assertEquals(200, response.statusCode());
+                String responseBody = response.bodyAsString();
+                System.out.println(responseBody);
+                assertEquals("{\"keysets\":{\"location\":\"http://encrypted_url\"}}", responseBody);
+                testContext.completeNow();
+            } else {
+                testContext.failNow(ar.cause());
+            }
+        });
+    }
+
+    @Tag("dontForceJwt")
+    @Test
+    void keysRefreshSuccessLowerVersion(Vertx vertx, VertxTestContext testContext) throws Exception {
+        fakeAuth(attestationProtocolPublic, Role.OPERATOR);
+        addAttestationProvider(attestationProtocolPublic);
+        onHandleAttestationRequest(() -> {
+            byte[] resultPublicKey = null;
+            return Future.succeededFuture(new AttestationResult(resultPublicKey, "test"));
+        });
+
+        MultiMap headers = MultiMap.caseInsensitiveMultiMap();
+        headers.add(Const.Http.AppVersionHeader, "uid2-operator=2.1.16-SNAPSHOT;uid2-attestation-api=1.1.0;uid2-shared=2.7.0-3e279acefa");
+
+        getWithVersion(vertx, "key/keyset/refresh", headers, ar -> {
+            if (ar.succeeded()) {
+                HttpResponse<Buffer> response = ar.result();
+                System.out.println(response.bodyAsString());
+                assertEquals(200, response.statusCode());
+                String responseBody = response.bodyAsString();
+                assertEquals("{\"keysets\":{\"location\":\"http://default_url\"}}", responseBody);
+                testContext.completeNow();
+            } else {
+                testContext.failNow(ar.cause());
+            }
+        });
+    }
+
+    @Tag("dontForceJwt")
+    @Test
+    void keysRefreshSuccessNoHeaderVersion(Vertx vertx, VertxTestContext testContext) throws Exception {
+        fakeAuth(attestationProtocolPublic, Role.OPERATOR);
+        addAttestationProvider(attestationProtocolPublic);
+        onHandleAttestationRequest(() -> {
+            byte[] resultPublicKey = null;
+            return Future.succeededFuture(new AttestationResult(resultPublicKey, "test"));
+        });
+
+        MultiMap headers = MultiMap.caseInsensitiveMultiMap();
+
+        getWithVersion(vertx, "key/keyset/refresh", headers, ar -> {
+            if (ar.succeeded()) {
+                HttpResponse<Buffer> response = ar.result();
+                System.out.println(response.bodyAsString());
+                assertEquals(200, response.statusCode());
+                String responseBody = response.bodyAsString();
+                assertEquals("{\"keysets\":{\"location\":\"http://default_url\"}}", responseBody);
+                testContext.completeNow();
+            } else {
+                testContext.failNow(ar.cause());
             }
         });
     }

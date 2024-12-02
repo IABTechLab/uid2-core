@@ -17,5 +17,6 @@
     "att_token_enc_key": null,
     "att_token_enc_salt": null,
     "enforceJwt": false,
-    "cloud_encryption_keys_metadata_path": null
+    "cloud_encryption_keys_metadata_path": null,
+    "encryption_support_version": "9999"
 }
