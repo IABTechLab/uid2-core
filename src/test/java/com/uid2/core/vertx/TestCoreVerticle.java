@@ -776,9 +776,9 @@ public class TestCoreVerticle {
                             HttpResponse<Buffer> response2 = ar2.result();
                             assertEquals(500, response2.statusCode());
 
-                        JsonObject json2 = response2.bodyAsJsonObject();
-                        assertEquals("error", json2.getString("status"));
-                        assertEquals("error generating attestation token", json2.getString("message"));
+                            JsonObject json2 = response2.bodyAsJsonObject();
+                            assertEquals("error", json2.getString("status"));
+                            assertEquals("error generating attestation token", json2.getString("message"));
 
                             testContext.completeNow();
                         } else {
