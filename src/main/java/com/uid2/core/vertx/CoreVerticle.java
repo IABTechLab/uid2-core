@@ -21,6 +21,9 @@ import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.secure.*;
 import com.uid2.shared.vertx.RequestCapturingHandler;
 import com.uid2.shared.vertx.VertxUtils;
+import io.vertx.config.ConfigRetriever;
+import io.vertx.config.ConfigRetrieverOptions;
+import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpHeaders;
@@ -192,6 +195,7 @@ public class CoreVerticle extends AbstractVerticle {
         router.get(Endpoints.OPERATORS_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handleOperatorRefresh), Role.OPTOUT_SERVICE));
         router.get(Endpoints.PARTNERS_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handlePartnerRefresh), Role.OPTOUT_SERVICE));
         router.get(Endpoints.OPS_HEALTHCHECK.toString()).handler(this::handleHealthCheck);
+        router.get(Endpoints.CONFIG.toString()).handler(this::handleGetConfig);
 
         if (Optional.ofNullable(ConfigStore.Global.getBoolean("enable_test_endpoints")).orElse(false)) {
             router.route(Endpoints.ATTEST_GET_TOKEN.toString()).handler(auth.handle(this::handleTestGetAttestationToken, Role.OPERATOR));
@@ -199,6 +203,31 @@ public class CoreVerticle extends AbstractVerticle {
 
         return router;
     }
+
+    private void handleGetConfig(RoutingContext rc) {
+        String dummyConfigPath = "conf/dummy-config.json";
+
+        ConfigStoreOptions dummyFileStore = new ConfigStoreOptions()
+                .setType("file")
+                .setConfig(new JsonObject().put("path", dummyConfigPath));
+
+        ConfigRetrieverOptions retrieverOptions = new ConfigRetrieverOptions().addStore(dummyFileStore);
+
+        ConfigRetriever retriever = ConfigRetriever.create(vertx, retrieverOptions);
+
+        retriever.getConfig().onComplete(ar -> {
+            if (ar.succeeded()) {
+                rc.response()
+                        .putHeader("content-type", "application/json")
+                        .end(ar.result().encodePrettily());
+            } else {
+                rc.response()
+                        .setStatusCode(500)
+                        .end("Failed to retrieve configuration");
+            }
+        });
+    }
+
 
     private void handleHealthCheck(RoutingContext rc) {
         if (HealthManager.instance.isHealthy()) {
