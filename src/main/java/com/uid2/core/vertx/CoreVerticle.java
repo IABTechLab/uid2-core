@@ -621,7 +621,7 @@ public class CoreVerticle extends AbstractVerticle {
             }
 
             JsonObject response = new JsonObject()
-                    .put("cloudEncryptionKeys", new JsonArray(cloudEncryptionKeys));
+                    .put("cloud_encryption_keys", new JsonArray(cloudEncryptionKeys));
 
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                     .end(response.encode());
