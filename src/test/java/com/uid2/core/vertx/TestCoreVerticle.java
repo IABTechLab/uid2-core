@@ -673,7 +673,7 @@ public class TestCoreVerticle {
                     assertEquals(200, response.statusCode());
 
                     JsonObject json = response.bodyAsJsonObject();
-                    JsonArray cloudEncryptionKeysArray = json.getJsonArray("cloudEncryptionKeys");
+                    JsonArray cloudEncryptionKeysArray = json.getJsonArray("cloud_encryption_keys");
 
                     assertNotNull(cloudEncryptionKeysArray);
                     assertEquals(1, cloudEncryptionKeysArray.size());
@@ -721,7 +721,7 @@ public class TestCoreVerticle {
                     assertEquals(200, response.statusCode());
 
                     JsonObject json = response.bodyAsJsonObject();
-                    JsonArray cloudEncryptionKeysArray = json.getJsonArray("cloudEncryptionKeys");
+                    JsonArray cloudEncryptionKeysArray = json.getJsonArray("cloud_encryption_keys");
 
                     assertNotNull(cloudEncryptionKeysArray);
                     assertEquals(3, cloudEncryptionKeysArray.size());
