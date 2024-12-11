@@ -392,8 +392,9 @@ public class CoreVerticle extends AbstractVerticle {
 
     private void handleSaltRefresh(RoutingContext rc) {
         try {
+            OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(saltMetadataProvider.getMetadata());
+                    .end(saltMetadataProvider.getMetadata(info));
         } catch (Exception e) {
             logger.warn("exception in handleSaltRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing salt refresh");
@@ -463,7 +464,7 @@ public class CoreVerticle extends AbstractVerticle {
                 return;
             }
             rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(clientSideKeypairMetadataProvider.getMetadata());
+                    .end(clientSideKeypairMetadataProvider.getMetadata(info));
         } catch (Exception e) {
             logger.warn("exception in handleClientSideKeypairRefresh: " + e.getMessage(), e);
             Error("error", 500, rc, "error processing client_side_keypairs refresh");

@@ -1,6 +1,7 @@
 package com.uid2.core.service;
 
 import com.uid2.core.model.SecretStore;
+import com.uid2.core.util.OperatorInfo;
 import com.uid2.shared.cloud.ICloudStorage;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
@@ -9,6 +10,8 @@ import io.vertx.core.json.JsonObject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+
+import static com.uid2.core.util.MetadataHelper.getMetadataPathName;
 import static com.uid2.core.util.MetadataHelper.readToEndAsString;
 
 public class SaltMetadataProvider implements ISaltMetadataProvider {
@@ -28,8 +31,9 @@ public class SaltMetadataProvider implements ISaltMetadataProvider {
     }
 
     @Override
-    public String getMetadata() throws Exception {
-        String original = readToEndAsString(metadataStreamProvider.download(SecretStore.Global.get(SaltsMetadataPathName)));
+    public String getMetadata(OperatorInfo info) throws Exception {
+        String pathname = getMetadataPathName(info, SecretStore.Global.get(SaltsMetadataPathName));
+        String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonArray salts = main.getJsonArray("salts");
         for(int i=0;i<salts.size();++i) {
