@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import static com.uid2.core.util.MetadataHelper.getMetadataPathName;
 import static com.uid2.core.util.MetadataHelper.readToEndAsString;
 
 public class ClientSideKeypairMetadataProvider implements IClientSideKeypairMetadataProvider {
@@ -26,7 +27,7 @@ public class ClientSideKeypairMetadataProvider implements IClientSideKeypairMeta
 
     @Override
     public String getMetadata(OperatorInfo info) throws Exception {
-        String pathname = new GlobalScope(new CloudPath(SecretStore.Global.get(ClientSideKeypairMetadataPathName))).getMetadataPath().toString();
+        String pathname = getMetadataPathName(info, SecretStore.Global.get(ClientSideKeypairMetadataPathName));
         String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonObject obj = main.getJsonObject("client_side_keypairs");
