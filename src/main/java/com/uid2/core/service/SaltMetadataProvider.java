@@ -35,7 +35,6 @@ public class SaltMetadataProvider implements ISaltMetadataProvider {
     @Override
     public String getMetadata(OperatorInfo info) throws Exception {
         String pathname = getMetadataPathNameOldPrivateNoSite(info, SecretStore.Global.get(SaltsMetadataPathName));
-        LOGGER.info("Metadata path: {}", pathname);
         String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonArray salts = main.getJsonArray("salts");
