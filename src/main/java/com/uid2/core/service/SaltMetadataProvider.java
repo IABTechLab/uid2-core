@@ -13,8 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import static com.uid2.core.util.MetadataHelper.getMetadataPathName;
-import static com.uid2.core.util.MetadataHelper.readToEndAsString;
+import static com.uid2.core.util.MetadataHelper.*;
 
 public class SaltMetadataProvider implements ISaltMetadataProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(SaltMetadataProvider.class);
@@ -35,7 +34,7 @@ public class SaltMetadataProvider implements ISaltMetadataProvider {
 
     @Override
     public String getMetadata(OperatorInfo info) throws Exception {
-        String pathname = getMetadataPathName(info, SecretStore.Global.get(SaltsMetadataPathName));
+        String pathname = getMetadataPathNameOldPrivateNoSite(info, SecretStore.Global.get(SaltsMetadataPathName));
         LOGGER.info("Metadata path: {}", pathname);
         String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
