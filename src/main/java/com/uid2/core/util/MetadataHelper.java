@@ -55,6 +55,25 @@ public final class MetadataHelper {
         return store.getMetadataPath().toString();
     }
 
+    // This exists because salts were never split into site folders for private operators.
+    public static String getMetadataPathNameOldPrivateNoSite(OperatorInfo info, String metadataPathName) {
+        StoreScope store;
+        Boolean providePrivateSiteData = ConfigStore.Global.getBoolean("provide_private_site_data");
+        if (info.getSupportsEncryption()) { // Check if decryption is possible
+            if (info.getOperatorType() == OperatorType.PUBLIC ) //siteId_public folder
+            {
+                store = new EncryptedScope(new CloudPath(metadataPathName), info.getSiteId(), true);
+            } else //siteId_private folder
+            {
+                store = new EncryptedScope(new CloudPath(metadataPathName), info.getSiteId(), false);
+            }
+        } else {
+            store = new GlobalScope(new CloudPath(metadataPathName));
+        }
+
+        return store.getMetadataPath().toString();
+    }
+
     public static String readToEndAsString(InputStream stream) throws IOException {
         final InputStreamReader reader = new InputStreamReader(stream);
         final char[] buff = new char[1024];
