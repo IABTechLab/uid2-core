@@ -49,6 +49,8 @@ import java.util.*;
 
 public class Main {
 
+    private static final int vertxServiceInstances = 1;
+
     public static void main(String[] args) {
         final String vertxConfigPath = System.getProperty(Const.Config.VERTX_CONFIG_PATH_PROP);
         if (vertxConfigPath != null) {
@@ -157,7 +159,7 @@ public class Main {
                 );
 
                 JwtService jwtService = new JwtService(config);
-
+                createServiceInstancesMetric();
                 coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider);
             } catch (Exception e) {
                 System.out.println("failed to initialize core verticle: " + e.getMessage());
@@ -207,6 +209,12 @@ public class Main {
                 .builder("app.status", () -> 1)
                 .description("application version and status")
                 .tags("version", version)
+                .register(Metrics.globalRegistry);
+    }
+
+    private static void createServiceInstancesMetric() {
+        Gauge.builder("uid2.core.vertx_service_instances", () -> vertxServiceInstances)
+                .description("gauge for number of request processing threads")
                 .register(Metrics.globalRegistry);
     }
 
