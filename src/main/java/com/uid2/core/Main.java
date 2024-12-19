@@ -32,6 +32,7 @@ import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.micrometer.prometheus.PrometheusRenameFilter;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServerOptions;
@@ -48,6 +49,8 @@ import java.lang.management.ManagementFactory;
 import java.util.*;
 
 public class Main {
+
+    private static final int vertxServiceInstances = 1;
 
     public static void main(String[] args) {
         final String vertxConfigPath = System.getProperty(Const.Config.VERTX_CONFIG_PATH_PROP);
@@ -157,17 +160,19 @@ public class Main {
                 );
 
                 JwtService jwtService = new JwtService(config);
-
                 coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider);
             } catch (Exception e) {
                 System.out.println("failed to initialize core verticle: " + e.getMessage());
                 System.exit(-1);
             }
 
+            createVertxInstancesMetric();
+            createVertxEventLoopsMetric();
+
             vertx.deployVerticle(enclaveRotatingVerticle);
             vertx.deployVerticle(operatorRotatingVerticle);
             vertx.deployVerticle(cloudEncryptionKeyRotatingVerticle);
-            vertx.deployVerticle(coreVerticle);
+            vertx.deployVerticle(coreVerticle, new DeploymentOptions().setInstances(vertxServiceInstances));
         });
     }
 
@@ -209,6 +214,19 @@ public class Main {
                 .tags("version", version)
                 .register(Metrics.globalRegistry);
     }
+
+    private static void createVertxInstancesMetric() {
+        Gauge.builder("uid2.core.vertx_service_instances", () -> vertxServiceInstances)
+                .description("gauge for number of vertx service instances requested")
+                .register(Metrics.globalRegistry);
+    }
+
+    private static void createVertxEventLoopsMetric() {
+        Gauge.builder("uid2.core.vertx_event_loop_threads", () -> VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE)
+                .description("gauge for number of vertx event loop threads")
+                .register(Metrics.globalRegistry);
+    }
+
 
     /*
     private static CommandLine parseArgs(String[] args) {
