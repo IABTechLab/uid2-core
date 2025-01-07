@@ -21,7 +21,7 @@ public enum Endpoints {
     SERVICE_LINKS_REFRESH("/service_links/refresh"),
     OPERATORS_REFRESH("/operators/refresh"),
     PARTNERS_REFRESH("/partners/refresh"),
-    CONFIG("/config");
+    OPERATOR_CONFIG("/operator/config");
 
     private final String path;
 

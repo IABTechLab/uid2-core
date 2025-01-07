@@ -1,5 +1,4 @@
 package com.uid2.core.vertx;
-import com.google.gson.JsonParser;
 import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.*;
@@ -10,19 +9,14 @@ import com.uid2.shared.attest.EncryptedAttestationToken;
 import com.uid2.shared.attest.IAttestationTokenService;
 import com.uid2.shared.attest.JwtService;
 import com.uid2.shared.auth.*;
-import com.uid2.shared.cloud.CloudStorageException;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.secure.AttestationException;
 import com.uid2.shared.secure.AttestationFailure;
 import com.uid2.shared.secure.AttestationResult;
 import com.uid2.shared.secure.ICoreAttestationService;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
-import io.vertx.config.ConfigRetriever;
-import io.vertx.config.ConfigRetrieverOptions;
-import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
@@ -45,14 +39,12 @@ import org.mockito.MockitoAnnotations;
 
 import javax.crypto.Cipher;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
-import java.sql.SQLOutput;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -887,11 +879,11 @@ public class TestCoreVerticle {
     @Test
     void getConfigSuccess(Vertx vertx, VertxTestContext testContext) throws Exception {
         // Load expected config
-        String expectedConfigString = Files.readString(Paths.get("conf/dummy-config.json")).trim();
+        String expectedConfigString = Files.readString(Paths.get("conf/operator-config.json")).trim();
         JsonObject expectedConfig = new JsonObject(expectedConfigString);
 
-        // Make HTTP Get request to /config endpoint
-        this.get(vertx, Endpoints.CONFIG.toString(), ar -> {
+        // Make HTTP Get request to operator config endpoint
+        this.get(vertx, Endpoints.OPERATOR_CONFIG.toString(), ar -> {
                 if (ar.succeeded()) {
                     HttpResponse<Buffer> response = ar.result();
                     System.out.println("Response: " + response.bodyAsString());
