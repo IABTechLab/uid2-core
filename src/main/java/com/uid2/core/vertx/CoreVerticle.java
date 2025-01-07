@@ -217,7 +217,7 @@ public class CoreVerticle extends AbstractVerticle {
             } else {
                 rc.response()
                         .setStatusCode(500)
-                        .end("Failed to retrieve configuration");
+                        .end("Failed to retrieve configuration: " + ar.cause().getMessage());
             }
         });
     }
