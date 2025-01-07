@@ -21,11 +21,9 @@ import com.uid2.shared.middleware.AuthMiddleware;
 import com.uid2.shared.secure.*;
 import com.uid2.shared.vertx.RequestCapturingHandler;
 import com.uid2.shared.vertx.VertxUtils;
-import io.vertx.config.ConfigRetriever;
-import io.vertx.config.ConfigRetrieverOptions;
-import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
+import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
@@ -207,19 +205,15 @@ public class CoreVerticle extends AbstractVerticle {
     private void handleGetConfig(RoutingContext rc) {
         String dummyConfigPath = "conf/dummy-config.json";
 
-        ConfigStoreOptions dummyFileStore = new ConfigStoreOptions()
-                .setType("file")
-                .setConfig(new JsonObject().put("path", dummyConfigPath));
+        FileSystem fs = vertx.fileSystem();
 
-        ConfigRetrieverOptions retrieverOptions = new ConfigRetrieverOptions().addStore(dummyFileStore);
-
-        ConfigRetriever retriever = ConfigRetriever.create(vertx, retrieverOptions);
-
-        retriever.getConfig().onComplete(ar -> {
+        fs.readFile(dummyConfigPath, ar -> {
             if (ar.succeeded()) {
+                String fileContent = ar.result().toString();
+                JsonObject configJson = new JsonObject(fileContent);
                 rc.response()
                         .putHeader("content-type", "application/json")
-                        .end(ar.result().encodePrettily());
+                        .end(configJson.encodePrettily());
             } else {
                 rc.response()
                         .setStatusCode(500)
