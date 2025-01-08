@@ -36,6 +36,7 @@ import io.micrometer.prometheus.PrometheusRenameFilter;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.json.JsonObject;
@@ -161,7 +162,8 @@ public class Main {
                 );
 
                 JwtService jwtService = new JwtService(config);
-                coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider);
+                FileSystem fileSystem = vertx.fileSystem();
+                coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider, fileSystem);
             } catch (Exception e) {
                 System.out.println("failed to initialize core verticle: " + e.getMessage());
                 System.exit(-1);

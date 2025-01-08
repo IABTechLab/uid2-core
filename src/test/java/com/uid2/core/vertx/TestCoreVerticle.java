@@ -17,6 +17,7 @@ import com.uid2.shared.secure.ICoreAttestationService;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -73,8 +74,11 @@ public class TestCoreVerticle {
     private JwtService jwtService;
     @Mock
     private RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
+    @Mock
+    private FileSystem fileSystem;
 
     private AttestationService attestationService;
+    private String operatorConfig;
 
     private static final String attestationProtocol = "test-attestation-protocol";
     private static final String attestationProtocolPublic = "trusted";
@@ -118,7 +122,18 @@ public class TestCoreVerticle {
             }
         });
 
-        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider);
+        operatorConfig = Files.readString(Paths.get(com.uid2.core.Const.OPERATOR_CONFIG_PATH)).trim();
+
+        when(fileSystem.readFile(anyString(), any())).thenAnswer(invocation -> {
+            String path = invocation.getArgument(0);
+            if (Objects.equals(path, com.uid2.core.Const.OPERATOR_CONFIG_PATH)) {
+                Handler<AsyncResult<Buffer>> handler = invocation.getArgument(1);
+                handler.handle(Future.succeededFuture(Buffer.buffer(operatorConfig)));
+            }
+            return null;
+        });
+
+        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider, fileSystem);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
 
     }
@@ -878,25 +893,30 @@ public class TestCoreVerticle {
     }
 
     @Test
-    void getConfigSuccess(Vertx vertx, VertxTestContext testContext) throws Exception {
-        // Load expected config
-        String expectedConfigString = Files.readString(Paths.get("conf/operator-config.json")).trim();
-        JsonObject expectedConfig = new JsonObject(expectedConfigString);
+    void getConfigSuccess(Vertx vertx, VertxTestContext testContext) {
+        JsonObject expectedConfig = new JsonObject(operatorConfig);
+
 
         // Make HTTP Get request to operator config endpoint
-        this.get(vertx, Endpoints.OPERATOR_CONFIG.toString(), ar -> {
-                if (ar.succeeded()) {
-                    HttpResponse<Buffer> response = ar.result();
-                    System.out.println("Response: " + response.bodyAsString());
-                    // Validate response
-                    assertEquals(200, response.statusCode());
-                    assertEquals("application/json", response.getHeader(HttpHeaders.CONTENT_TYPE));
-                    JsonObject actualConfig = new JsonObject(response.bodyAsString());
-                    assertEquals(expectedConfig, actualConfig);
+        this.get(vertx, Endpoints.OPERATOR_CONFIG.toString(), testContext.succeeding(response -> testContext.verify(() -> {
+                        assertEquals(200, response.statusCode());
+                        assertEquals("application/json", response.getHeader(HttpHeaders.CONTENT_TYPE));
+                        JsonObject actualConfig = new JsonObject(response.bodyAsString());
+                        assertEquals(expectedConfig, actualConfig);
+                        testContext.completeNow();
+                    })
+        ));
+    }
+
+    @Test
+    void getConfigInvalidJson(Vertx vertx, VertxTestContext testContext) {
+        operatorConfig = "invalid config";
+
+
+        this.get(vertx, Endpoints.OPERATOR_CONFIG.toString(), testContext.succeeding(response -> testContext.verify(() -> {
+                    assertEquals(500, response.statusCode());
                     testContext.completeNow();
-                } else {
-                    testContext.failNow(ar.cause());
-                }
-            });
+                })
+        ));
     }
 }
