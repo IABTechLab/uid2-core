@@ -896,6 +896,7 @@ public class TestCoreVerticle {
     void getConfigSuccess(Vertx vertx, VertxTestContext testContext) {
         JsonObject expectedConfig = new JsonObject(operatorConfig);
 
+        fakeAuth(Role.OPERATOR);
 
         // Make HTTP Get request to operator config endpoint
         this.get(vertx, Endpoints.OPERATOR_CONFIG.toString(), testContext.succeeding(response -> testContext.verify(() -> {
@@ -912,6 +913,7 @@ public class TestCoreVerticle {
     void getConfigInvalidJson(Vertx vertx, VertxTestContext testContext) {
         operatorConfig = "invalid config";
 
+        fakeAuth(Role.OPERATOR);
 
         this.get(vertx, Endpoints.OPERATOR_CONFIG.toString(), testContext.succeeding(response -> testContext.verify(() -> {
                     assertEquals(500, response.statusCode());
