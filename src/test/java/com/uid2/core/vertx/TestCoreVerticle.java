@@ -17,6 +17,7 @@ import com.uid2.shared.secure.ICoreAttestationService;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
@@ -889,7 +890,7 @@ public class TestCoreVerticle {
                     System.out.println("Response: " + response.bodyAsString());
                     // Validate response
                     assertEquals(200, response.statusCode());
-                    assertEquals("application/json", response.getHeader("content-type"));
+                    assertEquals("application/json", response.getHeader(HttpHeaders.CONTENT_TYPE));
                     JsonObject actualConfig = new JsonObject(response.bodyAsString());
                     assertEquals(expectedConfig, actualConfig);
                     testContext.completeNow();

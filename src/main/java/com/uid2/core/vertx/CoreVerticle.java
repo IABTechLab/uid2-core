@@ -212,7 +212,7 @@ public class CoreVerticle extends AbstractVerticle {
                 String fileContent = ar.result().toString();
                 JsonObject configJson = new JsonObject(fileContent);
                 rc.response()
-                        .putHeader("content-type", "application/json")
+                        .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                         .end(configJson.encodePrettily());
             } else {
                 rc.response()
