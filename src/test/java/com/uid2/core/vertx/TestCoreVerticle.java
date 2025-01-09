@@ -126,9 +126,11 @@ public class TestCoreVerticle {
 
         when(fileSystem.readFile(anyString(), any())).thenAnswer(invocation -> {
             String path = invocation.getArgument(0);
+            Handler<AsyncResult<Buffer>> handler = invocation.getArgument(1);
             if (Objects.equals(path, com.uid2.core.Const.OPERATOR_CONFIG_PATH)) {
-                Handler<AsyncResult<Buffer>> handler = invocation.getArgument(1);
                 handler.handle(Future.succeededFuture(Buffer.buffer(operatorConfig)));
+            } else {
+                handler.handle(Future.failedFuture(new RuntimeException("Failed to read file: " + path)));
             }
             return null;
         });
