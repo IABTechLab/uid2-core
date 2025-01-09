@@ -23,6 +23,7 @@ import com.uid2.shared.vertx.RequestCapturingHandler;
 import com.uid2.shared.vertx.VertxUtils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
+import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
@@ -81,6 +82,8 @@ public class CoreVerticle extends AbstractVerticle {
     private final OperatorJWTTokenProvider operatorJWTTokenProvider;
     private final RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
 
+    private final FileSystem fileSystem;
+
     public CoreVerticle(ICloudStorage cloudStorage,
                         IAuthorizableProvider authProvider,
                         AttestationService attestationService,
@@ -88,7 +91,8 @@ public class CoreVerticle extends AbstractVerticle {
                         IEnclaveIdentifierProvider enclaveIdentifierProvider,
                         OperatorJWTTokenProvider operatorJWTTokenProvider,
                         JwtService jwtService,
-                        RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider) throws Exception {
+                        RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider,
+                        FileSystem fileSystem) throws Exception {
         this.operatorJWTTokenProvider = operatorJWTTokenProvider;
         this.healthComponent.setHealthStatus(false, "not started");
 
@@ -99,6 +103,8 @@ public class CoreVerticle extends AbstractVerticle {
         this.enclaveIdentifierProvider = enclaveIdentifierProvider;
         this.enclaveIdentifierProvider.addListener(this.attestationService);
         this.cloudEncryptionKeyProvider = cloudEncryptionKeyProvider;
+
+        this.fileSystem = fileSystem;
 
         final String jwtAudience = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
         final String jwtIssuer = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
@@ -131,8 +137,9 @@ public class CoreVerticle extends AbstractVerticle {
                         IAttestationTokenService attestationTokenService,
                         IEnclaveIdentifierProvider enclaveIdentifierProvider,
                         OperatorJWTTokenProvider jwtTokenProvider,
-                        JwtService jwtService) throws Exception {
-        this(cloudStorage, authorizableProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, jwtTokenProvider, jwtService, null);
+                        JwtService jwtService,
+                        FileSystem fileSystem) throws Exception {
+        this(cloudStorage, authorizableProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, jwtTokenProvider, jwtService, null, fileSystem);
     }
 
     @Override
@@ -192,6 +199,7 @@ public class CoreVerticle extends AbstractVerticle {
         router.get(Endpoints.OPERATORS_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handleOperatorRefresh), Role.OPTOUT_SERVICE));
         router.get(Endpoints.PARTNERS_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handlePartnerRefresh), Role.OPTOUT_SERVICE));
         router.get(Endpoints.OPS_HEALTHCHECK.toString()).handler(this::handleHealthCheck);
+        router.get(Endpoints.OPERATOR_CONFIG.toString()).handler(auth.handle(this::handleGetConfig, Role.OPERATOR));
 
         if (Optional.ofNullable(ConfigStore.Global.getBoolean("enable_test_endpoints")).orElse(false)) {
             router.route(Endpoints.ATTEST_GET_TOKEN.toString()).handler(auth.handle(this::handleTestGetAttestationToken, Role.OPERATOR));
@@ -199,6 +207,30 @@ public class CoreVerticle extends AbstractVerticle {
 
         return router;
     }
+
+    private void handleGetConfig(RoutingContext rc) {
+        fileSystem.readFile(com.uid2.core.Const.OPERATOR_CONFIG_PATH, ar -> {
+            if (ar.succeeded()) {
+                try {
+                    String fileContent = ar.result().toString();
+                    JsonObject configJson = new JsonObject(fileContent);
+                    rc.response()
+                            .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                            .end(configJson.encodePrettily());
+                } catch (Exception e) {
+                    rc.response()
+                            .setStatusCode(500)
+                            .end("Failed to parse configuration: " + e.getMessage());
+                    throw new RuntimeException(e);
+                }
+            } else {
+                rc.response()
+                        .setStatusCode(500)
+                        .end("Failed to retrieve configuration: " + ar.cause().getMessage());
+            }
+        });
+    }
+
 
     private void handleHealthCheck(RoutingContext rc) {
         if (HealthManager.instance.isHealthy()) {

@@ -17,6 +17,8 @@ import com.uid2.shared.secure.ICoreAttestationService;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.FileSystem;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
@@ -40,6 +42,8 @@ import org.mockito.MockitoAnnotations;
 import javax.crypto.Cipher;
 import java.io.ByteArrayInputStream;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
@@ -70,12 +74,14 @@ public class TestCoreVerticle {
     private JwtService jwtService;
     @Mock
     private RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
+    @Mock
+    private FileSystem fileSystem;
 
     private AttestationService attestationService;
+    private String operatorConfig;
 
     private static final String attestationProtocol = "test-attestation-protocol";
     private static final String attestationProtocolPublic = "trusted";
-
     @BeforeEach
     void deployVerticle(TestInfo info, Vertx vertx, VertxTestContext testContext) throws Throwable {
         JsonObject config = new JsonObject();
@@ -116,7 +122,20 @@ public class TestCoreVerticle {
             }
         });
 
-        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider);
+        operatorConfig = Files.readString(Paths.get(com.uid2.core.Const.OPERATOR_CONFIG_PATH)).trim();
+
+        when(fileSystem.readFile(anyString(), any())).thenAnswer(invocation -> {
+            String path = invocation.getArgument(0);
+            Handler<AsyncResult<Buffer>> handler = invocation.getArgument(1);
+            if (Objects.equals(path, com.uid2.core.Const.OPERATOR_CONFIG_PATH)) {
+                handler.handle(Future.succeededFuture(Buffer.buffer(operatorConfig)));
+            } else {
+                handler.handle(Future.failedFuture(new RuntimeException("Failed to read file: " + path)));
+            }
+            return null;
+        });
+
+        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider, fileSystem);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
 
     }
@@ -873,5 +892,35 @@ public class TestCoreVerticle {
                 testContext.failNow(ar.cause());
             }
         });
+    }
+
+    @Test
+    void getConfigSuccess(Vertx vertx, VertxTestContext testContext) {
+        JsonObject expectedConfig = new JsonObject(operatorConfig);
+
+        fakeAuth(Role.OPERATOR);
+
+        // Make HTTP Get request to operator config endpoint
+        this.get(vertx, Endpoints.OPERATOR_CONFIG.toString(), testContext.succeeding(response -> testContext.verify(() -> {
+                        assertEquals(200, response.statusCode());
+                        assertEquals("application/json", response.getHeader(HttpHeaders.CONTENT_TYPE));
+                        JsonObject actualConfig = new JsonObject(response.bodyAsString());
+                        assertEquals(expectedConfig, actualConfig);
+                        testContext.completeNow();
+                    })
+        ));
+    }
+
+    @Test
+    void getConfigInvalidJson(Vertx vertx, VertxTestContext testContext) {
+        operatorConfig = "invalid config";
+
+        fakeAuth(Role.OPERATOR);
+
+        this.get(vertx, Endpoints.OPERATOR_CONFIG.toString(), testContext.succeeding(response -> testContext.verify(() -> {
+                    assertEquals(500, response.statusCode());
+                    testContext.completeNow();
+                })
+        ));
     }
 }

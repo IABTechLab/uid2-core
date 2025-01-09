@@ -15,6 +15,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.FileSystem;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
@@ -59,6 +60,7 @@ public class TestSiteSpecificMetadataPath {
   private JwtService jwtService;
 
   private AttestationService attestationService;
+  private FileSystem fileSystem;
 
   // we need trusted to skip the attestation procedure or otherwise the core encpoint call made in this file will
   // fail at the attestation handler
@@ -67,10 +69,11 @@ public class TestSiteSpecificMetadataPath {
   @BeforeEach
   void deployVerticle(Vertx vertx, VertxTestContext testContext) throws Throwable {
     attestationService = new AttestationService();
+    fileSystem = vertx.fileSystem();
     SecretStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testSiteSpecificMetadata/test-secrets.json"))));
     ConfigStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testSiteSpecificMetadata/test-configs-provide-private-site-data.json"))));
     MockitoAnnotations.initMocks(this);
-    CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService);
+    CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, fileSystem);
     vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
   }
 

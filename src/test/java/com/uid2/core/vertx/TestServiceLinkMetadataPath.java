@@ -17,6 +17,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.FileSystem;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
@@ -52,6 +53,7 @@ public class TestServiceLinkMetadataPath {
     private IEnclaveIdentifierProvider enclaveIdentifierProvider;
 
     private AttestationService attestationService;
+    private FileSystem fileSystem;
 
     @Mock
     private OperatorJWTTokenProvider operatorJWTTokenProvider;
@@ -69,9 +71,10 @@ public class TestServiceLinkMetadataPath {
         ConfigStore.Global.load(config);
 
         attestationService = new AttestationService();
+        fileSystem = vertx.fileSystem();
         SecretStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testGlobalMetadata/test-secrets.json"))));
         MockitoAnnotations.initMocks(this);
-        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService);
+        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, fileSystem);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
     }
 
