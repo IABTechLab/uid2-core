@@ -33,6 +33,7 @@ import java.io.StringBufferInputStream;
 import java.net.URL;
 import java.util.HashSet;
 
+import static com.uid2.core.Const.OPERATOR_CONFIG_PATH;
 import static com.uid2.shared.Utils.readToEndAsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -75,7 +76,7 @@ public class TestSiteSpecificMetadataPathDisabled {
     SecretStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testSiteSpecificMetadata/test-secrets.json"))));
     ConfigStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testSiteSpecificMetadata/test-configs-stop-providing-private-site-data.json"))));
     MockitoAnnotations.initMocks(this);
-    CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, fileSystem);
+    CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, fileSystem, OPERATOR_CONFIG_PATH);
     vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
   }
 

@@ -50,6 +50,9 @@ import javax.management.*;
 import java.lang.management.ManagementFactory;
 import java.util.*;
 
+import static com.uid2.core.Const.Config.OperatorConfigPathProp;
+import static com.uid2.core.Const.OPERATOR_CONFIG_PATH;
+
 public class Main {
 
     private static final int vertxServiceInstances = 1;
@@ -162,8 +165,12 @@ public class Main {
                 );
 
                 JwtService jwtService = new JwtService(config);
+
                 FileSystem fileSystem = vertx.fileSystem();
-                coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider, fileSystem);
+
+                String operatorConfigPath = config.getString(OperatorConfigPathProp, OPERATOR_CONFIG_PATH);
+
+                coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider, fileSystem, operatorConfigPath);
             } catch (Exception e) {
                 System.out.println("failed to initialize core verticle: " + e.getMessage());
                 System.exit(-1);

@@ -83,6 +83,7 @@ public class CoreVerticle extends AbstractVerticle {
     private final RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
 
     private final FileSystem fileSystem;
+    private final String operatorConfigPath;
 
     public CoreVerticle(ICloudStorage cloudStorage,
                         IAuthorizableProvider authProvider,
@@ -92,7 +93,7 @@ public class CoreVerticle extends AbstractVerticle {
                         OperatorJWTTokenProvider operatorJWTTokenProvider,
                         JwtService jwtService,
                         RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider,
-                        FileSystem fileSystem) throws Exception {
+                        FileSystem fileSystem, String operatorConfigPath) throws Exception {
         this.operatorJWTTokenProvider = operatorJWTTokenProvider;
         this.healthComponent.setHealthStatus(false, "not started");
 
@@ -105,6 +106,7 @@ public class CoreVerticle extends AbstractVerticle {
         this.cloudEncryptionKeyProvider = cloudEncryptionKeyProvider;
 
         this.fileSystem = fileSystem;
+        this.operatorConfigPath = operatorConfigPath;
 
         final String jwtAudience = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
         final String jwtIssuer = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
@@ -138,8 +140,8 @@ public class CoreVerticle extends AbstractVerticle {
                         IEnclaveIdentifierProvider enclaveIdentifierProvider,
                         OperatorJWTTokenProvider jwtTokenProvider,
                         JwtService jwtService,
-                        FileSystem fileSystem) throws Exception {
-        this(cloudStorage, authorizableProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, jwtTokenProvider, jwtService, null, fileSystem);
+                        FileSystem fileSystem, String operatorConfigPath) throws Exception {
+        this(cloudStorage, authorizableProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, jwtTokenProvider, jwtService, null, fileSystem, operatorConfigPath);
     }
 
     @Override
@@ -209,7 +211,7 @@ public class CoreVerticle extends AbstractVerticle {
     }
 
     private void handleGetConfig(RoutingContext rc) {
-        fileSystem.readFile(com.uid2.core.Const.OPERATOR_CONFIG_PATH, ar -> {
+        fileSystem.readFile(operatorConfigPath, ar -> {
             if (ar.succeeded()) {
                 try {
                     String fileContent = ar.result().toString();
