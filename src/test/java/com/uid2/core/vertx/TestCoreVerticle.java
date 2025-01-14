@@ -26,7 +26,6 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 
-import static com.uid2.core.Const.OPERATOR_CONFIG_PATH;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -123,12 +122,12 @@ public class TestCoreVerticle {
             }
         });
 
-        operatorConfig = Files.readString(Paths.get(OPERATOR_CONFIG_PATH)).trim();
+        operatorConfig = Files.readString(Paths.get(com.uid2.core.Const.OPERATOR_CONFIG_PATH)).trim();
 
         when(fileSystem.readFile(anyString(), any())).thenAnswer(invocation -> {
             String path = invocation.getArgument(0);
             Handler<AsyncResult<Buffer>> handler = invocation.getArgument(1);
-            if (Objects.equals(path, OPERATOR_CONFIG_PATH)) {
+            if (Objects.equals(path, com.uid2.core.Const.OPERATOR_CONFIG_PATH)) {
                 handler.handle(Future.succeededFuture(Buffer.buffer(operatorConfig)));
             } else {
                 handler.handle(Future.failedFuture(new RuntimeException("Failed to read file: " + path)));
@@ -136,7 +135,7 @@ public class TestCoreVerticle {
             return null;
         });
 
-        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider, fileSystem, OPERATOR_CONFIG_PATH);
+        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider, fileSystem);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
 
     }

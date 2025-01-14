@@ -40,7 +40,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static com.uid2.core.Const.OPERATOR_CONFIG_PATH;
 
 @ExtendWith(VertxExtension.class)
 public class TestClientSideKeypairMetadataPath {
@@ -76,7 +75,7 @@ public class TestClientSideKeypairMetadataPath {
         fileSystem = vertx.fileSystem();
         SecretStore.Global.load(((JsonObject) Json.decodeValue(openFile("/com.uid2.core/testGlobalMetadata/test-secrets.json"))));
         MockitoAnnotations.initMocks(this);
-        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, fileSystem, OPERATOR_CONFIG_PATH);
+        CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, fileSystem);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
     }
 
