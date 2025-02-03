@@ -7,6 +7,9 @@
         </encoder>
     </appender>
 
+    <logger name="com.amazonaws.request" level="INFO"/>
+    <logger name="com.amazonaws.services.s3" level="INFO"/>
+
     <root level="debug">
         <appender-ref ref="STDOUT" />
     </root>
