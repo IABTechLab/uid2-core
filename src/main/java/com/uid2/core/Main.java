@@ -149,8 +149,8 @@ public class Main {
                 }
 
                 var maaServerBaseUrl = ConfigStore.Global.getOrDefault(com.uid2.core.Const.Config.MaaServerBaseUrlProp, "https://sharedeus.eus.attest.azure.net");
-                attestationService.with("azure-cc", new AzureCCCoreAttestationService(maaServerBaseUrl, ConfigStore.Global.get(Const.Config.CorePublicUrlProp)));
-                attestationService.with("azure-cc-aks", new AzureCCAksCoreAttestationService(maaServerBaseUrl, ConfigStore.Global.get(Const.Config.CorePublicUrlProp)));
+                attestationService.with("azure-cc", new AzureCCCoreAttestationService(maaServerBaseUrl, ConfigStore.Global.get(Const.Config.CorePublicUrlProp), "azure-cc"));
+                attestationService.with("azure-cc-aks", new AzureCCCoreAttestationService(maaServerBaseUrl, ConfigStore.Global.get(Const.Config.CorePublicUrlProp), "azure-cc-aks"));
 
                 attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(corePublicUrl));
 
