@@ -16,7 +16,6 @@ import com.uid2.shared.attest.JwtService;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
-import com.uid2.shared.model.CloudEncryptionKey;
 import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.EmbeddedResourceStorage;
 import com.uid2.shared.cloud.ICloudStorage;
@@ -34,25 +33,26 @@ import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.micrometer.prometheus.PrometheusRenameFilter;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.json.JsonObject;
 import io.vertx.micrometer.Label;
 import io.vertx.micrometer.MetricsDomain;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import io.vertx.micrometer.backends.BackendRegistries;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.management.*;
 import java.lang.management.ManagementFactory;
 import java.util.*;
 
 public class Main {
-
-    private static final int vertxServiceInstances = 1;
+    private static final int VERTX_SERVICE_INSTANCES = 8;
 
     public static void main(String[] args) {
         final String vertxConfigPath = System.getProperty(Const.Config.VERTX_CONFIG_PATH_PROP);
@@ -110,24 +110,26 @@ public class Main {
                 cloudStorage.setPreSignedUrlExpiry(expiryInSeconds);
             }
 
-            RotatingStoreVerticle enclaveRotatingVerticle = null;
-            RotatingStoreVerticle operatorRotatingVerticle = null;
-            RotatingStoreVerticle cloudEncryptionKeyRotatingVerticle = null;
-            CoreVerticle coreVerticle = null;
             try {
+                createVertxInstancesMetric();
+                createVertxEventLoopsMetric();
+
                 CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
                 GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
                 RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
-                operatorRotatingVerticle = new RotatingStoreVerticle("operators", 60000, operatorKeyProvider);
+                RotatingStoreVerticle operatorRotatingVerticle = new RotatingStoreVerticle("operators", 60000, operatorKeyProvider);
+                vertx.deployVerticle(operatorRotatingVerticle);
 
                 String enclaveMetadataPath = SecretStore.Global.get(EnclaveIdentifierProvider.ENCLAVES_METADATA_PATH);
                 EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
-                enclaveRotatingVerticle = new RotatingStoreVerticle("enclaves", 60000, enclaveIdProvider);
+                RotatingStoreVerticle enclaveRotatingVerticle = new RotatingStoreVerticle("enclaves", 60000, enclaveIdProvider);
+                vertx.deployVerticle(enclaveRotatingVerticle);
 
                 CloudPath cloudEncryptionKeyMetadataPath = new CloudPath(config.getString(Const.Config.CloudEncryptionKeysMetadataPathProp));
                 GlobalScope cloudEncryptionKeyScope = new GlobalScope(cloudEncryptionKeyMetadataPath);
                 RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider = new RotatingCloudEncryptionKeyProvider(cloudStorage, cloudEncryptionKeyScope);
-                cloudEncryptionKeyRotatingVerticle = new RotatingStoreVerticle("cloud_encryption_keys", 60000, cloudEncryptionKeyProvider);
+                RotatingStoreVerticle cloudEncryptionKeyRotatingVerticle = new RotatingStoreVerticle("cloud_encryption_keys", 60000, cloudEncryptionKeyProvider);
+                vertx.deployVerticle(cloudEncryptionKeyRotatingVerticle);
 
                 String corePublicUrl = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
                 AttestationService attestationService = new AttestationService()
@@ -154,7 +156,7 @@ public class Main {
                 attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(corePublicUrl));
 
                 OperatorJWTTokenProvider operatorJWTTokenProvider = new OperatorJWTTokenProvider(config);
-                
+
                 IAttestationTokenService attestationTokenService = new AttestationTokenService(
                         SecretStore.Global.get(Constants.AttestationEncryptionKeyName),
                         SecretStore.Global.get(Constants.AttestationEncryptionSaltName),
@@ -163,19 +165,19 @@ public class Main {
 
                 JwtService jwtService = new JwtService(config);
                 FileSystem fileSystem = vertx.fileSystem();
-                coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider, fileSystem);
+
+                ICloudStorage finalCloudStorage = cloudStorage;
+                vertx.deployVerticle(() -> {
+                    try {
+                        return new CoreVerticle(finalCloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider, fileSystem);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }, new DeploymentOptions().setInstances(VERTX_SERVICE_INSTANCES));
             } catch (Exception e) {
                 System.out.println("failed to initialize core verticle: " + e.getMessage());
                 System.exit(-1);
             }
-
-            createVertxInstancesMetric();
-            createVertxEventLoopsMetric();
-
-            vertx.deployVerticle(enclaveRotatingVerticle);
-            vertx.deployVerticle(operatorRotatingVerticle);
-            vertx.deployVerticle(cloudEncryptionKeyRotatingVerticle);
-            vertx.deployVerticle(coreVerticle, new DeploymentOptions().setInstances(vertxServiceInstances));
         });
     }
 
@@ -213,7 +215,7 @@ public class Main {
     }
 
     private static void createVertxInstancesMetric() {
-        Gauge.builder("uid2.vertx_service_instances", () -> vertxServiceInstances)
+        Gauge.builder("uid2.vertx_service_instances", () -> VERTX_SERVICE_INSTANCES)
                 .description("gauge for number of vertx service instances requested")
                 .register(Metrics.globalRegistry);
     }
