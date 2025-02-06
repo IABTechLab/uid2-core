@@ -52,7 +52,7 @@ import java.util.*;
 
 public class Main {
 
-    private static final int vertxServiceInstances = 1;
+    private static final int vertxServiceInstances = 8;
 
     public static void main(String[] args) {
         final String vertxConfigPath = System.getProperty(Const.Config.VERTX_CONFIG_PATH_PROP);
