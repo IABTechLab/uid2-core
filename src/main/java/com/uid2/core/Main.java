@@ -52,7 +52,7 @@ import java.lang.management.ManagementFactory;
 import java.util.*;
 
 public class Main {
-    private static final int VERTX_SERVICE_INSTANCES = 4;
+    private static final int VERTX_SERVICE_INSTANCES = 2;
 
     public static void main(String[] args) {
         final String vertxConfigPath = System.getProperty(Const.Config.VERTX_CONFIG_PATH_PROP);
