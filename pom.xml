@@ -24,7 +24,7 @@
         <vertx.verticle>com.uid2.core.vertx.CoreVerticle</vertx.verticle>
         <launcher.class>io.vertx.core.Launcher</launcher.class>
 
-        <uid2-shared.version>8.0.32</uid2-shared.version>
+        <uid2-shared.version>8.1.0</uid2-shared.version>
         <image.version>${project.version}</image.version>
     </properties>
 
@@ -126,11 +126,6 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>1.5.6</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.loki4j</groupId>
-            <artifactId>loki-logback-appender</artifactId>
-            <version>1.5.1</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
