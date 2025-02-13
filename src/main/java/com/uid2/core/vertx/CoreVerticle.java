@@ -22,7 +22,10 @@ import com.uid2.shared.secure.*;
 import com.uid2.shared.vertx.RequestCapturingHandler;
 import com.uid2.shared.vertx.VertxUtils;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.FileProps;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
@@ -199,7 +202,7 @@ public class CoreVerticle extends AbstractVerticle {
         router.get(Endpoints.OPERATORS_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handleOperatorRefresh), Role.OPTOUT_SERVICE));
         router.get(Endpoints.PARTNERS_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handlePartnerRefresh), Role.OPTOUT_SERVICE));
         router.get(Endpoints.OPS_HEALTHCHECK.toString()).handler(this::handleHealthCheck);
-        router.get(Endpoints.OPERATOR_CONFIG.toString()).handler(auth.handle(this::handleGetConfig, Role.OPERATOR));
+        router.get(Endpoints.OPERATOR_CONFIG.toString()).handler(auth.handle(attestationMiddleware.handle(this::handleGetConfig), Role.OPERATOR));
 
         if (Optional.ofNullable(ConfigStore.Global.getBoolean("enable_test_endpoints")).orElse(false)) {
             router.route(Endpoints.ATTEST_GET_TOKEN.toString()).handler(auth.handle(this::handleTestGetAttestationToken, Role.OPERATOR));
@@ -209,11 +212,22 @@ public class CoreVerticle extends AbstractVerticle {
     }
 
     private void handleGetConfig(RoutingContext rc) {
-        fileSystem.readFile(com.uid2.core.Const.OPERATOR_CONFIG_PATH, ar -> {
+        String configPath = com.uid2.core.Const.OPERATOR_CONFIG_PATH;
+
+        Future<Buffer> fileFuture = Future.future(promise ->
+                fileSystem.readFile(configPath, promise)
+        );
+        Future<FileProps> propsFuture = Future.future(promise ->
+                fileSystem.props(configPath, promise)
+        );
+
+        Future.all(fileFuture, propsFuture).onComplete(ar -> {
             if (ar.succeeded()) {
+                Buffer fileBuffer = fileFuture.result();
+                FileProps fileProps = propsFuture.result();
                 try {
-                    String fileContent = ar.result().toString();
-                    JsonObject configJson = new JsonObject(fileContent);
+                    JsonObject configJson = new JsonObject(fileBuffer.toString());
+                    configJson.put("version", fileProps.lastModifiedTime());
                     rc.response()
                             .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                             .end(configJson.encodePrettily());
