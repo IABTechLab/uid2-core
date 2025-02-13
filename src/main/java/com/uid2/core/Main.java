@@ -44,15 +44,13 @@ import io.vertx.micrometer.MetricsDomain;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import io.vertx.micrometer.backends.BackendRegistries;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.management.*;
 import java.lang.management.ManagementFactory;
 import java.util.*;
 
 public class Main {
-    private static final int VERTX_SERVICE_INSTANCES = 6;
+    private static final int VERTX_SERVICE_INSTANCES = 3;
 
     public static void main(String[] args) {
         final String vertxConfigPath = System.getProperty(Const.Config.VERTX_CONFIG_PATH_PROP);

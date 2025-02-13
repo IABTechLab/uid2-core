@@ -52,7 +52,6 @@ import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.function.Supplier;
 
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.model.CloudEncryptionKey;
