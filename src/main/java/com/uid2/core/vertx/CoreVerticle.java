@@ -521,7 +521,7 @@ public class CoreVerticle extends AbstractVerticle {
 
         future.onComplete(res -> {
             if (res.succeeded()) {
-                if (rc.statusCode() != 403) {
+                if (!rc.response().ended()) {
                     rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                             .end(res.result());
                 }
