@@ -67,18 +67,18 @@ public class CoreVerticle extends AbstractVerticle {
     private final IEnclaveIdentifierProvider enclaveIdentifierProvider;
 
     private final IAttestationTokenService attestationTokenService;
-    private final ISiteMetadataProvider siteMetadataProvider;
-    private final IClientMetadataProvider clientMetadataProvider;
-    private final IClientSideKeypairMetadataProvider clientSideKeypairMetadataProvider;
-    private final IServiceMetadataProvider serviceMetadataProvider;
-    private final IServiceLinkMetadataProvider serviceLinkMetadataProvider;
-    private final IOperatorMetadataProvider operatorMetadataProvider;
-    private final IKeyMetadataProvider keyMetadataProvider;
-    private final IKeyAclMetadataProvider keyAclMetadataProvider;
-    private final IKeysetMetadataProvider keysetMetadataProvider;
-    private final IKeysetKeyMetadataProvider keysetKeyMetadataProvider;
-    private final ISaltMetadataProvider saltMetadataProvider;
-    private final IPartnerMetadataProvider partnerMetadataProvider;
+    private final SiteMetadataProvider siteMetadataProvider;
+    private final ClientMetadataProvider clientMetadataProvider;
+    private final ClientSideKeypairMetadataProvider clientSideKeypairMetadataProvider;
+    private final ServiceMetadataProvider serviceMetadataProvider;
+    private final ServiceLinkMetadataProvider serviceLinkMetadataProvider;
+    private final OperatorMetadataProvider operatorMetadataProvider;
+    private final KeyMetadataProvider keyMetadataProvider;
+    private final KeyAclMetadataProvider keyAclMetadataProvider;
+    private final KeysetMetadataProvider keysetMetadataProvider;
+    private final KeysetKeyMetadataProvider keysetKeyMetadataProvider;
+    private final SaltMetadataProvider saltMetadataProvider;
+    private final PartnerMetadataProvider partnerMetadataProvider;
     private final OperatorJWTTokenProvider operatorJWTTokenProvider;
     private final RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider;
 
@@ -125,7 +125,7 @@ public class CoreVerticle extends AbstractVerticle {
         this.saltMetadataProvider = new SaltMetadataProvider(cloudStorage);
         this.partnerMetadataProvider = new PartnerMetadataProvider(cloudStorage);
         this.keysetMetadataProvider = new KeysetMetadataProvider(cloudStorage);
-        this.keysetKeyMetadataProvider = new KeysetKeysMetadataProvider(cloudStorage);
+        this.keysetKeyMetadataProvider = new KeysetKeyMetadataProvider(cloudStorage);
         this.clientSideKeypairMetadataProvider = new ClientSideKeypairMetadataProvider(cloudStorage);
         this.serviceMetadataProvider = new ServiceMetadataProvider(cloudStorage);
         this.serviceLinkMetadataProvider = new ServiceLinkMetadataProvider(cloudStorage);
