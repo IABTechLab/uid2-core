@@ -150,7 +150,6 @@ public class TestCoreVerticle {
             return null;
         });
 
-
         CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider, fileSystem);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
 
@@ -925,12 +924,12 @@ public class TestCoreVerticle {
 
         // Make HTTP Get request to operator config endpoint
         this.get(vertx, Endpoints.OPERATOR_CONFIG.toString(), testContext.succeeding(response -> testContext.verify(() -> {
-                        assertEquals(200, response.statusCode());
-                        assertEquals("application/json", response.getHeader(HttpHeaders.CONTENT_TYPE));
-                        JsonObject actualConfig = new JsonObject(response.bodyAsString());
-                        assertEquals(expectedConfig, actualConfig);
-                        testContext.completeNow();
-                    })
+                    assertEquals(200, response.statusCode());
+                    assertEquals("application/json", response.getHeader(HttpHeaders.CONTENT_TYPE));
+                    JsonObject actualConfig = new JsonObject(response.bodyAsString());
+                    assertEquals(expectedConfig, actualConfig);
+                    testContext.completeNow();
+                })
         ));
     }
 
