@@ -416,7 +416,7 @@ public class CoreVerticle extends AbstractVerticle {
                 Error("error", 403, rc, "endpoint /sites/refresh is for public operators only");
                 return null;
             }
-            return siteMetadataProvider.getMetadata();
+            return siteMetadataProvider.getMetadata(info);
         }, "handleSiteRefresh", "sites");
     }
 
