@@ -38,7 +38,7 @@ public abstract class MetadataProvider {
     protected String getGlobalScopeMetadata(String metadataPath, String keyName) throws Exception {
         String pathName = new GlobalScope(new CloudPath(SecretStore.Global.get(metadataPath))).getMetadataPath().toString();
         String json = readToEndAsString(metadataStreamProvider.download(pathName));
-        return getMetadata(json, keyName);
+        return getMetadataJson(json, keyName);
     }
 
     private String getMetadataJson(String json, String keyName) throws Exception {
