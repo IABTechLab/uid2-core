@@ -17,6 +17,7 @@ import com.uid2.shared.secure.ICoreAttestationService;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.FileProps;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
@@ -79,6 +80,7 @@ public class TestCoreVerticle {
 
     private AttestationService attestationService;
     private String operatorConfig;
+    private final long operatorConfigVersion = 1;
 
     private static final String attestationProtocol = "test-attestation-protocol";
     private static final String attestationProtocolPublic = "trusted";
@@ -134,6 +136,20 @@ public class TestCoreVerticle {
             }
             return null;
         });
+
+        when(fileSystem.props(anyString(), any())).thenAnswer(invocation -> {
+            String path = invocation.getArgument(0);
+            Handler<AsyncResult<FileProps>> handler = invocation.getArgument(1);
+            if (Objects.equals(path, com.uid2.core.Const.OPERATOR_CONFIG_PATH)) {
+                FileProps fileProps = mock(FileProps.class);
+                when(fileProps.lastModifiedTime()).thenReturn(operatorConfigVersion);
+                handler.handle(Future.succeededFuture(fileProps));
+            } else {
+                handler.handle(Future.failedFuture(new RuntimeException("Failed to get file properties: " + path)));
+            }
+            return null;
+        });
+
 
         CoreVerticle verticle = new CoreVerticle(cloudStorage, authProvider, attestationService, attestationTokenService, enclaveIdentifierProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider, fileSystem);
         vertx.deployVerticle(verticle, testContext.succeeding(id -> testContext.completeNow()));
@@ -894,11 +910,18 @@ public class TestCoreVerticle {
         });
     }
 
+    @Tag("dontForceJwt")
     @Test
     void getConfigSuccess(Vertx vertx, VertxTestContext testContext) {
-        JsonObject expectedConfig = new JsonObject(operatorConfig);
+        JsonObject expectedConfig = new JsonObject(operatorConfig)
+                .put("version", operatorConfigVersion);
 
-        fakeAuth(Role.OPERATOR);
+        fakeAuth(attestationProtocolPublic, Role.OPERATOR);
+        addAttestationProvider(attestationProtocolPublic);
+        onHandleAttestationRequest(() -> {
+            byte[] resultPublicKey = null;
+            return Future.succeededFuture(new AttestationResult(resultPublicKey, "test"));
+        });
 
         // Make HTTP Get request to operator config endpoint
         this.get(vertx, Endpoints.OPERATOR_CONFIG.toString(), testContext.succeeding(response -> testContext.verify(() -> {
@@ -911,11 +934,17 @@ public class TestCoreVerticle {
         ));
     }
 
+    @Tag("dontForceJwt")
     @Test
     void getConfigInvalidJson(Vertx vertx, VertxTestContext testContext) {
         operatorConfig = "invalid config";
 
-        fakeAuth(Role.OPERATOR);
+        fakeAuth(attestationProtocolPublic, Role.OPERATOR);
+        addAttestationProvider(attestationProtocolPublic);
+        onHandleAttestationRequest(() -> {
+            byte[] resultPublicKey = null;
+            return Future.succeededFuture(new AttestationResult(resultPublicKey, "test"));
+        });
 
         this.get(vertx, Endpoints.OPERATOR_CONFIG.toString(), testContext.succeeding(response -> testContext.verify(() -> {
                     assertEquals(500, response.statusCode());
