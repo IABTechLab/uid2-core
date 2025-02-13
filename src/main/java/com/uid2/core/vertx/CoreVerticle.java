@@ -22,6 +22,7 @@ import com.uid2.shared.secure.*;
 import com.uid2.shared.vertx.RequestCapturingHandler;
 import com.uid2.shared.vertx.VertxUtils;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpHeaders;
@@ -50,6 +51,8 @@ import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
 import com.uid2.shared.model.CloudEncryptionKey;
@@ -408,151 +411,126 @@ public class CoreVerticle extends AbstractVerticle {
     }
 
     private void handleSiteRefresh(RoutingContext rc) {
-        try {
+        handleRefresh(rc, () -> {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             if (info.getOperatorType() != OperatorType.PUBLIC) {
                 Error("error", 403, rc, "endpoint /sites/refresh is for public operators only");
-                return;
+                return null;
             }
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(siteMetadataProvider.getMetadata(info));
-        } catch (Exception e) {
-            logger.warn("exception in handleSiteRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing sites refresh");
-        }
+            return siteMetadataProvider.getMetadata();
+        }, "handleSiteRefresh", "sites");
     }
 
     private void handleSaltRefresh(RoutingContext rc) {
-        try {
+        handleRefresh(rc, () -> {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(saltMetadataProvider.getMetadata(info));
-        } catch (Exception e) {
-            logger.warn("exception in handleSaltRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing salt refresh");
-        }
+            return saltMetadataProvider.getMetadata(info);
+        }, "handleSaltRefresh", "salt");
     }
 
     private void handleKeyRefresh(RoutingContext rc) {
-        try {
+        handleRefresh(rc, () -> {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(keyMetadataProvider.getMetadata(info));
-        } catch (Exception e) {
-            logger.warn("exception in handleKeyRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing key refresh");
-        }
+            return keyMetadataProvider.getMetadata(info);
+        }, "handleKeyRefresh", "key");
     }
 
     private void handleKeyAclRefresh(RoutingContext rc) {
-        try {
+        handleRefresh(rc, () -> {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(keyAclMetadataProvider.getMetadata(info));
-        } catch (Exception e) {
-            logger.warn("exception in handleKeyAclRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing key acl refresh");
-        }
+            return keyAclMetadataProvider.getMetadata(info);
+        }, "handleKeyAclRefresh", "key acl");
     }
 
     private void handleKeysetRefresh(RoutingContext rc) {
-        try {
+        handleRefresh(rc, () -> {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(keysetMetadataProvider.getMetadata(info));
-        } catch (Exception e) {
-            logger.warn("exception in handleKeysetRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing key refresh");
-        }
+            return keysetMetadataProvider.getMetadata(info);
+        }, "handleKeysetRefresh", "keyset");
     }
 
     private void handleKeysetKeyRefresh(RoutingContext rc) {
-        try {
+        handleRefresh(rc, () -> {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(keysetKeyMetadataProvider.getMetadata(info));
-        } catch (Exception e) {
-            logger.warn("exception in handleKeysetKeyRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing key refresh");
-        }
+            return keysetKeyMetadataProvider.getMetadata(info);
+        }, "handleKeysetKeyRefresh", "keyset key");
     }
 
     private void handleClientRefresh(RoutingContext rc) {
-        try {
+        handleRefresh(rc, () -> {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(clientMetadataProvider.getMetadata(info));
-        } catch (Exception e) {
-            logger.warn("exception in handleClientRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing client refresh");
-        }
+            return clientMetadataProvider.getMetadata(info);
+        }, "handleClientRefresh", "client");
     }
 
     private void handleClientSideKeypairRefresh(RoutingContext rc) {
-        try {
+        handleRefresh(rc, () -> {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             if (info.getOperatorType() != OperatorType.PUBLIC) {
                 Error("error", 403, rc, "endpoint /client_side_keypairs/refresh is for public operators only");
-                return;
+                return null;
             }
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(clientSideKeypairMetadataProvider.getMetadata(info));
-        } catch (Exception e) {
-            logger.warn("exception in handleClientSideKeypairRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing client_side_keypairs refresh");
-        }
+            return clientSideKeypairMetadataProvider.getMetadata(info);
+        }, "handleClientSideKeypairRefresh", "client_side_keypairs");
     }
 
     private void handleServiceRefresh(RoutingContext rc) {
-        try {
+        handleRefresh(rc, () -> {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             if (info.getOperatorType() != OperatorType.PUBLIC) {
                 Error("error", 403, rc, "endpoint /services/refresh is for public operators only");
-                return;
+                return null;
             }
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(serviceMetadataProvider.getMetadata());
-        } catch (Exception e) {
-            logger.warn("exception in handleServiceRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing services refresh");
-        }
+            return serviceMetadataProvider.getMetadata();
+        }, "handleServiceRefresh", "services");
     }
 
     private void handleServiceLinkRefresh(RoutingContext rc) {
-        try {
+        handleRefresh(rc, () -> {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
             if (info.getOperatorType() != OperatorType.PUBLIC) {
                 Error("error", 403, rc, "endpoint /service_links/refresh is for public operators only");
-                return;
+                return null;
             }
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(serviceLinkMetadataProvider.getMetadata());
-        } catch (Exception e) {
-            logger.warn("exception in handleServiceLinkRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing service_links refresh");
-        }
+            return serviceLinkMetadataProvider.getMetadata();
+        }, "handleServiceLinkRefresh", "service_links");
     }
 
     private void handleOperatorRefresh(RoutingContext rc) {
-        try {
+        handleRefresh(rc, () -> {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(operatorMetadataProvider.getMetadata());
-        } catch (Exception e) {
-            logger.warn("exception in handleOperatorRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing operator refresh");
-        }
+            return operatorMetadataProvider.getMetadata();
+        }, "handleOperatorRefresh", "operator");
     }
 
     private void handlePartnerRefresh(RoutingContext rc) {
-        try {
+        handleRefresh(rc, () -> {
             OperatorInfo info = OperatorInfo.getOperatorInfo(rc);
-            rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .end(partnerMetadataProvider.getMetadata());
+            return partnerMetadataProvider.getMetadata();
+        }, "handlePartnerRefresh", "partner");
+    }
+
+    private void handleRefresh(RoutingContext rc, Callable<String> metadataFn, String refreshFunctionName, String refreshKeyName) {
+        Future<String> future;
+        try {
+            future = vertx.executeBlocking(metadataFn);
         } catch (Exception e) {
-            logger.warn("exception in handlePartnerRefresh: " + e.getMessage(), e);
-            Error("error", 500, rc, "error processing partner refresh");
+            logger.warn("exception in {}: {}", refreshFunctionName, e.getMessage(), e);
+            Error("error", 500, rc, String.format("error processing %s refresh", refreshKeyName));
+            return;
         }
+
+        future.onComplete(res -> {
+            if (res.succeeded()) {
+                if (rc.statusCode() != 403) {
+                    rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                            .end(res.result());
+                }
+            } else {
+                logger.warn("exception in {}: {}", refreshFunctionName, res.cause().getMessage(), res.cause());
+                Error("error", 500, rc, String.format("error processing %s refresh", refreshKeyName));
+            }
+        });
     }
 
     private void handleEnclaveChange(RoutingContext rc, boolean isUnregister) {
@@ -699,7 +677,7 @@ public class CoreVerticle extends AbstractVerticle {
     //endregion test endpoints
 
     public static void Success(RoutingContext rc, Object body) {
-        final JsonObject json = new JsonObject(new HashMap<String, Object>() {
+        final JsonObject json = new JsonObject(new HashMap<>() {
             {
                 put("status", "success");
                 put("body", body);
@@ -710,7 +688,7 @@ public class CoreVerticle extends AbstractVerticle {
     }
 
     public static void Error(String errorStatus, int statusCode, RoutingContext rc, String message) {
-        final JsonObject json = new JsonObject(new HashMap<String, Object>() {
+        final JsonObject json = new JsonObject(new HashMap<>() {
             {
                 put("status", errorStatus);
             }
