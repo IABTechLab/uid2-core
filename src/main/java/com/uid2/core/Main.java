@@ -33,7 +33,6 @@ import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.micrometer.prometheus.PrometheusRenameFilter;
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.file.FileSystem;
@@ -50,7 +49,8 @@ import java.lang.management.ManagementFactory;
 import java.util.*;
 
 public class Main {
-    private static final int VERTX_SERVICE_INSTANCES = 5;
+    private static final int VERTX_SERVICE_INSTANCES = 3;
+    private static final int VERTX_WORKER_POOL_SIZE = 1000;
 
     public static void main(String[] args) {
         final String vertxConfigPath = System.getProperty(Const.Config.VERTX_CONFIG_PATH_PROP);
@@ -249,7 +249,8 @@ public class Main {
 
         return new VertxOptions()
                 .setMetricsOptions(metricOptions)
-                .setBlockedThreadCheckInterval(threadBlockedCheckInterval);
+                .setBlockedThreadCheckInterval(threadBlockedCheckInterval)
+                .setWorkerPoolSize(VERTX_WORKER_POOL_SIZE);
     }
 
     private static MicrometerMetricsOptions getMetricOptions(VertxPrometheusOptions promOptions) {
