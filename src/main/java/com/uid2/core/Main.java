@@ -49,7 +49,7 @@ import java.lang.management.ManagementFactory;
 import java.util.*;
 
 public class Main {
-    private static final int VERTX_SERVICE_INSTANCES = 4;
+    private static final int VERTX_SERVICE_INSTANCES = 6;
     private static final int VERTX_WORKER_POOL_SIZE = 20;
 
     public static void main(String[] args) {
