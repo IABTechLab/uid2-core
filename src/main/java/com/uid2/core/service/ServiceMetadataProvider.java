@@ -3,8 +3,6 @@ package com.uid2.core.service;
 import com.uid2.shared.cloud.ICloudStorage;
 
 public class ServiceMetadataProvider extends MetadataProvider {
-    public static final String ServiceMetadataPathName = "services_metadata_path";
-
     public ServiceMetadataProvider(ICloudStorage cloudStorage) {
         super(cloudStorage);
     }
@@ -14,6 +12,6 @@ public class ServiceMetadataProvider extends MetadataProvider {
     }
 
     public String getMetadata() throws Exception {
-        return getGlobalScopeMetadata(ServiceMetadataPathName, "services");
+        return getGlobalScopeMetadata("services_metadata_path", "services");
     }
 }

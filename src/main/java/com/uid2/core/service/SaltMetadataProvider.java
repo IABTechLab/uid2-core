@@ -10,8 +10,6 @@ import io.vertx.core.json.JsonObject;
 import static com.uid2.core.util.MetadataHelper.*;
 
 public class SaltMetadataProvider extends MetadataProvider {
-    public static final String SaltsMetadataPathName = "salts_metadata_path";
-
     public SaltMetadataProvider(ICloudStorage cloudStorage) {
         super(cloudStorage);
     }
@@ -21,7 +19,7 @@ public class SaltMetadataProvider extends MetadataProvider {
     }
 
     public String getMetadata(OperatorInfo info) throws Exception {
-        String pathname = getMetadataPathNameOldPrivateNoSite(info, SecretStore.Global.get(SaltsMetadataPathName));
+        String pathname = getMetadataPathNameOldPrivateNoSite(info, SecretStore.Global.get("salts_metadata_path"));
         String original = readToEndAsString(metadataStreamProvider.download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonArray salts = main.getJsonArray("salts");

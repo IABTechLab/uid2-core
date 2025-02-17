@@ -4,8 +4,6 @@ import com.uid2.core.util.OperatorInfo;
 import com.uid2.shared.cloud.ICloudStorage;
 
 public class SiteMetadataProvider extends MetadataProvider {
-    public static final String SiteMetadataPathName = "sites_metadata_path";
-
     public SiteMetadataProvider(ICloudStorage cloudStorage) {
         super(cloudStorage);
     }
@@ -15,6 +13,6 @@ public class SiteMetadataProvider extends MetadataProvider {
     }
 
     public String getMetadata(OperatorInfo info) throws Exception {
-        return getMetadata(info, SiteMetadataPathName, "sites");
+        return getMetadata(info, "sites_metadata_path", "sites");
     }
 }
