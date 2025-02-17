@@ -512,7 +512,7 @@ public class CoreVerticle extends AbstractVerticle {
     private void handleRefresh(RoutingContext rc, Callable<String> metadataFn, String refreshFunctionName, String refreshKeyName) {
         Future<String> future;
         try {
-            future = vertx.executeBlocking(metadataFn);
+            future = vertx.executeBlocking(metadataFn, false);
         } catch (Exception e) {
             logger.warn("exception in {}: {}", refreshFunctionName, e.getMessage(), e);
             Error("error", 500, rc, String.format("error processing %s refresh", refreshKeyName));
