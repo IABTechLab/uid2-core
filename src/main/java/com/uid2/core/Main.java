@@ -43,23 +43,26 @@ import io.vertx.micrometer.MetricsDomain;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import io.vertx.micrometer.backends.BackendRegistries;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.management.*;
 import java.lang.management.ManagementFactory;
 import java.util.*;
 
 public class Main {
+    private final static Logger LOGGER = LoggerFactory.getLogger(CoreVerticle.class);
     private static final int VERTX_SERVICE_INSTANCES = 6;
 
     public static void main(String[] args) {
         final String vertxConfigPath = System.getProperty(Const.Config.VERTX_CONFIG_PATH_PROP);
         if (vertxConfigPath != null) {
-            System.out.format("Running CUSTOM CONFIG mode, config: %s\n", vertxConfigPath);
+            LOGGER.info("Running CUSTOM CONFIG mode, config: {}", vertxConfigPath);
         } else if (!Utils.isProductionEnvironment()) {
-            System.out.format("Running LOCAL DEBUG mode, config: %s\n", Const.Config.LOCAL_CONFIG_PATH);
+            LOGGER.info("Running LOCAL DEBUG mode, config: {}", Const.Config.LOCAL_CONFIG_PATH);
             System.setProperty(Const.Config.VERTX_CONFIG_PATH_PROP, Const.Config.LOCAL_CONFIG_PATH);
         } else {
-            System.out.format("Running PRODUCTION mode, config: %s\n", Const.Config.OVERRIDE_CONFIG_PATH);
+            LOGGER.info("Running PRODUCTION mode, config: {}", Const.Config.OVERRIDE_CONFIG_PATH);
         }
 
         // create AdminApi instance
@@ -68,7 +71,7 @@ public class Main {
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
             server.registerMBean(AdminApi.instance, objectName);
         } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException | MalformedObjectNameException e) {
-            System.err.format("%s", e.getMessage());
+            LOGGER.error(e.getMessage());
             System.exit(-1);
         }
 
@@ -88,7 +91,7 @@ public class Main {
 
         VertxUtils.createConfigRetriever(vertx).getConfig(ar -> {
             if (ar.failed()) {
-                System.out.println("failed to load config: " + ar.cause().toString());
+                LOGGER.error("failed to load config: {}", ar.cause().toString());
                 System.exit(-1);
             }
 
@@ -97,7 +100,7 @@ public class Main {
             SecretStore.Global.load(config);
 
             boolean useStorageMock = Optional.ofNullable(ConfigStore.Global.getBoolean("storage_mock")).orElse(false);
-            ICloudStorage cloudStorage = null;
+            ICloudStorage cloudStorage;
             if (useStorageMock) {
                 cloudStorage = new EmbeddedResourceStorage(Main.class).withUrlPrefix(ConfigStore.Global.getOrDefault("storage_mock_url_prefix", ""));
             } else {
@@ -164,16 +167,17 @@ public class Main {
                 JwtService jwtService = new JwtService(config);
                 FileSystem fileSystem = vertx.fileSystem();
 
-                ICloudStorage finalCloudStorage = cloudStorage;
                 vertx.deployVerticle(() -> {
                     try {
-                        return new CoreVerticle(finalCloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider, fileSystem);
+                        return new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider, fileSystem);
                     } catch (Exception e) {
-                        throw new RuntimeException(e);
+                        LOGGER.error("failed to deploy core verticle: {}", e.getMessage());
+                        System.exit(-1);
+                        return null;
                     }
                 }, new DeploymentOptions().setInstances(VERTX_SERVICE_INSTANCES));
             } catch (Exception e) {
-                System.out.println("failed to initialize core verticle: " + e.getMessage());
+                LOGGER.error("failed to initialize core verticle: {}", e.getMessage());
                 System.exit(-1);
             }
         });
@@ -194,8 +198,8 @@ public class Main {
                             actualPath -> HTTPPathMetricFilter.filterPath(actualPath, Endpoints.pathSet())))
                     // Don't record metrics for 404s.
                     .meterFilter(MeterFilter.deny(id ->
-                        id.getName().startsWith(MetricsDomain.HTTP_SERVER.getPrefix()) &&
-                        Objects.equals(id.getTag(Label.HTTP_CODE.toString()), "404")))
+                            id.getName().startsWith(MetricsDomain.HTTP_SERVER.getPrefix()) &&
+                                    Objects.equals(id.getTag(Label.HTTP_CODE.toString()), "404")))
                     // adding common labels
                     .commonTags("application", "uid2-core");
 
