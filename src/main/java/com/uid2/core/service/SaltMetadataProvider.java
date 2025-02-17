@@ -23,7 +23,8 @@ public class SaltMetadataProvider extends MetadataProvider {
         String original = readToEndAsString(getMetadataStreamProvider().download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonArray salts = main.getJsonArray("salts");
-        for(JsonObject obj : salts) {
+        for(int i = 0; i < salts.size(); ++i) {
+            JsonObject obj = salts.getJsonObject(i);
             String location = obj.getString("location");
             obj.put("location", downloadUrlGenerator.preSignUrl(location).toString());
         }
