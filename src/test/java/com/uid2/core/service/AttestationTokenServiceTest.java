@@ -1,11 +1,10 @@
-package com.uid2.services;
+package com.uid2.core.service;
 
 import com.uid2.shared.secure.AttestationFailure;
 import com.uid2.shared.secure.AttestationResult;
 import com.uid2.shared.secure.ICertificateProvider;
 import com.uid2.shared.secure.NitroCoreAttestationService;
 import com.uid2.shared.secure.nitro.InMemoryAWSCertificateStore;
-import com.uid2.core.service.AttestationService;
 import com.uid2.shared.attest.AttestationToken;
 import com.uid2.shared.attest.AttestationTokenService;
 import org.junit.jupiter.api.Test;
@@ -17,7 +16,7 @@ import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class TestAttestation {
+public class AttestationTokenServiceTest {
 
     @Test
     public void testGenerateAttestationToken()

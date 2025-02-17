@@ -57,7 +57,7 @@ import java.util.Arrays;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(VertxExtension.class)
-public class TestCoreVerticle {
+public class CoreVerticleTest {
     @Mock
     private ICloudStorage cloudStorage;
     @Mock

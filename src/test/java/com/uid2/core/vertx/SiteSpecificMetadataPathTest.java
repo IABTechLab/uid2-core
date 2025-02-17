@@ -42,7 +42,7 @@ import static org.mockito.Mockito.*;
  * See TestSitesMetadataPath for testing public operator able to retrieve site metadata for CSTG use.
  */
 @ExtendWith(VertxExtension.class)
-public class TestSiteSpecificMetadataPath {
+public class SiteSpecificMetadataPathTest {
 
   @Mock
   private ICloudStorage cloudStorage;
@@ -167,7 +167,7 @@ public class TestSiteSpecificMetadataPath {
 
   String openFile(String filePath) throws IOException
   {
-    return readToEndAsString(TestSiteSpecificMetadataPath.class.getResourceAsStream(filePath));
+    return readToEndAsString(SiteSpecificMetadataPathTest.class.getResourceAsStream(filePath));
   }
 
 }

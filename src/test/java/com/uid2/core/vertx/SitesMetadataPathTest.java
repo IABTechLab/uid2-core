@@ -45,7 +45,7 @@ import static org.mockito.Mockito.when;
 // this class is for test public operator able to retrieve site metadata for CSTG use.
 // For testing Core Service returning site specific metadata for private operator refer to TestSiteSpecificMetadataPath/TestSiteSpecificMetadataPathDisabled classes
 @ExtendWith(VertxExtension.class)
-public class TestSitesMetadataPath {
+public class SitesMetadataPathTest {
     @Mock
     private ICloudStorage cloudStorage;
     @Mock
@@ -130,6 +130,6 @@ public class TestSitesMetadataPath {
 
     String openFile(String filePath) throws IOException
     {
-        return readToEndAsString(TestSiteSpecificMetadataPath.class.getResourceAsStream(filePath));
+        return readToEndAsString(SiteSpecificMetadataPathTest.class.getResourceAsStream(filePath));
     }
 }
