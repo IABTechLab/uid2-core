@@ -20,11 +20,10 @@ public class SaltMetadataProvider extends MetadataProvider {
 
     public String getMetadata(OperatorInfo info) throws Exception {
         String pathname = getMetadataPathNameOldPrivateNoSite(info, SecretStore.Global.get("salts_metadata_path"));
-        String original = readToEndAsString(metadataStreamProvider.download(pathname));
+        String original = readToEndAsString(getMetadataStreamProvider().download(pathname));
         JsonObject main = (JsonObject) Json.decodeValue(original);
         JsonArray salts = main.getJsonArray("salts");
-        for(int i=0;i<salts.size();++i) {
-            JsonObject obj = salts.getJsonObject(i);
+        for(JsonObject obj : salts) {
             String location = obj.getString("location");
             obj.put("location", downloadUrlGenerator.preSignUrl(location).toString());
         }

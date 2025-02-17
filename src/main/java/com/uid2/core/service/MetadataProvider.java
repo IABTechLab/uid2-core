@@ -7,13 +7,15 @@ import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.scope.GlobalScope;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
+import lombok.Getter;
 
 import static com.uid2.core.util.MetadataHelper.getMetadataPathName;
 import static com.uid2.core.util.MetadataHelper.readToEndAsString;
 
+@Getter
 public abstract class MetadataProvider {
-    protected final ICloudStorage metadataStreamProvider;
-    protected final ICloudStorage downloadUrlGenerator;
+    private final ICloudStorage metadataStreamProvider;
+    private final ICloudStorage downloadUrlGenerator;
 
     protected MetadataProvider(ICloudStorage cloudStorage) {
         this.metadataStreamProvider = this.downloadUrlGenerator = cloudStorage;
