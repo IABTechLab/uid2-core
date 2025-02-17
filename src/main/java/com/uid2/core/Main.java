@@ -52,7 +52,8 @@ import java.util.*;
 
 public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoreVerticle.class);
-    private static final int VERTX_SERVICE_INSTANCES = 6;
+    private static final int VERTX_SERVICE_INSTANCES = 3;
+    private static final int VERTX_WORKER_POOL_SIZE = 1000;
 
     public static void main(String[] args) {
         final String vertxConfigPath = System.getProperty(Const.Config.VERTX_CONFIG_PATH_PROP);
@@ -251,7 +252,8 @@ public class Main {
 
         return new VertxOptions()
                 .setMetricsOptions(metricOptions)
-                .setBlockedThreadCheckInterval(threadBlockedCheckInterval);
+                .setBlockedThreadCheckInterval(threadBlockedCheckInterval)
+                .setWorkerPoolSize(VERTX_WORKER_POOL_SIZE);
     }
 
     private static MicrometerMetricsOptions getMetricOptions(VertxPrometheusOptions promOptions) {
