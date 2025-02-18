@@ -52,8 +52,6 @@ import java.util.*;
 
 public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoreVerticle.class);
-    private static final int VERTX_SERVICE_INSTANCES = 3;
-    private static final int VERTX_WORKER_POOL_SIZE = 1000;
 
     public static void main(String[] args) {
         final String vertxConfigPath = System.getProperty(Const.Config.VERTX_CONFIG_PATH_PROP);
@@ -143,7 +141,7 @@ public class Main {
                     Set<String> enclaveParams = null;
                     String params = config.getString(Const.Config.GcpEnclaveParamsProp);
                     if (params != null) {
-                        enclaveParams = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(params.split(","))));
+                        enclaveParams = Set.of(params.split(","));
                     }
 
                     // enable gcp-vmid attestation if requested
@@ -176,7 +174,7 @@ public class Main {
                         System.exit(-1);
                         return null;
                     }
-                }, new DeploymentOptions().setInstances(VERTX_SERVICE_INSTANCES));
+                }, new DeploymentOptions().setInstances(ConfigStore.Global.getInteger(com.uid2.core.Const.Config.ServiceInstancesProp)));
             } catch (Exception e) {
                 LOGGER.error("failed to initialize core verticle: {}", e.getMessage());
                 System.exit(-1);
@@ -188,9 +186,7 @@ public class Main {
         BackendRegistries.setupBackend(metricOptions, null);
 
         // As of now default backend registry should have been created
-        if (BackendRegistries.getDefaultNow() instanceof PrometheusMeterRegistry) {
-            PrometheusMeterRegistry prometheusRegistry = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
-
+        if (BackendRegistries.getDefaultNow() instanceof PrometheusMeterRegistry prometheusRegistry) {
             // see also https://micrometer.io/docs/registry/prometheus
             prometheusRegistry.config()
                     // providing common renaming for prometheus metric, e.g. "hello.world" to "hello_world"
@@ -210,15 +206,14 @@ public class Main {
 
         // retrieve image version (will unify when uid2-common is used)
         String version = Optional.ofNullable(System.getenv("IMAGE_VERSION")).orElse("unknown");
-        Gauge appStatus = Gauge
-                .builder("app.status", () -> 1)
+        Gauge.builder("app.status", () -> 1)
                 .description("application version and status")
                 .tags("version", version)
                 .register(Metrics.globalRegistry);
     }
 
     private static void createVertxInstancesMetric() {
-        Gauge.builder("uid2.vertx_service_instances", () -> VERTX_SERVICE_INSTANCES)
+        Gauge.builder("uid2.vertx_service_instances", () -> ConfigStore.Global.getInteger(com.uid2.core.Const.Config.ServiceInstancesProp))
                 .description("gauge for number of vertx service instances requested")
                 .register(Metrics.globalRegistry);
     }
@@ -253,7 +248,7 @@ public class Main {
         return new VertxOptions()
                 .setMetricsOptions(metricOptions)
                 .setBlockedThreadCheckInterval(threadBlockedCheckInterval)
-                .setWorkerPoolSize(VERTX_WORKER_POOL_SIZE);
+                .setWorkerPoolSize(ConfigStore.Global.getInteger(com.uid2.core.Const.Config.WorkerPoolSizeProp));
     }
 
     private static MicrometerMetricsOptions getMetricOptions(VertxPrometheusOptions promOptions) {

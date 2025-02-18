@@ -1,4 +1,6 @@
 {
+    "service_instances": 3,
+    "worker_pool_size": 1000,
     "pre_signed_url_expiry": 1800,
     "core_s3_bucket": null,
     "aws_region": null,

@@ -1,4 +1,6 @@
 {
+    "service_instances": 1,
+    "worker_pool_size": 20,
     "enable_test_endpoints": true,
     "storage_mock": false,
     "aws_s3_endpoint": "http://localhost:5001",
