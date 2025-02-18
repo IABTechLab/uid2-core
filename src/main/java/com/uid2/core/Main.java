@@ -110,8 +110,7 @@ public class Main {
             }
 
             try {
-                createVertxInstancesMetric();
-                createVertxEventLoopsMetric();
+                createVertxMetrics();
 
                 CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
                 GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
@@ -212,33 +211,19 @@ public class Main {
                 .register(Metrics.globalRegistry);
     }
 
-    private static void createVertxInstancesMetric() {
+    private static void createVertxMetrics() {
         Gauge.builder("uid2.vertx_service_instances", () -> ConfigStore.Global.getInteger(com.uid2.core.Const.Config.ServiceInstancesProp))
                 .description("gauge for number of vertx service instances requested")
                 .register(Metrics.globalRegistry);
-    }
 
-    private static void createVertxEventLoopsMetric() {
+        Gauge.builder("uid2.vertx_worker_pool_size", () -> ConfigStore.Global.getInteger(com.uid2.core.Const.Config.WorkerPoolSizeProp))
+                .description("gauge for vertx worker pool size requested")
+                .register(Metrics.globalRegistry);
+
         Gauge.builder("uid2.vertx_event_loop_threads", () -> VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE)
                 .description("gauge for number of vertx event loop threads")
                 .register(Metrics.globalRegistry);
     }
-
-    /*
-    private static CommandLine parseArgs(String[] args) {
-        final CLI cli = CLI.create("uid2-core")
-            .setSummary("run uid2 core service")
-            .addOption(new Option()
-                .setLongName("config")
-                .setDescription("path to configuration file")
-                .setRequired(true))
-            .addOption(new Option()
-                .setLongName("secrets")
-                .setDescription("path to secrets file")
-                .setRequired(true));
-        return cli.parse(Arrays.asList(args));
-    }
-     */
 
     private static VertxOptions getVertxOptions(MicrometerMetricsOptions metricOptions) {
         final int threadBlockedCheckInterval = Utils.isProductionEnvironment()
