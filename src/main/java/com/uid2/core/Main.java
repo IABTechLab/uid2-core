@@ -52,6 +52,7 @@ import java.util.*;
 
 public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(CoreVerticle.class);
+    private static final int VERTX_WORKER_POOL_SIZE = 1000; // Cannot set this in config file because it's needed on Vertx init
 
     public static void main(String[] args) {
         final String vertxConfigPath = System.getProperty(Const.Config.VERTX_CONFIG_PATH_PROP);
@@ -208,7 +209,7 @@ public class Main {
                 .description("gauge for number of vertx service instances requested")
                 .register(Metrics.globalRegistry);
 
-        Gauge.builder("uid2.vertx_worker_pool_size", () -> ConfigStore.Global.getInteger(com.uid2.core.Const.Config.WorkerPoolSizeProp))
+        Gauge.builder("uid2.vertx_worker_pool_size", () -> VERTX_WORKER_POOL_SIZE)
                 .description("gauge for vertx worker pool size requested")
                 .register(Metrics.globalRegistry);
 
@@ -225,7 +226,7 @@ public class Main {
         return new VertxOptions()
                 .setMetricsOptions(metricOptions)
                 .setBlockedThreadCheckInterval(threadBlockedCheckInterval)
-                .setWorkerPoolSize(ConfigStore.Global.getInteger(com.uid2.core.Const.Config.WorkerPoolSizeProp));
+                .setWorkerPoolSize(VERTX_WORKER_POOL_SIZE);
     }
 
     private static MicrometerMetricsOptions getMetricOptions(VertxPrometheusOptions promOptions) {

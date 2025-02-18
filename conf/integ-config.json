@@ -1,6 +1,5 @@
 {
     "service_instances": 3,
-    "worker_pool_size": 1000,
     "aws_region": "<aws_region_for_s3_bucket>",
     "core_s3_bucket": "<s3_bucket_for_stores>",
     "aws_access_key_id": "<your_aws_key_here>",
