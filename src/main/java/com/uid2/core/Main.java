@@ -80,14 +80,6 @@ public class Main {
         VertxOptions vertxOptions = getVertxOptions(metricOptions);
         Vertx vertx = Vertx.vertx(vertxOptions);
 
-        /*
-        CommandLine commandLine = parseArgs(args);
-        String configPath = commandLine.getOptionValue("config").toString();
-        String secretsPath = commandLine.getOptionValue("secrets").toString();
-        ConfigStore.Global.load(configPath);
-        SecretStore.Global.load(secretsPath);
-         */
-
         VertxUtils.createConfigRetriever(vertx).getConfig(ar -> {
             if (ar.failed()) {
                 LOGGER.error("failed to load config: {}", ar.cause().toString());
