@@ -1,31 +1,17 @@
 package com.uid2.core.service;
 
-import com.uid2.core.model.SecretStore;
 import com.uid2.shared.cloud.ICloudStorage;
-import com.uid2.shared.store.CloudPath;
-import com.uid2.shared.store.scope.GlobalScope;
-import io.vertx.core.json.Json;
-import io.vertx.core.json.JsonObject;
 
-import static com.uid2.core.util.MetadataHelper.readToEndAsString;
-
-public class ServiceLinkMetadataProvider implements IServiceLinkMetadataProvider {
-    public static final String ServiceLinkMetadataPathName = "service_links_metadata_path";
-    private final ICloudStorage metadataStreamProvider;
-    private final ICloudStorage downloadUrlGenerator;
-
+public class ServiceLinkMetadataProvider extends MetadataProvider {
     public ServiceLinkMetadataProvider(ICloudStorage cloudStorage) {
-        this.metadataStreamProvider = this.downloadUrlGenerator = cloudStorage;
+        super(cloudStorage);
     }
 
-    @Override
+    public ServiceLinkMetadataProvider(ICloudStorage fileStreamProvider, ICloudStorage downloadUrlGenerator) {
+        super(fileStreamProvider, downloadUrlGenerator);
+    }
+
     public String getMetadata() throws Exception {
-        String pathname = new GlobalScope(new CloudPath(SecretStore.Global.get(ServiceLinkMetadataPathName))).getMetadataPath().toString();
-        String original = readToEndAsString(metadataStreamProvider.download(pathname));
-        JsonObject main = (JsonObject) Json.decodeValue(original);
-        JsonObject obj = main.getJsonObject("service_links");
-        String location = obj.getString("location");
-        obj.put("location", downloadUrlGenerator.preSignUrl(location).toString());
-        return main.encode();
+        return getGlobalScopeMetadata("service_links_metadata_path", "service_links");
     }
 }

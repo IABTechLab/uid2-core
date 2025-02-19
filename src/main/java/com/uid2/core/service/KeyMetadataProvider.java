@@ -1,34 +1,18 @@
 package com.uid2.core.service;
 
-import com.uid2.core.model.SecretStore;
 import com.uid2.core.util.OperatorInfo;
 import com.uid2.shared.cloud.ICloudStorage;
-import io.vertx.core.json.Json;
-import io.vertx.core.json.JsonObject;
 
-
-import static com.uid2.core.util.MetadataHelper.getMetadataPathName;
-import static com.uid2.core.util.MetadataHelper.readToEndAsString;
-
-public class KeyMetadataProvider implements IKeyMetadataProvider {
-
-    public static final String KeysMetadataPathName = "keys_metadata_path";
-
-    private final ICloudStorage metadataStreamProvider;
-    private final ICloudStorage downloadUrlGenerator;
-
+public class KeyMetadataProvider extends MetadataProvider {
     public KeyMetadataProvider(ICloudStorage cloudStorage) {
-        this.metadataStreamProvider = this.downloadUrlGenerator = cloudStorage;
+        super(cloudStorage);
     }
 
-    @Override
+    public KeyMetadataProvider(ICloudStorage fileStreamProvider, ICloudStorage downloadUrlGenerator) {
+        super(fileStreamProvider, downloadUrlGenerator);
+    }
+
     public String getMetadata(OperatorInfo info) throws Exception {
-        String pathname = getMetadataPathName(info.getOperatorType(), info.getSiteId(), SecretStore.Global.get(KeysMetadataPathName));
-        String original = readToEndAsString(metadataStreamProvider.download(pathname));
-        JsonObject main = (JsonObject) Json.decodeValue(original);
-        JsonObject obj = main.getJsonObject("keys");
-        String location = obj.getString("location");
-        obj.put("location", downloadUrlGenerator.preSignUrl(location).toString());
-        return main.encode();
+        return getMetadata(info, "keys_metadata_path", "keys");
     }
 }

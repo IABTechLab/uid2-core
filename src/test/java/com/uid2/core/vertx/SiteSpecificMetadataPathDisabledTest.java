@@ -43,7 +43,7 @@ import static org.mockito.Mockito.*;
  * we still provide global scope metadata file instead of private operator caller's private site data
  */
 @ExtendWith(VertxExtension.class)
-public class TestSiteSpecificMetadataPathDisabled {
+public class SiteSpecificMetadataPathDisabledTest {
 
   @Mock
   private ICloudStorage cloudStorage;
@@ -169,7 +169,7 @@ public class TestSiteSpecificMetadataPathDisabled {
 
   String openFile(String filePath) throws IOException
   {
-    return readToEndAsString(TestSiteSpecificMetadataPathDisabled.class.getResourceAsStream(filePath));
+    return readToEndAsString(SiteSpecificMetadataPathDisabledTest.class.getResourceAsStream(filePath));
   }
 
 }

@@ -42,7 +42,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
-public class TestServiceLinkMetadataPath {
+public class ServiceMetadataPathTest {
     @Mock
     private ICloudStorage cloudStorage;
     @Mock
@@ -94,16 +94,16 @@ public class TestServiceLinkMetadataPath {
 
     @Test
     void publicOperatorGetsGlobalKeypairs(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
-        String metadata = "/com.uid2.core/testGlobalMetadata/service_links/metadata.json";
+        String metadata = "/com.uid2.core/testGlobalMetadata/services/metadata.json";
         String metadataContent = openFile(metadata);
-        String location = ((JsonObject) Json.decodeValue(metadataContent)).getJsonObject("service_links").getString("location");
+        String location = ((JsonObject) Json.decodeValue(metadataContent)).getJsonObject("services").getString("location");
         when(cloudStorage.download(eq(metadata))).thenReturn(new StringBufferInputStream(metadataContent));
         when(cloudStorage.preSignUrl(any())).thenAnswer(i -> new URL(i.getArgument(0)));
         fakeAuth(OperatorType.PUBLIC, 99);
-        get(vertx, "/service_links/refresh", "", testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, "/services/refresh", "", testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(200, response.statusCode());
             JsonObject json = response.bodyAsJsonObject();
-            String resultLocation = json.getJsonObject("service_links").getString("location");
+            String resultLocation = json.getJsonObject("services").getString("location");
             assertEquals(resultLocation, location);
             testContext.completeNow();
         })));
@@ -111,20 +111,20 @@ public class TestServiceLinkMetadataPath {
 
     @Test
     void privateOperatorGetsKeypairsError(Vertx vertx, VertxTestContext testContext) throws CloudStorageException, IOException {
-        String metadata = "/com.uid2.core/testGlobalMetadata/service_links/metadata.json";
+        String metadata = "/com.uid2.core/testGlobalMetadata/services/metadata.json";
         String metadataContent = openFile(metadata);
-        String location = ((JsonObject) Json.decodeValue(metadataContent)).getJsonObject("service_links").getString("location");
+        String location = ((JsonObject) Json.decodeValue(metadataContent)).getJsonObject("services").getString("location");
         when(cloudStorage.download(eq(metadata))).thenReturn(new StringBufferInputStream(metadataContent));
         when(cloudStorage.preSignUrl(any())).thenAnswer(i -> new URL(i.getArgument(0)));
         fakeAuth(OperatorType.PRIVATE, 99);
-        get(vertx, "/service_links/refresh", "", testContext.succeeding(response -> testContext.verify(() -> {
+        get(vertx, "/services/refresh", "", testContext.succeeding(response -> testContext.verify(() -> {
             assertEquals(403, response.statusCode());
-            assertEquals("endpoint /service_links/refresh is for public operators only", response.bodyAsJsonObject().getString("message"));
+            assertEquals("endpoint /services/refresh is for public operators only", response.bodyAsJsonObject().getString("message"));
             testContext.completeNow();
         })));
     }
 
     String openFile(String filePath) throws IOException {
-        return readToEndAsString(TestSiteSpecificMetadataPath.class.getResourceAsStream(filePath));
+        return readToEndAsString(SiteSpecificMetadataPathTest.class.getResourceAsStream(filePath));
     }
 }

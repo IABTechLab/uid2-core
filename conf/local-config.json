@@ -1,4 +1,5 @@
 {
+    "service_instances": 1,
     "aws_s3_endpoint": "http://localstack:5001",
     "enable_test_endpoints": true,
     "storage_mock": true,

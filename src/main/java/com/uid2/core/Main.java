@@ -16,7 +16,6 @@ import com.uid2.shared.attest.JwtService;
 import com.uid2.shared.auth.EnclaveIdentifierProvider;
 import com.uid2.shared.auth.RotatingOperatorKeyProvider;
 import com.uid2.shared.store.reader.RotatingCloudEncryptionKeyProvider;
-import com.uid2.shared.model.CloudEncryptionKey;
 import com.uid2.shared.cloud.CloudUtils;
 import com.uid2.shared.cloud.EmbeddedResourceStorage;
 import com.uid2.shared.cloud.ICloudStorage;
@@ -38,31 +37,32 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.json.JsonObject;
 import io.vertx.micrometer.Label;
 import io.vertx.micrometer.MetricsDomain;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import io.vertx.micrometer.backends.BackendRegistries;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.management.*;
 import java.lang.management.ManagementFactory;
 import java.util.*;
 
 public class Main {
-
-    private static final int vertxServiceInstances = 1;
+    private static final Logger LOGGER = LoggerFactory.getLogger(CoreVerticle.class);
+    private static final int VERTX_WORKER_POOL_SIZE = 1000; // Cannot set this in config file because it's needed on Vertx init
 
     public static void main(String[] args) {
         final String vertxConfigPath = System.getProperty(Const.Config.VERTX_CONFIG_PATH_PROP);
         if (vertxConfigPath != null) {
-            System.out.format("Running CUSTOM CONFIG mode, config: %s\n", vertxConfigPath);
+            LOGGER.info("Running CUSTOM CONFIG mode, config: {}", vertxConfigPath);
         } else if (!Utils.isProductionEnvironment()) {
-            System.out.format("Running LOCAL DEBUG mode, config: %s\n", Const.Config.LOCAL_CONFIG_PATH);
+            LOGGER.info("Running LOCAL DEBUG mode, config: {}", Const.Config.LOCAL_CONFIG_PATH);
             System.setProperty(Const.Config.VERTX_CONFIG_PATH_PROP, Const.Config.LOCAL_CONFIG_PATH);
         } else {
-            System.out.format("Running PRODUCTION mode, config: %s\n", Const.Config.OVERRIDE_CONFIG_PATH);
+            LOGGER.info("Running PRODUCTION mode, config: {}", Const.Config.OVERRIDE_CONFIG_PATH);
         }
 
         // create AdminApi instance
@@ -71,7 +71,7 @@ public class Main {
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
             server.registerMBean(AdminApi.instance, objectName);
         } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException | MalformedObjectNameException e) {
-            System.err.format("%s", e.getMessage());
+            LOGGER.error(e.getMessage());
             System.exit(-1);
         }
 
@@ -81,17 +81,9 @@ public class Main {
         VertxOptions vertxOptions = getVertxOptions(metricOptions);
         Vertx vertx = Vertx.vertx(vertxOptions);
 
-        /*
-        CommandLine commandLine = parseArgs(args);
-        String configPath = commandLine.getOptionValue("config").toString();
-        String secretsPath = commandLine.getOptionValue("secrets").toString();
-        ConfigStore.Global.load(configPath);
-        SecretStore.Global.load(secretsPath);
-         */
-
         VertxUtils.createConfigRetriever(vertx).getConfig(ar -> {
             if (ar.failed()) {
-                System.out.println("failed to load config: " + ar.cause().toString());
+                LOGGER.error("failed to load config: {}", ar.cause().toString());
                 System.exit(-1);
             }
 
@@ -100,7 +92,7 @@ public class Main {
             SecretStore.Global.load(config);
 
             boolean useStorageMock = Optional.ofNullable(ConfigStore.Global.getBoolean("storage_mock")).orElse(false);
-            ICloudStorage cloudStorage = null;
+            ICloudStorage cloudStorage;
             if (useStorageMock) {
                 cloudStorage = new EmbeddedResourceStorage(Main.class).withUrlPrefix(ConfigStore.Global.getOrDefault("storage_mock_url_prefix", ""));
             } else {
@@ -110,24 +102,25 @@ public class Main {
                 cloudStorage.setPreSignedUrlExpiry(expiryInSeconds);
             }
 
-            RotatingStoreVerticle enclaveRotatingVerticle = null;
-            RotatingStoreVerticle operatorRotatingVerticle = null;
-            RotatingStoreVerticle cloudEncryptionKeyRotatingVerticle = null;
-            CoreVerticle coreVerticle = null;
             try {
+                createVertxMetrics();
+
                 CloudPath operatorMetadataPath = new CloudPath(config.getString(Const.Config.OperatorsMetadataPathProp));
                 GlobalScope operatorScope = new GlobalScope(operatorMetadataPath);
                 RotatingOperatorKeyProvider operatorKeyProvider = new RotatingOperatorKeyProvider(cloudStorage, cloudStorage, operatorScope);
-                operatorRotatingVerticle = new RotatingStoreVerticle("operators", 60000, operatorKeyProvider);
+                RotatingStoreVerticle operatorRotatingVerticle = new RotatingStoreVerticle("operators", 60000, operatorKeyProvider);
+                vertx.deployVerticle(operatorRotatingVerticle);
 
                 String enclaveMetadataPath = SecretStore.Global.get(EnclaveIdentifierProvider.ENCLAVES_METADATA_PATH);
                 EnclaveIdentifierProvider enclaveIdProvider = new EnclaveIdentifierProvider(cloudStorage, enclaveMetadataPath);
-                enclaveRotatingVerticle = new RotatingStoreVerticle("enclaves", 60000, enclaveIdProvider);
+                RotatingStoreVerticle enclaveRotatingVerticle = new RotatingStoreVerticle("enclaves", 60000, enclaveIdProvider);
+                vertx.deployVerticle(enclaveRotatingVerticle);
 
                 CloudPath cloudEncryptionKeyMetadataPath = new CloudPath(config.getString(Const.Config.CloudEncryptionKeysMetadataPathProp));
                 GlobalScope cloudEncryptionKeyScope = new GlobalScope(cloudEncryptionKeyMetadataPath);
                 RotatingCloudEncryptionKeyProvider cloudEncryptionKeyProvider = new RotatingCloudEncryptionKeyProvider(cloudStorage, cloudEncryptionKeyScope);
-                cloudEncryptionKeyRotatingVerticle = new RotatingStoreVerticle("cloud_encryption_keys", 60000, cloudEncryptionKeyProvider);
+                RotatingStoreVerticle cloudEncryptionKeyRotatingVerticle = new RotatingStoreVerticle("cloud_encryption_keys", 60000, cloudEncryptionKeyProvider);
+                vertx.deployVerticle(cloudEncryptionKeyRotatingVerticle);
 
                 String corePublicUrl = ConfigStore.Global.get(Const.Config.CorePublicUrlProp);
                 AttestationService attestationService = new AttestationService()
@@ -140,7 +133,7 @@ public class Main {
                     Set<String> enclaveParams = null;
                     String params = config.getString(Const.Config.GcpEnclaveParamsProp);
                     if (params != null) {
-                        enclaveParams = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(params.split(","))));
+                        enclaveParams = Set.of(params.split(","));
                     }
 
                     // enable gcp-vmid attestation if requested
@@ -155,7 +148,7 @@ public class Main {
                 attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(corePublicUrl));
 
                 OperatorJWTTokenProvider operatorJWTTokenProvider = new OperatorJWTTokenProvider(config);
-                
+
                 IAttestationTokenService attestationTokenService = new AttestationTokenService(
                         SecretStore.Global.get(Constants.AttestationEncryptionKeyName),
                         SecretStore.Global.get(Constants.AttestationEncryptionSaltName),
@@ -164,19 +157,20 @@ public class Main {
 
                 JwtService jwtService = new JwtService(config);
                 FileSystem fileSystem = vertx.fileSystem();
-                coreVerticle = new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider, fileSystem);
+
+                vertx.deployVerticle(() -> {
+                    try {
+                        return new CoreVerticle(cloudStorage, operatorKeyProvider, attestationService, attestationTokenService, enclaveIdProvider, operatorJWTTokenProvider, jwtService, cloudEncryptionKeyProvider, fileSystem);
+                    } catch (Exception e) {
+                        LOGGER.error("failed to deploy core verticle: {}", e.getMessage());
+                        System.exit(-1);
+                        return null;
+                    }
+                }, new DeploymentOptions().setInstances(ConfigStore.Global.getInteger(com.uid2.core.Const.Config.ServiceInstancesProp)));
             } catch (Exception e) {
-                System.out.println("failed to initialize core verticle: " + e.getMessage());
+                LOGGER.error("failed to initialize core verticle: {}", e.getMessage());
                 System.exit(-1);
             }
-
-            createVertxInstancesMetric();
-            createVertxEventLoopsMetric();
-
-            vertx.deployVerticle(enclaveRotatingVerticle);
-            vertx.deployVerticle(operatorRotatingVerticle);
-            vertx.deployVerticle(cloudEncryptionKeyRotatingVerticle);
-            vertx.deployVerticle(coreVerticle, new DeploymentOptions().setInstances(vertxServiceInstances));
         });
     }
 
@@ -184,9 +178,7 @@ public class Main {
         BackendRegistries.setupBackend(metricOptions, null);
 
         // As of now default backend registry should have been created
-        if (BackendRegistries.getDefaultNow() instanceof PrometheusMeterRegistry) {
-            PrometheusMeterRegistry prometheusRegistry = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
-
+        if (BackendRegistries.getDefaultNow() instanceof PrometheusMeterRegistry prometheusRegistry) {
             // see also https://micrometer.io/docs/registry/prometheus
             prometheusRegistry.config()
                     // providing common renaming for prometheus metric, e.g. "hello.world" to "hello_world"
@@ -195,8 +187,8 @@ public class Main {
                             actualPath -> HTTPPathMetricFilter.filterPath(actualPath, Endpoints.pathSet())))
                     // Don't record metrics for 404s.
                     .meterFilter(MeterFilter.deny(id ->
-                        id.getName().startsWith(MetricsDomain.HTTP_SERVER.getPrefix()) &&
-                        Objects.equals(id.getTag(Label.HTTP_CODE.toString()), "404")))
+                            id.getName().startsWith(MetricsDomain.HTTP_SERVER.getPrefix()) &&
+                                    Objects.equals(id.getTag(Label.HTTP_CODE.toString()), "404")))
                     // adding common labels
                     .commonTags("application", "uid2-core");
 
@@ -206,41 +198,25 @@ public class Main {
 
         // retrieve image version (will unify when uid2-common is used)
         String version = Optional.ofNullable(System.getenv("IMAGE_VERSION")).orElse("unknown");
-        Gauge appStatus = Gauge
-                .builder("app.status", () -> 1)
+        Gauge.builder("app.status", () -> 1)
                 .description("application version and status")
                 .tags("version", version)
                 .register(Metrics.globalRegistry);
     }
 
-    private static void createVertxInstancesMetric() {
-        Gauge.builder("uid2.vertx_service_instances", () -> vertxServiceInstances)
+    private static void createVertxMetrics() {
+        Gauge.builder("uid2.vertx_service_instances", () -> ConfigStore.Global.getInteger(com.uid2.core.Const.Config.ServiceInstancesProp))
                 .description("gauge for number of vertx service instances requested")
                 .register(Metrics.globalRegistry);
-    }
 
-    private static void createVertxEventLoopsMetric() {
+        Gauge.builder("uid2.vertx_worker_pool_size", () -> VERTX_WORKER_POOL_SIZE)
+                .description("gauge for vertx worker pool size requested")
+                .register(Metrics.globalRegistry);
+
         Gauge.builder("uid2.vertx_event_loop_threads", () -> VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE)
                 .description("gauge for number of vertx event loop threads")
                 .register(Metrics.globalRegistry);
     }
-
-
-    /*
-    private static CommandLine parseArgs(String[] args) {
-        final CLI cli = CLI.create("uid2-core")
-            .setSummary("run uid2 core service")
-            .addOption(new Option()
-                .setLongName("config")
-                .setDescription("path to configuration file")
-                .setRequired(true))
-            .addOption(new Option()
-                .setLongName("secrets")
-                .setDescription("path to secrets file")
-                .setRequired(true));
-        return cli.parse(Arrays.asList(args));
-    }
-     */
 
     private static VertxOptions getVertxOptions(MicrometerMetricsOptions metricOptions) {
         final int threadBlockedCheckInterval = Utils.isProductionEnvironment()
@@ -249,7 +225,8 @@ public class Main {
 
         return new VertxOptions()
                 .setMetricsOptions(metricOptions)
-                .setBlockedThreadCheckInterval(threadBlockedCheckInterval);
+                .setBlockedThreadCheckInterval(threadBlockedCheckInterval)
+                .setWorkerPoolSize(VERTX_WORKER_POOL_SIZE);
     }
 
     private static MicrometerMetricsOptions getMetricOptions(VertxPrometheusOptions promOptions) {

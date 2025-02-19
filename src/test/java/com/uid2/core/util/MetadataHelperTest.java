@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 
-public class TestMetadataHelper {
+public class MetadataHelperTest {
 
     @Mock
     private OperatorInfo operatorInfo;
