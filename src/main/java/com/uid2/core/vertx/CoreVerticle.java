@@ -345,7 +345,7 @@ public class CoreVerticle extends AbstractVerticle {
                         if (enforceJWT) {
                             throw e;
                         } else {
-                            logger.info("Failed creating the JWT, but enforceJWT is false. No JWTs returned.");
+                            logger.info("Failed creating the JWT, but enforceJWT is false. No JWTs returned.", e);
                         }
                     }
                 } catch (Exception e) {
