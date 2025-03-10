@@ -131,15 +131,10 @@ public class JWTTokenProvider {
     private static KmsClient getKmsClient(KmsClientBuilder kmsClientBuilder, JsonObject config) throws URISyntaxException {
         KmsClient client;
 
+        String region = config.getString(KmsRegionProp, config.getString(Const.Config.AwsRegionProp));
         String accessKeyId = config.getString(KmsAccessKeyIdProp);
         String secretAccessKey = config.getString(KmsSecretAccessKeyProp);
         String endpoint = config.getString(KmsEndpointProp);
-
-        String awsRegion = config.getString(Const.Config.AwsRegionProp);
-        String  awsRegionOverride = config.getString(KmsRegionProp);
-        if (awsRegionOverride != null && !awsRegionOverride.isBlank()) {
-            awsRegion = awsRegionOverride;
-        }
 
         if (accessKeyId != null && !accessKeyId.isBlank() && secretAccessKey != null && !secretAccessKey.isBlank()) {
             AwsBasicCredentials basicCredentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
@@ -151,7 +146,7 @@ public class JWTTokenProvider {
                 }
 
                 client = kmsClientBuilder
-                        .region(Region.of(awsRegion))
+                        .region(Region.of(region))
                         .credentialsProvider(StaticCredentialsProvider.create(basicCredentials))
                         .build();
             } catch (URISyntaxException e) {
@@ -162,7 +157,7 @@ public class JWTTokenProvider {
             WebIdentityTokenFileCredentialsProvider credentialsProvider = WebIdentityTokenFileCredentialsProvider.create();
 
             client = kmsClientBuilder
-                    .region(Region.of(awsRegion))
+                    .region(Region.of(region))
                     .credentialsProvider(credentialsProvider)
                     .build();
         }
