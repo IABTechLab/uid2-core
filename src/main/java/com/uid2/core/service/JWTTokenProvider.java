@@ -1,6 +1,7 @@
 package com.uid2.core.service;
 
 import com.uid2.core.model.ConfigStore;
+import com.uid2.shared.Const;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -133,7 +134,12 @@ public class JWTTokenProvider {
         String accessKeyId = config.getString(KmsAccessKeyIdProp);
         String secretAccessKey = config.getString(KmsSecretAccessKeyProp);
         String endpoint = config.getString(KmsEndpointProp, "");
-        String awsRegion = config.getString(AwsRegionProp);
+
+        String awsRegion = config.getString(Const.Config.AwsRegionProp);
+        String  awsRegionOverride = config.getString(KmsRegionProp);
+        if (awsRegionOverride == null || awsRegionOverride.isBlank()) {
+            awsRegion = awsRegionOverride;
+        }
 
         if (accessKeyId != null && !accessKeyId.isEmpty() && secretAccessKey != null && !secretAccessKey.isEmpty()) {
             AwsBasicCredentials basicCredentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
