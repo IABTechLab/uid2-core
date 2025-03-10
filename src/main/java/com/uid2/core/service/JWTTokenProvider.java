@@ -137,7 +137,7 @@ public class JWTTokenProvider {
 
         String awsRegion = config.getString(Const.Config.AwsRegionProp);
         String  awsRegionOverride = config.getString(KmsRegionProp);
-        if (awsRegionOverride == null || awsRegionOverride.isBlank()) {
+        if (awsRegionOverride != null && !awsRegionOverride.isBlank()) {
             awsRegion = awsRegionOverride;
         }
 
