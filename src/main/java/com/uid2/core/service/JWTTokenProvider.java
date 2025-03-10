@@ -133,7 +133,7 @@ public class JWTTokenProvider {
 
         String accessKeyId = config.getString(KmsAccessKeyIdProp);
         String secretAccessKey = config.getString(KmsSecretAccessKeyProp);
-        String endpoint = config.getString(KmsEndpointProp, "");
+        String endpoint = config.getString(KmsEndpointProp);
 
         String awsRegion = config.getString(Const.Config.AwsRegionProp);
         String  awsRegionOverride = config.getString(KmsRegionProp);
@@ -141,12 +141,12 @@ public class JWTTokenProvider {
             awsRegion = awsRegionOverride;
         }
 
-        if (accessKeyId != null && !accessKeyId.isEmpty() && secretAccessKey != null && !secretAccessKey.isEmpty()) {
+        if (accessKeyId != null && !accessKeyId.isBlank() && secretAccessKey != null && !secretAccessKey.isBlank()) {
             AwsBasicCredentials basicCredentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
 
             StaticCredentialsProvider.create(basicCredentials);
             try {
-                if (endpoint != null && !endpoint.isEmpty()) {
+                if (endpoint != null && !endpoint.isBlank()) {
                     kmsClientBuilder.endpointOverride(new URI(endpoint));
                 }
 
