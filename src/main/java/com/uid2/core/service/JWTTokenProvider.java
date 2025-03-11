@@ -1,6 +1,7 @@
 package com.uid2.core.service;
 
 import com.uid2.core.model.ConfigStore;
+import com.uid2.shared.Const;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,22 +131,22 @@ public class JWTTokenProvider {
     private static KmsClient getKmsClient(KmsClientBuilder kmsClientBuilder, JsonObject config) throws URISyntaxException {
         KmsClient client;
 
+        String region = config.getString(KmsRegionProp, config.getString(Const.Config.AwsRegionProp));
         String accessKeyId = config.getString(KmsAccessKeyIdProp);
         String secretAccessKey = config.getString(KmsSecretAccessKeyProp);
-        String endpoint = config.getString(KmsEndpointProp, "");
-        String awsRegion = config.getString(AwsRegionProp);
+        String endpoint = config.getString(KmsEndpointProp);
 
-        if (accessKeyId != null && !accessKeyId.isEmpty() && secretAccessKey != null && !secretAccessKey.isEmpty()) {
+        if (accessKeyId != null && !accessKeyId.isBlank() && secretAccessKey != null && !secretAccessKey.isBlank()) {
             AwsBasicCredentials basicCredentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
 
             StaticCredentialsProvider.create(basicCredentials);
             try {
-                if (endpoint != null && !endpoint.isEmpty()) {
+                if (endpoint != null && !endpoint.isBlank()) {
                     kmsClientBuilder.endpointOverride(new URI(endpoint));
                 }
 
                 client = kmsClientBuilder
-                        .region(Region.of(awsRegion))
+                        .region(Region.of(region))
                         .credentialsProvider(StaticCredentialsProvider.create(basicCredentials))
                         .build();
             } catch (URISyntaxException e) {
@@ -156,7 +157,7 @@ public class JWTTokenProvider {
             WebIdentityTokenFileCredentialsProvider credentialsProvider = WebIdentityTokenFileCredentialsProvider.create();
 
             client = kmsClientBuilder
-                    .region(Region.of(awsRegion))
+                    .region(Region.of(region))
                     .credentialsProvider(credentialsProvider)
                     .build();
         }
