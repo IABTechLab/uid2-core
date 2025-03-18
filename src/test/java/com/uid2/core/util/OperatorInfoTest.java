@@ -88,18 +88,4 @@ class OperatorInfoTest {
         when(mockRequest.getHeader(AppVersionHeader)).thenReturn(null);
         assertFalse(OperatorInfo.supportsEncryption(mockRoutingContext));
     }
-
-    @Test
-    void testIsVersionGreaterOrEqual() {
-        assertTrue(OperatorInfo.isVersionGreaterOrEqual("2.0.0", "1.0.0"));
-        assertTrue(OperatorInfo.isVersionGreaterOrEqual("2.0.0", "2.0.0"));
-        assertFalse(OperatorInfo.isVersionGreaterOrEqual("1.0.0", "2.0.0"));
-        assertTrue(OperatorInfo.isVersionGreaterOrEqual("2.1.0", "2.0.0"));
-        assertFalse(OperatorInfo.isVersionGreaterOrEqual("2.0.1", "2.1.0"));
-        assertFalse(OperatorInfo.isVersionGreaterOrEqual("operator.5.26.19-56899dc0d7", "operator.5.27.19-56899dc0d7"));
-        assertTrue(OperatorInfo.isVersionGreaterOrEqual("operator.5.27.19-56899dc0d7", "operator.5.27.19-56899dc0d7"));
-        assertTrue(OperatorInfo.isVersionGreaterOrEqual("operator.5.27.19-56899dc0d7", "operator.5.26.19-56899dc0d7"));
-
-        assertTrue(OperatorInfo.isVersionGreaterOrEqual("uid2-operator.5.40.25-alpha-15-SNAPSHOT", "uid2-operator.5.40.25-alpha-15-SNAPSHOT"));
-    }
 }
