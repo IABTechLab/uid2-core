@@ -53,22 +53,7 @@ public class OperatorInfo {
     }
 
     static boolean supportsEncryption(RoutingContext rc) {
-        String appVersion = rc.request().getHeader(AppVersionHeader);
-        if (appVersion == null) {
-            logger.warn("AppVersion header is missing.");
-            return false;
-        }
-        String[] versions = appVersion.split(";");
-        for (String version : versions) {
-            if (version.startsWith("uid2-operator=")) {
-                String operatorVersion = version.substring("uid2-operator=".length());
-                boolean isSupported = isVersionGreaterOrEqual(operatorVersion, ConfigStore.Global.getOrDefault(encryptionSupportVersion, "9999"));
-                logger.debug("Operator version: {}, {}",
-                        operatorVersion, isSupported ? "Supports encryption" : "Does not support encryption");
-                return isSupported;
-            }
-        }
-        return false;
+        return Boolean.parseBoolean(rc.request().getHeader("Encrypted"));
     }
 
     /*
