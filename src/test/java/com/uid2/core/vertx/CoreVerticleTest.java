@@ -815,7 +815,7 @@ public class CoreVerticleTest {
 
     @Tag("dontForceJwt")
     @Test
-    void keysetRefreshSuccessHigherVersion(Vertx vertx, VertxTestContext testContext) throws Exception {
+    void keysetRefreshSuccessEncrypted(Vertx vertx, VertxTestContext testContext) throws Exception {
         fakeAuth(attestationProtocolPublic, Role.OPERATOR);
         addAttestationProvider(attestationProtocolPublic);
         onHandleAttestationRequest(() -> {
@@ -824,8 +824,7 @@ public class CoreVerticleTest {
         });
 
         MultiMap headers = MultiMap.caseInsensitiveMultiMap();
-        headers.add(Const.Http.AppVersionHeader, "uid2-operator=3.7.16-SNAPSHOT;uid2-attestation-api=1.1.0;uid2-shared=2.7.0-3e279acefa");
-
+        headers.add("Encrypted","true");
         getWithVersion(vertx, "key/keyset/refresh", headers, ar -> {
             assertTrue(ar.succeeded());
             if (ar.succeeded()) {

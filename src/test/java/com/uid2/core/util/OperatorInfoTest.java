@@ -52,8 +52,7 @@ class OperatorInfoTest {
         Map<String, Object> data = new HashMap<>();
         data.put(API_CLIENT_PROP, mockOperatorKey);
         when(mockRoutingContext.data()).thenReturn(data);
-        when(mockRequest.getHeader(AppVersionHeader)).thenReturn("uid2-operator=3.0.0");
-
+        when(mockRequest.getHeader("Encrypted")).thenReturn("true");
         OperatorInfo result = OperatorInfo.getOperatorInfo(mockRoutingContext);
 
         assertNotNull(result);
@@ -73,7 +72,7 @@ class OperatorInfoTest {
 
     @Test
     void testSupportsEncryptionTrue() {
-        when(mockRequest.getHeader(AppVersionHeader)).thenReturn("uid2-operator=3.0.0");
+        when(mockRequest.getHeader("Encrypted")).thenReturn("true");
         assertTrue(OperatorInfo.supportsEncryption(mockRoutingContext));
     }
 
