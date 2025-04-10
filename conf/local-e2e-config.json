@@ -35,6 +35,6 @@
     "core_public_url": "http://localhost:8088",
     "optout_url": "http://localhost:8081",
     "s3_keys_metadata_path": "s3encryption_keys/metadata.json",
-    "cloud_keys_metadata_path": "cloud_encryption_keys/metadata.json",
+    "cloud_encryption_keys_metadata_path": "cloud_encryption_keys/metadata.json",
     "encryption_support_version": "6.0.0"
 }
