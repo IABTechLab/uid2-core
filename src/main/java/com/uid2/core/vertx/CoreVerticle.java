@@ -353,7 +353,7 @@ public class CoreVerticle extends AbstractVerticle {
                     return;
                 }
 
-                logger.info("attestation successful for SiteId: {}, Operator name: {}, protocol: {}", operator.getSiteId(), operator.getName(), protocol);
+                logger.info("attestation successful for SiteId: {}, Operator name: {}, protocol: {}, JWT token expiry: {}", operator.getSiteId(), operator.getName(), protocol, encryptedAttestationToken.getExpiresAt().getEpochSecond());
                 Success(rc, responseObj);
             });
         } catch (AttestationService.NotFound e) {
