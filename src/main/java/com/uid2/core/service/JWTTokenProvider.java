@@ -62,7 +62,7 @@ public class JWTTokenProvider {
 
         KmsClient client = null;
         try {
-            client = getKmsClient(this.config, kmsClientBuilder);
+            client = getKmsClient(kmsClientBuilder, this.config);
         } catch (URISyntaxException e) {
             throw new JwtSigningException(Optional.of("Unable to get KMS Client"), e);
         }
@@ -126,7 +126,7 @@ public class JWTTokenProvider {
         }
     }
 
-    private static KmsClient getKmsClient(JsonObject config, KmsClientBuilder kmsClientBuilder) throws URISyntaxException {
+    private static KmsClient getKmsClient(KmsClientBuilder kmsClientBuilder, JsonObject config) throws URISyntaxException {
         KmsClient client;
 
         String region = config.getString(KmsRegionProp, config.getString(Const.Config.AwsRegionProp));
