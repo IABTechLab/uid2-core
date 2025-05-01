@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
@@ -32,18 +33,19 @@ import static com.uid2.core.Const.Config.*;
 public class JWTTokenProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(JWTTokenProvider.class);
     private static final Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
-
+    private final Supplier<KmsClientBuilder> kmsClientBuilderSupplier;
     private final JsonObject config;
 
-    public JWTTokenProvider(JsonObject config) {
+    public JWTTokenProvider(JsonObject config, Supplier<KmsClientBuilder> kmsClientBuilderSupplier) {
         this.config = config;
+        this.kmsClientBuilderSupplier = kmsClientBuilderSupplier;
     }
 
     public String getJWT(Instant expiresAt, Instant issuedAt, Map<String, String> customClaims) throws JwtSigningException {
-        return this.getJWT(expiresAt, issuedAt, null, customClaims, KmsClient.builder());
+        return this.getJWT(expiresAt, issuedAt, null, customClaims);
     }
 
-    public String getJWT(Instant expiresAt, Instant issuedAt, Map<String, String> headers, Map<String, String> customClaims, KmsClientBuilder kmsClientBuilder) throws JwtSigningException {
+    public String getJWT(Instant expiresAt, Instant issuedAt, Map<String, String> headers, Map<String, String> customClaims) throws JwtSigningException {
         JsonObject headersJson = new JsonObject();
         headersJson.put("typ", "JWT");
         headersJson.put("alg", "RS256");
@@ -62,7 +64,7 @@ public class JWTTokenProvider {
 
         KmsClient client = null;
         try {
-            client = getKmsClient(kmsClientBuilder, this.config);
+            client = getKmsClient(kmsClientBuilderSupplier.get(), this.config);
         } catch (URISyntaxException e) {
             throw new JwtSigningException(Optional.of("Unable to get KMS Client"), e);
         }

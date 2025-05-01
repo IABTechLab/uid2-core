@@ -591,7 +591,7 @@ public class CoreVerticleTest {
         EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestation-token", Instant.ofEpochMilli(111));
         when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
 
-        when(operatorJWTTokenProvider.getCoreJWTToken(anyString(), anyString(), any(), anyInt(), anyString(), any(), anyString(), any())).thenThrow(new JWTTokenProvider(null).new JwtSigningException(Optional.of("Test error")));
+        when(operatorJWTTokenProvider.getCoreJWTToken(anyString(), anyString(), any(), anyInt(), anyString(), any(), anyString(), any())).thenThrow(new JWTTokenProvider(null, null).new JwtSigningException(Optional.of("Test error")));
         post(vertx, "attest", makeAttestationRequestJson("xxx", null), ar -> {
             assertTrue(ar.succeeded());
             HttpResponse response = ar.result();
