@@ -34,11 +34,9 @@ public class JWTTokenProvider {
     private static final Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
 
     private final JsonObject config;
-    private final KmsClientBuilder kmsClientBuilder;
 
-    public JWTTokenProvider(JsonObject config, KmsClientBuilder clientBuilder) {
+    public JWTTokenProvider(JsonObject config) {
         this.config = config;
-        this.kmsClientBuilder = clientBuilder;
     }
 
     public String getJWT(Instant expiresAt, Instant issuedAt, Map<String, String> customClaims) throws JwtSigningException {
@@ -64,7 +62,7 @@ public class JWTTokenProvider {
 
         KmsClient client = null;
         try {
-            client = getKmsClient(this.kmsClientBuilder, this.config);
+            client = getKmsClient(this.config);
         } catch (URISyntaxException e) {
             throw new JwtSigningException(Optional.of("Unable to get KMS Client"), e);
         }
@@ -128,8 +126,9 @@ public class JWTTokenProvider {
         }
     }
 
-    private static KmsClient getKmsClient(KmsClientBuilder kmsClientBuilder, JsonObject config) throws URISyntaxException {
+    private static KmsClient getKmsClient(JsonObject config) throws URISyntaxException {
         KmsClient client;
+        KmsClientBuilder kmsClientBuilder = KmsClient.builder();
 
         String region = config.getString(KmsRegionProp, config.getString(Const.Config.AwsRegionProp));
         String accessKeyId = config.getString(KmsAccessKeyIdProp);
