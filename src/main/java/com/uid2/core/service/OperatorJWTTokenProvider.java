@@ -6,7 +6,6 @@ import com.uid2.shared.auth.Role;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.kms.KmsClient;
 
 import java.time.Clock;
 import java.time.Instant;

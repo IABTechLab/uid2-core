@@ -57,11 +57,11 @@ public class JWTTokenProviderTest {
         content.put("iss", "issuer");
 
         var builder = getBuilder(true, "TestSignature");
-        JWTTokenProvider provider = new JWTTokenProvider(config, builder);
+        JWTTokenProvider provider = new JWTTokenProvider(config);
 
         Instant i = Clock.systemUTC().instant();
 
-        String result = provider.getJWT(i, i, headers, content);
+        String result = provider.getJWT(i, i, headers, content, builder);
 
         String expectedSig = "TestSignature";
 
@@ -84,11 +84,11 @@ public class JWTTokenProviderTest {
     void getJwtEmptySignatureThrowsException() {
         var builder = getBuilder(false, "");
 
-        JWTTokenProvider provider = new JWTTokenProvider(config, builder);
+        JWTTokenProvider provider = new JWTTokenProvider(config);
 
         JWTTokenProvider.JwtSigningException e = assertThrows(
                 JWTTokenProvider.JwtSigningException.class,
-                () -> provider.getJWT(Clock.systemUTC().instant().plusSeconds(600), Clock.systemUTC().instant(), new HashMap<>(), new HashMap<>()));
+                () -> provider.getJWT(Clock.systemUTC().instant().plusSeconds(600), Clock.systemUTC().instant(), new HashMap<>(), new HashMap<>(), builder));
 
         assertEquals("Test status text", e.getMessage());
     }
@@ -97,11 +97,11 @@ public class JWTTokenProviderTest {
     void getJwtEmptySignatureEmptyResponseText() {
         var builder = getBuilder(false, "", Optional.empty());
 
-        JWTTokenProvider provider = new JWTTokenProvider(config, builder);
+        JWTTokenProvider provider = new JWTTokenProvider(config);
 
         JWTTokenProvider.JwtSigningException e = assertThrows(
                 JWTTokenProvider.JwtSigningException.class,
-                () -> provider.getJWT(Clock.systemUTC().instant().plusSeconds(600), Clock.systemUTC().instant(), new HashMap<>(), new HashMap<>()));
+                () -> provider.getJWT(Clock.systemUTC().instant().plusSeconds(600), Clock.systemUTC().instant(), new HashMap<>(), new HashMap<>(), builder));
 
         assertEquals("No message returned from KMS Client", e.getMessage());
     }
@@ -110,11 +110,11 @@ public class JWTTokenProviderTest {
     void getJwtEmptySignatureNullResponseText() {
         var builder = getBuilder(false, "", null);
 
-        JWTTokenProvider provider = new JWTTokenProvider(config, builder);
+        JWTTokenProvider provider = new JWTTokenProvider(config);
 
         JWTTokenProvider.JwtSigningException e = assertThrows(
                 JWTTokenProvider.JwtSigningException.class,
-                () -> provider.getJWT(Clock.systemUTC().instant().plusSeconds(600), Clock.systemUTC().instant(), new HashMap<>(), new HashMap<>()));
+                () -> provider.getJWT(Clock.systemUTC().instant().plusSeconds(600), Clock.systemUTC().instant(), new HashMap<>(), new HashMap<>(), builder));
 
         assertEquals("No message returned from KMS Client", e.getMessage());
     }
@@ -123,13 +123,13 @@ public class JWTTokenProviderTest {
     void getJwtSignatureThrowsKmsException() {
         var builder = getBuilder(false, "", Optional.empty());
 
-        JWTTokenProvider provider = new JWTTokenProvider(config, builder);
+        JWTTokenProvider provider = new JWTTokenProvider(config);
         var ex = KmsException.builder().message("Test Error").build();
         when(mockClient.sign(capturedSignRequest.capture())).thenThrow(ex);
 
         JWTTokenProvider.JwtSigningException e = assertThrows(
                 JWTTokenProvider.JwtSigningException.class,
-                () -> provider.getJWT(Clock.systemUTC().instant().plusSeconds(600), Clock.systemUTC().instant(), new HashMap<>(), new HashMap<>()));
+                () -> provider.getJWT(Clock.systemUTC().instant().plusSeconds(600), Clock.systemUTC().instant(), new HashMap<>(), new HashMap<>(), builder));
 
         assertEquals("Error signing JWT Token.", e.getMessage());
     }
@@ -144,11 +144,11 @@ public class JWTTokenProviderTest {
 
         var builder = getBuilder(false, "", Optional.empty());
 
-        JWTTokenProvider provider = new JWTTokenProvider(config, builder);
+        JWTTokenProvider provider = new JWTTokenProvider(config);
 
         JWTTokenProvider.JwtSigningException e = assertThrows(
                 JWTTokenProvider.JwtSigningException.class,
-                () -> provider.getJWT(Clock.systemUTC().instant().plusSeconds(600), Clock.systemUTC().instant(), new HashMap<>(), new HashMap<>()));
+                () -> provider.getJWT(Clock.systemUTC().instant().plusSeconds(600), Clock.systemUTC().instant(), new HashMap<>(), new HashMap<>(), builder));
 
         assertEquals("Unable to retrieve the AWS KMS Key Id from config. Unable to sign JWT token", e.getMessage());
     }
