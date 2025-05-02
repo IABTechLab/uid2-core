@@ -89,9 +89,9 @@ public class JWTTokenProvider {
             }
 
             if (keyId == null || keyId.isEmpty()) {
+                String message = "Unable to retrieve the AWS KMS Key Id from config. Unable to sign JWT token";
+                LOGGER.error(message);
                 if (enforceJWT) {
-                    String message = "Unable to retrieve the AWS KMS Key Id from config. Unable to sign JWT token";
-                    LOGGER.error(message);
                     throw new JwtSigningException(Optional.of(message));
                 } else {
                     return "";
