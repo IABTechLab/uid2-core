@@ -64,7 +64,7 @@ public class JWTTokenProvider {
 
         KmsClient client = null;
         try {
-            client = getKmsClient(kmsClientBuilderSupplier.get(), this.config);
+            client = getKmsClient(this.kmsClientBuilderSupplier.get(), this.config);
         } catch (URISyntaxException e) {
             throw new JwtSigningException(Optional.of("Unable to get KMS Client"), e);
         }
