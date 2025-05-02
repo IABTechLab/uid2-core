@@ -349,6 +349,7 @@ public class CoreVerticle extends AbstractVerticle {
                         }
                     }
                 } catch (Exception e) {
+                    logger.error("attestation failure: failed to create attestation token", e);
                     Error("attestation failure", 500, rc, AttestationFailure.INTERNAL_ERROR.explain());
                     return;
                 }
