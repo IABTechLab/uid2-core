@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
@@ -32,13 +33,12 @@ import static com.uid2.core.Const.Config.*;
 public class JWTTokenProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(JWTTokenProvider.class);
     private static final Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
-
+    private final Supplier<KmsClientBuilder> kmsClientBuilderSupplier;
     private final JsonObject config;
-    private final KmsClientBuilder kmsClientBuilder;
 
-    public JWTTokenProvider(JsonObject config, KmsClientBuilder clientBuilder) {
+    public JWTTokenProvider(JsonObject config, Supplier<KmsClientBuilder> kmsClientBuilderSupplier) {
         this.config = config;
-        this.kmsClientBuilder = clientBuilder;
+        this.kmsClientBuilderSupplier = kmsClientBuilderSupplier;
     }
 
     public String getJWT(Instant expiresAt, Instant issuedAt, Map<String, String> customClaims) throws JwtSigningException {
@@ -64,7 +64,7 @@ public class JWTTokenProvider {
 
         KmsClient client = null;
         try {
-            client = getKmsClient(this.kmsClientBuilder, this.config);
+            client = getKmsClient(this.kmsClientBuilderSupplier.get(), this.config);
         } catch (URISyntaxException e) {
             throw new JwtSigningException(Optional.of("Unable to get KMS Client"), e);
         }

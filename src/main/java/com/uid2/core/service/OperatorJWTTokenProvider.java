@@ -24,7 +24,7 @@ public class OperatorJWTTokenProvider {
     private final Clock clock;
 
     public OperatorJWTTokenProvider(JsonObject config) {
-        this(config, new JWTTokenProvider(config, KmsClient.builder()), Clock.systemUTC());
+        this(config, new JWTTokenProvider(config, KmsClient::builder), Clock.systemUTC());
     }
 
     public OperatorJWTTokenProvider(JsonObject config, JWTTokenProvider jwtTokenProvider, Clock clock) {

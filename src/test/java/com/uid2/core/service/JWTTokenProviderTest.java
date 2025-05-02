@@ -57,7 +57,7 @@ public class JWTTokenProviderTest {
         content.put("iss", "issuer");
 
         var builder = getBuilder(true, "TestSignature");
-        JWTTokenProvider provider = new JWTTokenProvider(config, builder);
+        JWTTokenProvider provider = new JWTTokenProvider(config, () -> builder);
 
         Instant i = Clock.systemUTC().instant();
 
@@ -84,7 +84,7 @@ public class JWTTokenProviderTest {
     void getJwtEmptySignatureThrowsException() {
         var builder = getBuilder(false, "");
 
-        JWTTokenProvider provider = new JWTTokenProvider(config, builder);
+        JWTTokenProvider provider = new JWTTokenProvider(config, () -> builder);
 
         JWTTokenProvider.JwtSigningException e = assertThrows(
                 JWTTokenProvider.JwtSigningException.class,
@@ -97,7 +97,7 @@ public class JWTTokenProviderTest {
     void getJwtEmptySignatureEmptyResponseText() {
         var builder = getBuilder(false, "", Optional.empty());
 
-        JWTTokenProvider provider = new JWTTokenProvider(config, builder);
+        JWTTokenProvider provider = new JWTTokenProvider(config, () -> builder);
 
         JWTTokenProvider.JwtSigningException e = assertThrows(
                 JWTTokenProvider.JwtSigningException.class,
@@ -110,7 +110,7 @@ public class JWTTokenProviderTest {
     void getJwtEmptySignatureNullResponseText() {
         var builder = getBuilder(false, "", null);
 
-        JWTTokenProvider provider = new JWTTokenProvider(config, builder);
+        JWTTokenProvider provider = new JWTTokenProvider(config, () -> builder);
 
         JWTTokenProvider.JwtSigningException e = assertThrows(
                 JWTTokenProvider.JwtSigningException.class,
@@ -123,7 +123,7 @@ public class JWTTokenProviderTest {
     void getJwtSignatureThrowsKmsException() {
         var builder = getBuilder(false, "", Optional.empty());
 
-        JWTTokenProvider provider = new JWTTokenProvider(config, builder);
+        JWTTokenProvider provider = new JWTTokenProvider(config, () -> builder);
         var ex = KmsException.builder().message("Test Error").build();
         when(mockClient.sign(capturedSignRequest.capture())).thenThrow(ex);
 
@@ -144,7 +144,7 @@ public class JWTTokenProviderTest {
 
         var builder = getBuilder(false, "", Optional.empty());
 
-        JWTTokenProvider provider = new JWTTokenProvider(config, builder);
+        JWTTokenProvider provider = new JWTTokenProvider(config, () -> builder);
 
         JWTTokenProvider.JwtSigningException e = assertThrows(
                 JWTTokenProvider.JwtSigningException.class,
