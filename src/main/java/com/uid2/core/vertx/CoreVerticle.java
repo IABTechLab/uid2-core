@@ -343,13 +343,13 @@ public class CoreVerticle extends AbstractVerticle {
                         }
 
                         if (enforceJWT) {
+                            logger.error("Failed creating the JWT. No JWTs returned.", e);
                             throw e;
                         } else {
                             logger.info("Failed creating the JWT, but enforceJWT is false. No JWTs returned.", e);
                         }
                     }
                 } catch (Exception e) {
-                    logger.error("attestation failure: failed to create attestation token", e);
                     Error("attestation failure", 500, rc, AttestationFailure.INTERNAL_ERROR.explain());
                     return;
                 }
