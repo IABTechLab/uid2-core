@@ -27,6 +27,8 @@ import com.uid2.shared.store.scope.GlobalScope;
 import com.uid2.shared.util.HTTPPathMetricFilter;
 import com.uid2.shared.vertx.RotatingStoreVerticle;
 import com.uid2.shared.vertx.VertxUtils;
+import com.uid2.shared.health.HealthManager;
+import com.uid2.shared.health.PodTerminationMonitor;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.config.MeterFilter;
@@ -90,6 +92,8 @@ public class Main {
             JsonObject config = ar.result();
             ConfigStore.Global.load(config);
             SecretStore.Global.load(config);
+
+            HealthManager.instance.registerGenericComponent(new PodTerminationMonitor(config.getInteger("pod_termination_check_interval", 3000)));
 
             boolean useStorageMock = Optional.ofNullable(ConfigStore.Global.getBoolean("storage_mock")).orElse(false);
             ICloudStorage cloudStorage;
