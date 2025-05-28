@@ -12,6 +12,7 @@ import com.uid2.shared.Utils;
 import com.uid2.shared.attest.EncryptedAttestationToken;
 import com.uid2.shared.attest.IAttestationTokenService;
 import com.uid2.shared.attest.JwtService;
+import com.uid2.shared.audit.AuditParams;
 import com.uid2.shared.auth.*;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.health.HealthComponent;
@@ -117,7 +118,7 @@ public class CoreVerticle extends AbstractVerticle {
 
         this.attestationMiddleware = new AttestationMiddleware(this.attestationTokenService, jwtService, jwtAudience, jwtIssuer, enforceJwt);
 
-        this.auth = new AuthMiddleware(authProvider);
+        this.auth = new AuthMiddleware(authProvider, "core");
 
         this.siteMetadataProvider = new SiteMetadataProvider(cloudStorage);
         this.clientMetadataProvider = new ClientMetadataProvider(cloudStorage);
@@ -186,25 +187,25 @@ public class CoreVerticle extends AbstractVerticle {
 
         router.post(Endpoints.ATTEST.toString())
                 .handler(new AttestationFailureHandler())
-                .handler(auth.handle(this::handleAttestAsync, Role.OPERATOR, Role.OPTOUT_SERVICE));
-        router.get(Endpoints.CLOUD_ENCRYPTION_KEYS_RETRIEVE.toString()).handler(auth.handle(attestationMiddleware.handle(this::handleCloudEncryptionKeysRetrieval), Role.OPERATOR));
-        router.get(Endpoints.SITES_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handleSiteRefresh), Role.OPERATOR));
-        router.get(Endpoints.KEY_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handleKeyRefresh), Role.OPERATOR));
-        router.get(Endpoints.KEY_ACL_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handleKeyAclRefresh), Role.OPERATOR));
-        router.get(Endpoints.KEY_KEYSET_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handleKeysetRefresh), Role.OPERATOR));
-        router.get(Endpoints.KEY_KEYSET_KEYS_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handleKeysetKeyRefresh), Role.OPERATOR));
-        router.get(Endpoints.SALT_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handleSaltRefresh), Role.OPERATOR));
-        router.get(Endpoints.CLIENTS_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handleClientRefresh), Role.OPERATOR));
-        router.get(Endpoints.CLIENT_SIDE_KEYPAIRS_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handleClientSideKeypairRefresh), Role.OPERATOR));
-        router.get(Endpoints.SERVICES_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handleServiceRefresh), Role.OPERATOR));
-        router.get(Endpoints.SERVICE_LINKS_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handleServiceLinkRefresh), Role.OPERATOR));
-        router.get(Endpoints.OPERATORS_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handleOperatorRefresh), Role.OPTOUT_SERVICE));
-        router.get(Endpoints.PARTNERS_REFRESH.toString()).handler(auth.handle(attestationMiddleware.handle(this::handlePartnerRefresh), Role.OPTOUT_SERVICE));
+                .handler(auth.handleWithAudit(this::handleAttestAsync, new AuditParams(), true, Role.OPERATOR, Role.OPTOUT_SERVICE));
+        router.get(Endpoints.CLOUD_ENCRYPTION_KEYS_RETRIEVE.toString()).handler(auth.handleWithAudit(attestationMiddleware.handle(this::handleCloudEncryptionKeysRetrieval), new AuditParams(), true, Role.OPERATOR));
+        router.get(Endpoints.SITES_REFRESH.toString()).handler(auth.handleWithAudit(attestationMiddleware.handle(this::handleSiteRefresh), new AuditParams(), true, Role.OPERATOR));
+        router.get(Endpoints.KEY_REFRESH.toString()).handler(auth.handleWithAudit(attestationMiddleware.handle(this::handleKeyRefresh), new AuditParams(), true, Role.OPERATOR));
+        router.get(Endpoints.KEY_ACL_REFRESH.toString()).handler(auth.handleWithAudit(attestationMiddleware.handle(this::handleKeyAclRefresh), new AuditParams(), true, Role.OPERATOR));
+        router.get(Endpoints.KEY_KEYSET_REFRESH.toString()).handler(auth.handleWithAudit(attestationMiddleware.handle(this::handleKeysetRefresh), new AuditParams(), true, Role.OPERATOR));
+        router.get(Endpoints.KEY_KEYSET_KEYS_REFRESH.toString()).handler(auth.handleWithAudit(attestationMiddleware.handle(this::handleKeysetKeyRefresh), new AuditParams(), true, Role.OPERATOR));
+        router.get(Endpoints.SALT_REFRESH.toString()).handler(auth.handleWithAudit(attestationMiddleware.handle(this::handleSaltRefresh), new AuditParams(), true, Role.OPERATOR));
+        router.get(Endpoints.CLIENTS_REFRESH.toString()).handler(auth.handleWithAudit(attestationMiddleware.handle(this::handleClientRefresh), new AuditParams(), true, Role.OPERATOR));
+        router.get(Endpoints.CLIENT_SIDE_KEYPAIRS_REFRESH.toString()).handler(auth.handleWithAudit(attestationMiddleware.handle(this::handleClientSideKeypairRefresh), new AuditParams(), true, Role.OPERATOR));
+        router.get(Endpoints.SERVICES_REFRESH.toString()).handler(auth.handleWithAudit(attestationMiddleware.handle(this::handleServiceRefresh), new AuditParams(), true, Role.OPERATOR));
+        router.get(Endpoints.SERVICE_LINKS_REFRESH.toString()).handler(auth.handleWithAudit(attestationMiddleware.handle(this::handleServiceLinkRefresh), new AuditParams(), true, Role.OPERATOR));
+        router.get(Endpoints.OPERATORS_REFRESH.toString()).handler(auth.handleWithAudit(attestationMiddleware.handle(this::handleOperatorRefresh), new AuditParams(), true, Role.OPTOUT_SERVICE));
+        router.get(Endpoints.PARTNERS_REFRESH.toString()).handler(auth.handleWithAudit(attestationMiddleware.handle(this::handlePartnerRefresh), new AuditParams(), true, Role.OPTOUT_SERVICE));
         router.get(Endpoints.OPS_HEALTHCHECK.toString()).handler(this::handleHealthCheck);
-        router.get(Endpoints.OPERATOR_CONFIG.toString()).handler(auth.handle(attestationMiddleware.handle(this::handleGetConfig), Role.OPERATOR));
+        router.get(Endpoints.OPERATOR_CONFIG.toString()).handler(auth.handleWithAudit(attestationMiddleware.handle(this::handleGetConfig), new AuditParams(), true, Role.OPERATOR));
 
         if (Optional.ofNullable(ConfigStore.Global.getBoolean("enable_test_endpoints")).orElse(false)) {
-            router.route(Endpoints.ATTEST_GET_TOKEN.toString()).handler(auth.handle(this::handleTestGetAttestationToken, Role.OPERATOR));
+            router.route(Endpoints.ATTEST_GET_TOKEN.toString()).handler(auth.handleWithAudit(this::handleTestGetAttestationToken, new AuditParams(), true, Role.OPERATOR));
         }
 
         return router;
