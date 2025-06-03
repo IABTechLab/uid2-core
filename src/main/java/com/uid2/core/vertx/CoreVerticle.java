@@ -225,7 +225,8 @@ public class CoreVerticle extends AbstractVerticle {
             .handler(auth.handleWithAudit(attestationMiddleware.handle(this::handleGetConfig), List.of(Role.OPERATOR)));
 
         if (Optional.ofNullable(ConfigStore.Global.getBoolean("enable_test_endpoints")).orElse(false)) {
-            router.route(Endpoints.ATTEST_GET_TOKEN.toString()).handler(auth.handleWithAudit(this::handleTestGetAttestationToken, List.of(Role.OPERATOR)));
+            router.route(Endpoints.ATTEST_GET_TOKEN.toString())
+                .handler(auth.handleWithAudit(this::handleTestGetAttestationToken, List.of(Role.OPERATOR)));
         }
 
         return router;
@@ -313,7 +314,8 @@ public class CoreVerticle extends AbstractVerticle {
 
                 final AttestationResult attestationResult = ar.result();
                 JsonObject auditUserDetails = rc.get(Audit.USER_DETAILS, new JsonObject());
-                auditUserDetails.put("enclaveId", attestationResult.getEnclaveId());
+                auditUserDetails.put("enclave_id", attestationResult.getEnclaveId());
+                rc.put(Audit.USER_DETAILS, auditUserDetails);
                 if (!attestationResult.isSuccess()) {
                     AttestationFailure failure = attestationResult.getFailure();
                     switch (failure) {
