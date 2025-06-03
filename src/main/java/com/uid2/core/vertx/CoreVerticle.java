@@ -88,7 +88,7 @@ public class CoreVerticle extends AbstractVerticle {
 
     private final FileSystem fileSystem;
 
-    private static final String OPERATOR_TYPE = "operator_type";
+    private static final String OPERATOR_TYPE_REQUEST_PARAM = "operator_type";
 
     public CoreVerticle(ICloudStorage cloudStorage,
                         IAuthorizableProvider authProvider,
@@ -191,7 +191,7 @@ public class CoreVerticle extends AbstractVerticle {
 
         router.post(Endpoints.ATTEST.toString())
             .handler(new AttestationFailureHandler())
-            .handler(auth.handleWithAudit(this::handleAttestAsync, new AuditParams(Collections.emptyList(), List.of("application_name", "application_version", OPERATOR_TYPE, "components.uid2-attestation-api", "components.uid2-shared")),
+            .handler(auth.handleWithAudit(this::handleAttestAsync, new AuditParams(Collections.emptyList(), List.of("application_name", "application_version", OPERATOR_TYPE_REQUEST_PARAM, "components.uid2-attestation-api", "components.uid2-shared")),
                 true, List.of(Role.OPERATOR, Role.OPTOUT_SERVICE)));
         router.get(Endpoints.CLOUD_ENCRYPTION_KEYS_RETRIEVE.toString())
             .handler(auth.handleWithAudit(attestationMiddleware.handle(this::handleCloudEncryptionKeysRetrieval), List.of(Role.OPERATOR)));
@@ -336,7 +336,7 @@ public class CoreVerticle extends AbstractVerticle {
                     }
                 }
 
-                if (json.containsKey(OPERATOR_TYPE) && !operator.getOperatorType().name().equalsIgnoreCase(json.getString(OPERATOR_TYPE))) {
+                if (json.containsKey(OPERATOR_TYPE_REQUEST_PARAM) && !operator.getOperatorType().name().equalsIgnoreCase(json.getString(OPERATOR_TYPE_REQUEST_PARAM))) {
                     setAttestationFailureReason(rc, AttestationFailure.INVALID_TYPE, Collections.singletonMap("reason", AttestationFailure.INVALID_TYPE.explain()));
                     Error("attestation failure; invalid operator type", 403, rc, null);
                     return;
