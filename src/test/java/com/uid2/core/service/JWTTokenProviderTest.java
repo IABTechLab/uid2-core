@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.UUID;
 
 import static com.uid2.shared.Utils.readToEndAsString;
 import static org.junit.jupiter.api.Assertions.*;
@@ -53,8 +54,10 @@ public class JWTTokenProviderTest {
         headers.put("c", "d");
 
         HashMap<String, String> content = new HashMap<>();
+        String jti = UUID.randomUUID().toString();
         content.put("sub", "subject");
         content.put("iss", "issuer");
+        content.put("jti", jti);
 
         var builder = getBuilder(true, "TestSignature");
         JWTTokenProvider provider = new JWTTokenProvider(config, () -> builder);
@@ -74,6 +77,7 @@ public class JWTTokenProviderTest {
         contentJson.put("iat", i.getEpochSecond());
         contentJson.put("sub", "subject");
         contentJson.put("iss", "issuer");
+        contentJson.put("jti", jti);
 
         assertJWT(defaultHeaders.encode(), contentJson.encode(), expectedSig, result);
         assertEquals("1234", this.capturedSignRequest.getValue().keyId());
