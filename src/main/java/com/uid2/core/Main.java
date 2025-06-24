@@ -201,22 +201,22 @@ public class Main {
 
         // retrieve image version (will unify when uid2-common is used)
         String version = Optional.ofNullable(System.getenv("IMAGE_VERSION")).orElse("unknown");
-        Gauge.builder("app.status", () -> 1)
+        Gauge.builder("app_status", () -> 1)
                 .description("application version and status")
                 .tags("version", version)
                 .register(Metrics.globalRegistry);
     }
 
     private static void createVertxMetrics() {
-        Gauge.builder("uid2.vertx_service_instances", () -> ConfigStore.Global.getInteger(com.uid2.core.Const.Config.ServiceInstancesProp))
+        Gauge.builder("uid2_vertx_service_instances", () -> ConfigStore.Global.getInteger(com.uid2.core.Const.Config.ServiceInstancesProp))
                 .description("gauge for number of vertx service instances requested")
                 .register(Metrics.globalRegistry);
 
-        Gauge.builder("uid2.vertx_worker_pool_size", () -> VERTX_WORKER_POOL_SIZE)
+        Gauge.builder("uid2_vertx_worker_pool_size", () -> VERTX_WORKER_POOL_SIZE)
                 .description("gauge for vertx worker pool size requested")
                 .register(Metrics.globalRegistry);
 
-        Gauge.builder("uid2.vertx_event_loop_threads", () -> VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE)
+        Gauge.builder("uid2_vertx_event_loop_threads", () -> VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE)
                 .description("gauge for number of vertx event loop threads")
                 .register(Metrics.globalRegistry);
     }
