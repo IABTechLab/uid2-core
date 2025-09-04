@@ -45,7 +45,7 @@ public abstract class MetadataProvider {
         for(int i = 0; i < arr.size(); ++i) {
             JsonObject obj = arr.getJsonObject(i);
             String location = obj.getString("location");
-            obj.put("location", getDownloadUrlGenerator().preSignUrl(location).toString());
+            obj.put("location", downloadUrlGenerator.preSignUrl(location).toString());
         }
         return main.encode();
     }
