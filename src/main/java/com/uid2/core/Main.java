@@ -1,6 +1,5 @@
 package com.uid2.core;
 
-import com.google.auth.oauth2.GoogleCredentials;
 import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.Constants;
 import com.uid2.core.model.SecretStore;
@@ -131,19 +130,6 @@ public class Main {
                         .with("trusted", new TrustedCoreAttestationService())
                         .with("aws-nitro", new NitroCoreAttestationService(new InMemoryAWSCertificateStore(), corePublicUrl));
 
-                // try read GoogleCredentials
-                GoogleCredentials googleCredentials = CloudUtils.getGoogleCredentialsFromConfig(config);
-                if (googleCredentials != null) {
-                    Set<String> enclaveParams = null;
-                    String params = config.getString(Const.Config.GcpEnclaveParamsProp);
-                    if (params != null) {
-                        enclaveParams = Set.of(params.split(","));
-                    }
-
-                    // enable gcp-vmid attestation if requested
-                    attestationService
-                            .with("gcp-vmid", new GcpVmidCoreAttestationService(googleCredentials, enclaveParams));
-                }
 
                 var maaServerBaseUrl = ConfigStore.Global.getOrDefault(com.uid2.core.Const.Config.MaaServerBaseUrlProp, "https://sharedeus.eus.attest.azure.net");
                 attestationService.with("azure-cc", new AzureCCCoreAttestationService(maaServerBaseUrl, ConfigStore.Global.get(Const.Config.CorePublicUrlProp)));
