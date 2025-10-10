@@ -27,16 +27,6 @@
     "key_id": "test-partner-key"
   },
   {
-    "key": "test-gcp-key",
-    "name": "partner-gcp@uid2.com",
-    "contact": "partner-gcp@uid2.com",
-    "created": 1617149276,
-    "protocol": "gcp-vmid",
-    "key_hash": "+8Vp3bOKibg7PpWomCtolqZu3uRqR7G5DLcAwvt9n2ZqkWAdmPGoXuQMcEBAmE/nAslF7eA+VwXLp7zN40IZkA==",
-    "key_salt": "uJYzyAZujZ6QOatbwEB9/+/sgXe3jvPvYaULNANxgkQ=",
-    "key_id": "test-gcp-key"
-  },
-  {
     "key": "test-gcp-key-2",
     "name": "partner-gcp-2@uid2.com",
     "contact": "partner-gcp-2@uid2.com",
