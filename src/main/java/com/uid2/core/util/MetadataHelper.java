@@ -36,8 +36,8 @@ public final class MetadataHelper {
         StoreScope store;
         Boolean providePrivateSiteData = ConfigStore.Global.getBoolean("provide_private_site_data");
         if (supportsDecryption) { // Check if decryption is possible
-            if (operatorType == OperatorType.PUBLIC || (providePrivateSiteData == null || !providePrivateSiteData.booleanValue()))//siteId_public folder
-            {       
+            if (operatorType == OperatorType.PUBLIC || (providePrivateSiteData == null || !providePrivateSiteData.booleanValue())) //siteId_public folder
+            {
                 store = new EncryptedScope(new CloudPath(metadataPathName), siteId, true);
             } else //siteId_private folder
             {
