@@ -11,3 +11,5 @@ CVE-2025-64720 exp:2026-06-05
 # UID2-6340
 CVE-2025-65018 exp:2026-06-05
 
+# UID2-6362 - Investigating, added for E2E testing
+CVE-2025-66293 exp:2025-12-31
