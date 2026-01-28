@@ -16,7 +16,7 @@ COPY ./target/${JAR_NAME}-${JAR_VERSION}-sources.jar /app
 COPY ./conf/default-config.json /app/conf/
 COPY ./conf/*.xml /app/conf/
 
-RUN adduser -D uid2-core && mkdir -p /app && chmod 705 -R /app && mkdir -p /app/file-uploads && chmod 777 -R /app/file-uploads && mkdir -p /app/pod_terminating && chmod 777 -R /app/pod_terminating
+RUN apk add --no-cache --upgrade libpng && adduser -D uid2-core && mkdir -p /app && chmod 705 -R /app && mkdir -p /app/file-uploads && chmod 777 -R /app/file-uploads && mkdir -p /app/pod_terminating && chmod 777 -R /app/pod_terminating
 USER uid2-core
 
 CMD java \
