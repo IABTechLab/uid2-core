@@ -1,3 +1,7 @@
 # List any vulnerability that are to be accepted
-# See https://aquasecurity.github.io/trivy/v0.35/docs/vulnerability/examples/filter/ 
+# See https://aquasecurity.github.io/trivy/v0.35/docs/vulnerability/examples/filter/
 # for more details
+
+# gnutls DoS vulnerability via crafted ClientHello - not impactful as gnutls is not used by our Java service
+# See: UID2-6655
+CVE-2026-1584 exp:2026-08-27
