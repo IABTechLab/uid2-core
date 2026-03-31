@@ -24,7 +24,8 @@
         <vertx.verticle>com.uid2.core.vertx.CoreVerticle</vertx.verticle>
         <launcher.class>io.vertx.core.Launcher</launcher.class>
 
-        <uid2-shared.version>11.3.3</uid2-shared.version>
+        <uid2-shared.version>11.4.16</uid2-shared.version>
+        <netty.version>4.1.132.Final</netty.version>
         <image.version>${project.version}</image.version>
     </properties>
 
@@ -49,6 +50,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-stack-depchain</artifactId>
