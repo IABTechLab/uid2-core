@@ -221,6 +221,8 @@ public class CoreVerticle extends AbstractVerticle {
             .handler(auth.handleWithAudit(attestationMiddleware.handle(this::handlePartnerRefresh), List.of(Role.OPTOUT_SERVICE)));
         router.get(Endpoints.OPS_HEALTHCHECK.toString())
             .handler(this::handleHealthCheck);
+        router.get(Endpoints.OPERATOR_KEY_CHECK.toString())
+            .handler(auth.handleWithAudit(this::handleOperatorKeyCheck, List.of(Role.OPERATOR)));
         router.get(Endpoints.OPERATOR_CONFIG.toString())
             .handler(auth.handleWithAudit(attestationMiddleware.handle(this::handleGetConfig), List.of(Role.OPERATOR)));
 
@@ -267,6 +269,10 @@ public class CoreVerticle extends AbstractVerticle {
             resp.write(reason);
             resp.end();
         }
+    }
+
+    private void handleOperatorKeyCheck(RoutingContext rc) {
+        rc.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json").end("{\"status\":\"ok\"}");
     }
 
     private void handleAttestAsync(RoutingContext rc) {

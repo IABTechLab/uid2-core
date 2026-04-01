@@ -895,6 +895,28 @@ public class CoreVerticleTest {
 
     @Test
     @Tag("dontForceJwt")
+    void operatorKeyCheckReturns200ForValidOperatorKey(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.OPERATOR);
+        this.get(vertx, Endpoints.OPERATOR_KEY_CHECK.toString(), testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(200, response.statusCode());
+            assertEquals("application/json", response.getHeader(HttpHeaders.CONTENT_TYPE));
+            assertEquals("{\"status\":\"ok\"}", response.bodyAsString());
+            testContext.completeNow();
+        })));
+    }
+
+    @Test
+    @Tag("dontForceJwt")
+    void operatorKeyCheckReturns401ForUnknownKey(Vertx vertx, VertxTestContext testContext) {
+        when(authProvider.get(any())).thenReturn(null);
+        this.get(vertx, Endpoints.OPERATOR_KEY_CHECK.toString(), testContext.succeeding(response -> testContext.verify(() -> {
+            assertEquals(401, response.statusCode());
+            testContext.completeNow();
+        })));
+    }
+
+    @Test
+    @Tag("dontForceJwt")
     void getConfigSuccess(Vertx vertx, VertxTestContext testContext) {
         JsonObject expectedConfig = new JsonObject(operatorConfig);
 
