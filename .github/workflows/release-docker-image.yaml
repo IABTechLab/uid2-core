@@ -52,6 +52,7 @@ jobs:
       pull-requests: write
       id-token: write
       attestations: write
+      artifact-metadata: write
     uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-publish-java-to-docker-versioned.yaml@v3
     with: 
       release_type: ${{ inputs.release_type }}
