@@ -58,7 +58,7 @@ public class GenericFailureHandler implements Handler<RoutingContext> {
         final String reason;
         final String message;
         if (profile == null) {
-            // Key did not resolve to any record - the most common operator-onboarding mistake.
+            // Key did not resolve to any record.
             reason = "unrecognized_key";
             message = "Operator key not recognized.";
         } else if (profile.isDisabled()) {
