@@ -16,7 +16,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.regions.Region;
@@ -154,7 +154,7 @@ public class JWTTokenProvider {
                 throw e;
             }
         } else {
-            WebIdentityTokenFileCredentialsProvider credentialsProvider = WebIdentityTokenFileCredentialsProvider.create();
+            DefaultCredentialsProvider credentialsProvider = DefaultCredentialsProvider.create();
 
             client = kmsClientBuilder
                     .region(Region.of(region))
