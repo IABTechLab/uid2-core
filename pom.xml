@@ -6,7 +6,7 @@
 
     <groupId>com.uid2</groupId>
     <artifactId>uid2-core</artifactId>
-    <version>2.30.107</version>
+    <version>2.30.127</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -25,7 +25,7 @@
         <launcher.class>io.vertx.core.Launcher</launcher.class>
 
         <uid2-shared.version>11.5.1-alpha-352-SNAPSHOT</uid2-shared.version>
-        <netty.version>4.1.133.Final</netty.version>
+        <netty.version>4.1.135.Final</netty.version>
         <image.version>${project.version}</image.version>
     </properties>
 
