@@ -25,6 +25,7 @@
         <launcher.class>io.vertx.core.Launcher</launcher.class>
 
         <uid2-shared.version>11.5.1-alpha-352-SNAPSHOT</uid2-shared.version>
+        <lombok.version>1.18.36</lombok.version>
         <netty.version>4.1.135.Final</netty.version>
         <image.version>${project.version}</image.version>
     </properties>
@@ -82,6 +83,12 @@
     </dependencyManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>com.uid2</groupId>
             <artifactId>uid2-shared</artifactId>
@@ -209,6 +216,13 @@
         <configuration>
           <source>21</source>
           <target>21</target>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${lombok.version}</version>
+            </path>
+          </annotationProcessorPaths>
         </configuration>
       </plugin>
       <plugin>
