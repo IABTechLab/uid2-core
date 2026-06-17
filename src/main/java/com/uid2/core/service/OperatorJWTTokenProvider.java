@@ -38,7 +38,7 @@ public class OperatorJWTTokenProvider {
         OptOut when the operator makes calls to OptOut.
         The claims we will add are:
         "iss" : the config value for issuer, something like https://core-prod.uidapi.com
-        "sub" : the name of the operator as registered in the Admin site
+        "sub" : the base64-encoded SHA-512 hash of the operator key
         "aud" : the url of the optout service that this token can be used with https://optout-prod.uidapi.com
         "exp" : the expiry date time of the token, set to be the same as the expiry of the attestation token
         "iat" : the current date time
@@ -49,11 +49,11 @@ public class OperatorJWTTokenProvider {
 
     /*
         Returns a JWT that is given to the operator. This is then presented by the operator to
-        OptOut when the operator makes calls to Core.
+        Core when the operator makes calls to Core.
         The claims we will add are:
         "iss" : the config value for issuer, something like https://core-prod.uidapi.com
-        "sub" : the name of the operator as registered in the Admin site
-        "aud" : the url of the optout service that this token can be used with https://core-prod.uidapi.com
+        "sub" : the base64-encoded SHA-512 hash of the operator key
+        "aud" : the url of the core service that this token can be used with https://core-prod.uidapi.com
         "exp" : the expiry date time of the token, set to be the same as the expiry of the attestation token
         "iat" : the current date time
      */
