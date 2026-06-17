@@ -12,7 +12,6 @@ import lombok.Getter;
 
 import static com.uid2.core.util.MetadataHelper.*;
 
-@Getter
 public abstract class MetadataProvider {
     private final ICloudStorage metadataStreamProvider;
     private final ICloudStorage downloadUrlGenerator;
