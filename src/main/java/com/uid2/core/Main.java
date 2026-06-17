@@ -4,7 +4,9 @@ import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.Constants;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.AttestationService;
+import com.uid2.core.service.JWTTokenProvider;
 import com.uid2.core.service.OperatorJWTTokenProvider;
+import software.amazon.awssdk.services.kms.KmsClient;
 import com.uid2.core.vertx.CoreVerticle;
 import com.uid2.core.vertx.Endpoints;
 import com.uid2.shared.Const;
@@ -136,7 +138,11 @@ public class Main {
 
                 attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(corePublicUrl));
 
-                OperatorJWTTokenProvider operatorJWTTokenProvider = new OperatorJWTTokenProvider(config);
+                KmsClient kmsClient = JWTTokenProvider.buildKmsClient(config);
+                OperatorJWTTokenProvider operatorJWTTokenProvider = new OperatorJWTTokenProvider(
+                        config.getString(Const.Config.CorePublicUrlProp),
+                        config.getString(Const.Config.OptOutUrlProp),
+                        new JWTTokenProvider(kmsClient));
 
                 IAttestationTokenService attestationTokenService = new AttestationTokenService(
                         SecretStore.Global.get(Constants.AttestationEncryptionKeyName),

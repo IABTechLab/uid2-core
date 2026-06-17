@@ -6,12 +6,9 @@ import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.http.SdkHttpResponse;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kms.KmsClient;
-import software.amazon.awssdk.services.kms.KmsClientBuilder;
 import software.amazon.awssdk.services.kms.model.KmsException;
 import software.amazon.awssdk.services.kms.model.SignRequest;
 import software.amazon.awssdk.services.kms.model.SignResponse;
@@ -27,7 +24,6 @@ import java.util.UUID;
 
 import static com.uid2.shared.Utils.readToEndAsString;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -36,11 +32,10 @@ public class JWTTokenProviderTest {
 
     private KmsClient mockClient;
     private ArgumentCaptor<SignRequest> capturedSignRequest;
-    private JsonObject config;
 
     @BeforeEach
     void setUp() throws IOException {
-        this.config = ((JsonObject) Json.decodeValue(openFile("/com.uid2.core/service/jwt-token-provider-test-config.json")));
+        JsonObject config = (JsonObject) Json.decodeValue(openFile("/com.uid2.core/service/jwt-token-provider-test-config.json"));
         ConfigStore.Global.load(config);
         defaultHeaders.put("typ", "JWT");
         defaultHeaders.put("alg", "RS256");
@@ -59,8 +54,8 @@ public class JWTTokenProviderTest {
         content.put("iss", "issuer");
         content.put("jti", jti);
 
-        var builder = getBuilder(true, "TestSignature");
-        JWTTokenProvider provider = new JWTTokenProvider(config, () -> builder);
+        var kmsClient = getKmsClient(true, "TestSignature");
+        JWTTokenProvider provider = new JWTTokenProvider(kmsClient);
 
         Instant i = Clock.systemUTC().instant();
 
@@ -86,9 +81,9 @@ public class JWTTokenProviderTest {
 
     @Test
     void getJwtEmptySignatureThrowsException() {
-        var builder = getBuilder(false, "");
+        var kmsClient = getKmsClient(false, "");
 
-        JWTTokenProvider provider = new JWTTokenProvider(config, () -> builder);
+        JWTTokenProvider provider = new JWTTokenProvider(kmsClient);
 
         JWTTokenProvider.JwtSigningException e = assertThrows(
                 JWTTokenProvider.JwtSigningException.class,
@@ -99,9 +94,9 @@ public class JWTTokenProviderTest {
 
     @Test
     void getJwtEmptySignatureEmptyResponseText() {
-        var builder = getBuilder(false, "", Optional.empty());
+        var kmsClient = getKmsClient(false, "", Optional.empty());
 
-        JWTTokenProvider provider = new JWTTokenProvider(config, () -> builder);
+        JWTTokenProvider provider = new JWTTokenProvider(kmsClient);
 
         JWTTokenProvider.JwtSigningException e = assertThrows(
                 JWTTokenProvider.JwtSigningException.class,
@@ -112,9 +107,9 @@ public class JWTTokenProviderTest {
 
     @Test
     void getJwtEmptySignatureNullResponseText() {
-        var builder = getBuilder(false, "", null);
+        var kmsClient = getKmsClient(false, "", null);
 
-        JWTTokenProvider provider = new JWTTokenProvider(config, () -> builder);
+        JWTTokenProvider provider = new JWTTokenProvider(kmsClient);
 
         JWTTokenProvider.JwtSigningException e = assertThrows(
                 JWTTokenProvider.JwtSigningException.class,
@@ -125,9 +120,9 @@ public class JWTTokenProviderTest {
 
     @Test
     void getJwtSignatureThrowsKmsException() {
-        var builder = getBuilder(false, "", Optional.empty());
+        var kmsClient = getKmsClient(false, "", Optional.empty());
 
-        JWTTokenProvider provider = new JWTTokenProvider(config, () -> builder);
+        JWTTokenProvider provider = new JWTTokenProvider(kmsClient);
         var ex = KmsException.builder().message("Test Error").build();
         when(mockClient.sign(capturedSignRequest.capture())).thenThrow(ex);
 
@@ -146,9 +141,9 @@ public class JWTTokenProviderTest {
 
         ConfigStore.Global.load(data);
 
-        var builder = getBuilder(false, "", Optional.empty());
+        var kmsClient = getKmsClient(false, "", Optional.empty());
 
-        JWTTokenProvider provider = new JWTTokenProvider(config, () -> builder);
+        JWTTokenProvider provider = new JWTTokenProvider(kmsClient);
 
         JWTTokenProvider.JwtSigningException e = assertThrows(
                 JWTTokenProvider.JwtSigningException.class,
@@ -161,11 +156,11 @@ public class JWTTokenProviderTest {
         return readToEndAsString(JWTTokenProviderTest.class.getResourceAsStream(filePath));
     }
 
-    private KmsClientBuilder getBuilder(boolean isSuccessful, String signature) {
-        return getBuilder(isSuccessful, signature, Optional.of("Test status text"));
+    private KmsClient getKmsClient(boolean isSuccessful, String signature) {
+        return getKmsClient(isSuccessful, signature, Optional.of("Test status text"));
     }
 
-    private KmsClientBuilder getBuilder(boolean isSuccessful, String signature, Optional<String> statusText) {
+    private KmsClient getKmsClient(boolean isSuccessful, String signature, Optional<String> statusText) {
         SdkHttpResponse sdkHttpResponse = mock(SdkHttpResponse.class);
         when(sdkHttpResponse.isSuccessful()).thenReturn(isSuccessful);
         when(sdkHttpResponse.statusText()).thenReturn(statusText);
@@ -178,12 +173,7 @@ public class JWTTokenProviderTest {
         capturedSignRequest = ArgumentCaptor.forClass(SignRequest.class);
         when(mockClient.sign(capturedSignRequest.capture())).thenReturn(response);
 
-        KmsClientBuilder builder = mock(KmsClientBuilder.class);
-        when(builder.region(any(Region.class))).thenReturn(builder);
-        when(builder.credentialsProvider(any(AwsCredentialsProvider.class))).thenReturn(builder);
-        when(builder.build()).thenReturn(mockClient);
-
-        return builder;
+        return mockClient;
     }
 
     private void assertJWT(String expectedHeader, String expectedContent, String expectedSignature, String jwt) {

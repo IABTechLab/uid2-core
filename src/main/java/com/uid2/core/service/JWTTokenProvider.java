@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -33,12 +32,10 @@ import static com.uid2.core.Const.Config.*;
 public class JWTTokenProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(JWTTokenProvider.class);
     private static final Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
-    private final Supplier<KmsClientBuilder> kmsClientBuilderSupplier;
-    private final JsonObject config;
+    private final KmsClient kmsClient;
 
-    public JWTTokenProvider(JsonObject config, Supplier<KmsClientBuilder> kmsClientBuilderSupplier) {
-        this.config = config;
-        this.kmsClientBuilderSupplier = kmsClientBuilderSupplier;
+    public JWTTokenProvider(KmsClient kmsClient) {
+        this.kmsClient = kmsClient;
     }
 
     public String getJWT(Instant expiresAt, Instant issuedAt, Map<String, String> customClaims) throws JwtSigningException {
@@ -62,13 +59,7 @@ public class JWTTokenProvider {
                 .append(encoder.encodeToString(claimsJson.encode().getBytes(StandardCharsets.UTF_8)))
                 .toString();
 
-        KmsClient client = null;
-        try {
-            client = getKmsClient(this.kmsClientBuilderSupplier.get(), this.config);
-        } catch (URISyntaxException e) {
-            throw new JwtSigningException(Optional.of("Unable to get KMS Client"), e);
-        }
-        String signature = signJwtContent(client, jwtContent);
+        String signature = signJwtContent(this.kmsClient, jwtContent);
         if (signature != null && !signature.isBlank()) {
             return new StringBuilder()
                     .append(jwtContent)
@@ -128,44 +119,35 @@ public class JWTTokenProvider {
         }
     }
 
-    private static KmsClient getKmsClient(KmsClientBuilder kmsClientBuilder, JsonObject config) throws URISyntaxException {
-        KmsClient client;
-
+    public static KmsClient buildKmsClient(JsonObject config) throws URISyntaxException {
         String region = config.getString(KmsRegionProp, config.getString(Const.Config.AwsRegionProp));
         String accessKeyId = config.getString(KmsAccessKeyIdProp);
         String secretAccessKey = config.getString(KmsSecretAccessKeyProp);
         String endpoint = config.getString(KmsEndpointProp);
 
-        if (accessKeyId != null && !accessKeyId.isBlank() && secretAccessKey != null && !secretAccessKey.isBlank()) {
-            AwsBasicCredentials basicCredentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
-
-            StaticCredentialsProvider.create(basicCredentials);
+        KmsClientBuilder kmsClientBuilder = KmsClient.builder();
+        if (endpoint != null && !endpoint.isBlank()) {
             try {
-                if (endpoint != null && !endpoint.isBlank()) {
-                    kmsClientBuilder.endpointOverride(new URI(endpoint));
-                }
-
-                client = kmsClientBuilder
-                        .region(Region.of(region))
-                        .credentialsProvider(StaticCredentialsProvider.create(basicCredentials))
-                        .build();
+                kmsClientBuilder.endpointOverride(new URI(endpoint));
             } catch (URISyntaxException e) {
-                LOGGER.error("Error creating KMS Client Builder using static credentials.", e);
+                LOGGER.error("Error creating KMS Client Builder.", e);
                 throw e;
             }
-        } else {
-            DefaultCredentialsProvider credentialsProvider = DefaultCredentialsProvider.create();
-
-            client = kmsClientBuilder
-                    .region(Region.of(region))
-                    .credentialsProvider(credentialsProvider)
-                    .build();
         }
 
-        return client;
+        kmsClientBuilder.region(Region.of(region));
+
+        if (accessKeyId != null && !accessKeyId.isBlank() && secretAccessKey != null && !secretAccessKey.isBlank()) {
+            kmsClientBuilder.credentialsProvider(StaticCredentialsProvider.create(
+                    AwsBasicCredentials.create(accessKeyId, secretAccessKey)));
+        } else {
+            kmsClientBuilder.credentialsProvider(DefaultCredentialsProvider.create());
+        }
+
+        return kmsClientBuilder.build();
     }
 
-    public class JwtSigningException extends Exception {
+    public static class JwtSigningException extends Exception {
         public JwtSigningException(Optional<String> message) {
             this(message, null);
         }

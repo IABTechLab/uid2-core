@@ -1,12 +1,9 @@
 package com.uid2.core.service;
 
-import com.uid2.shared.Const;
 import com.uid2.shared.Utils;
 import com.uid2.shared.auth.Role;
-import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.kms.KmsClient;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -20,16 +17,18 @@ import static com.uid2.shared.Utils.createMessageDigestSHA512;
 
 public class OperatorJWTTokenProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(OperatorJWTTokenProvider.class);
-    private final JsonObject config;
+    private final String issuerUrl;
+    private final String optOutUrl;
     private final JWTTokenProvider jwtTokenProvider;
     private final Clock clock;
 
-    public OperatorJWTTokenProvider(JsonObject config) {
-        this(config, new JWTTokenProvider(config, KmsClient::builder), Clock.systemUTC());
+    public OperatorJWTTokenProvider(String issuerUrl, String optOutUrl, JWTTokenProvider jwtTokenProvider) {
+        this(issuerUrl, optOutUrl, jwtTokenProvider, Clock.systemUTC());
     }
 
-    public OperatorJWTTokenProvider(JsonObject config, JWTTokenProvider jwtTokenProvider, Clock clock) {
-        this.config = config;
+    public OperatorJWTTokenProvider(String issuerUrl, String optOutUrl, JWTTokenProvider jwtTokenProvider, Clock clock) {
+        this.issuerUrl = issuerUrl;
+        this.optOutUrl = optOutUrl;
         this.jwtTokenProvider = jwtTokenProvider;
         this.clock = clock;
     }
@@ -45,7 +44,7 @@ public class OperatorJWTTokenProvider {
         "iat" : the current date time
      */
     public String getOptOutJWTToken(String operatorKey, String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
-        return this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.OptOutUrlProp), operatorKey, name, roles, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
+        return this.getJWTToken(this.issuerUrl, this.optOutUrl, operatorKey, name, roles, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
     }
 
     /*
@@ -59,7 +58,7 @@ public class OperatorJWTTokenProvider {
         "iat" : the current date time
      */
     public String getCoreJWTToken(String operatorKey, String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
-        return this.getJWTToken(this.config.getString(Const.Config.CorePublicUrlProp), this.config.getString(Const.Config.CorePublicUrlProp), operatorKey, name, roles, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
+        return this.getJWTToken(this.issuerUrl, this.issuerUrl, operatorKey, name, roles, siteId, enclaveId, enclaveType, operatorVersion, expiresAt);
     }
 
     private String getJWTToken(String issuer, String audience, String operatorKey, String name, Set<Role> roles, Integer siteId, String enclaveId, String enclaveType, String operatorVersion, Instant expiresAt) throws JWTTokenProvider.JwtSigningException {
