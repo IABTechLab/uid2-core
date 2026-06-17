@@ -8,7 +8,6 @@ import com.uid2.shared.store.scope.GlobalScope;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import lombok.Getter;
 
 import static com.uid2.core.util.MetadataHelper.*;
 
