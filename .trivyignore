@@ -38,3 +38,10 @@ CVE-2026-56408 exp:2026-08-09
 # jackson-core's non-blocking/async parser. A jackson bump is also in flight via uid2-shared
 # (PR #631) and will flow on the next release. See: UID2-7557 (predecessor UID2-6670)
 GHSA-r7wm-3cxj-wff9 exp:2026-08-23
+
+# CVE-2026-45447 — openssl (libcrypto3 / libssl3, Alpine base image) (HIGH).
+# Not exploitable here: Dockerfile:19 apk adds libcrypto3/libssl3; no
+# tcnative/conscrypt/bouncycastle in pom.xml and no openssl/pkcs7/OpenSsl refs in any *.java —
+# pure-Java Vert.x uses JSSE
+# See: [TICKET]
+CVE-2026-45447 exp:2026-09-04
