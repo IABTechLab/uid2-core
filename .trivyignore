@@ -52,3 +52,12 @@ GHSA-r7wm-3cxj-wff9 exp:2026-08-23
 # server/servlet binder imports
 # See: UID2-7662
 CVE-2026-40984 exp:2026-11-11
+
+# CVE-2026-11822 / CVE-2026-11824 — sqlite-libs (Alpine base image, transitive via
+# eclipse-temurin:21-jre-alpine-3.23) (HIGH). Not exploitable: uid2-core is a pure Java
+# service with no SQLite/JDBC driver dependency and no JNI bindings; the FTS5 attack path
+# requires an application to invoke SQLite's full-text search engine, which this service
+# never does. Same pattern already confirmed for uid2-admin in UID2-7748.
+# See: UID2-7760
+CVE-2026-11822 exp:2026-09-27
+CVE-2026-11824 exp:2026-09-27
