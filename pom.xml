@@ -25,7 +25,7 @@
         <launcher.class>io.vertx.core.Launcher</launcher.class>
 
         <uid2-shared.version>11.6.0</uid2-shared.version>
-        <netty.version>4.1.136.Final</netty.version>
+        <netty.version>4.1.137.Final</netty.version>
         <jackson.version>2.21.4</jackson.version>
         <image.version>${project.version}</image.version>
     </properties>
