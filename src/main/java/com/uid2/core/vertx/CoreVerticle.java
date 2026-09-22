@@ -190,7 +190,7 @@ public class CoreVerticle extends AbstractVerticle {
 
 
         router.post(Endpoints.ATTEST.toString())
-            .handler(new AttestationFailureHandler())
+            .handler(auth.handleWithAudit(new AttestationFailureHandler(),List.of(Role.OPERATOR, Role.OPTOUT_SERVICE)))
             .handler(auth.handleWithAudit(this::handleAttestAsync, new AuditParams(Collections.emptyList(), List.of("application_name", "application_version", OPERATOR_TYPE_REQUEST_PARAM, "components.uid2-attestation-api", "components.uid2-shared")),
                 true, List.of(Role.OPERATOR, Role.OPTOUT_SERVICE)));
         router.get(Endpoints.CLOUD_ENCRYPTION_KEYS_RETRIEVE.toString())
