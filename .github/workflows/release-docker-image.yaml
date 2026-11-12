@@ -63,6 +63,10 @@ jobs:
 
   e2e-test:
     name: E2E Test
+    permissions:
+      contents: write
+      packages: read
+      id-token: write
     uses: IABTechLab/uid2-shared-actions/.github/workflows/shared-run-e2e-tests.yaml@v3
     needs: Image
     with:
@@ -75,5 +79,7 @@ jobs:
       optout_branch: ${{ inputs.optout_branch }}
       admin_branch: ${{ inputs.admin_branch }}
       operator_branch: ${{ inputs.operator_branch }}
+      azure_client_id: ${{ vars.AZURE_CLIENT_ID }}
+      azure_tenant_id: ${{ vars.AZURE_TENANT_ID }}
+      azure_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
     secrets: inherit
-  
