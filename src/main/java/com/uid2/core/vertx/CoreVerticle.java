@@ -318,6 +318,7 @@ public class CoreVerticle extends AbstractVerticle {
                 rc.put(Audit.USER_DETAILS, auditUserDetails);
                 if (!attestationResult.isSuccess()) {
                     AttestationFailure failure = attestationResult.getFailure();
+                    logger.info("attestation failed for SiteId: {}, protocol: {}, failure: {}{}", operator.getSiteId(), protocol, failure, formatAttestationDetails(attestationResult.getAttestationDetails()));
                     switch (failure) {
                         case BAD_FORMAT:
                         case INVALID_PROTOCOL:
@@ -379,13 +380,24 @@ public class CoreVerticle extends AbstractVerticle {
                     return;
                 }
 
-                logger.info("attestation successful for SiteId: {}, Operator name: {}, protocol: {}", operator.getSiteId(), operator.getName(), protocol);
+                logger.info("attestation successful for SiteId: {}, Operator name: {}, protocol: {}{}", operator.getSiteId(), operator.getName(), protocol, formatAttestationDetails(attestationResult.getAttestationDetails()));
                 Success(rc, responseObj);
             });
         } catch (AttestationService.NotFound e) {
             setAttestationFailureReason(rc, AttestationFailure.INVALID_PROTOCOL, Collections.singletonMap("cause", AttestationFailure.INVALID_PROTOCOL.explain()));
             Error("protocol not found", 403, rc, null);
         }
+    }
+
+    static String formatAttestationDetails(Map<String, String> details) {
+        if (details == null || details.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(", GCP attestation overrides:");
+        details.forEach((key, value) -> sb.append(' ').append(key).append("=\"")
+                .append(value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r"))
+                .append('"'));
+        return sb.toString();
     }
 
     private static String encodeAttestationToken(RoutingContext rc, AttestationResult attestationResult, String encodedAttestationToken) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, InvalidKeySpecException, BadPaddingException, InvalidKeyException {
