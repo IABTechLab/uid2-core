@@ -24,11 +24,11 @@ GHSA-r7wm-3cxj-wff9 exp:2026-09-27
 # CVE-2026-40984 — io.micrometer:micrometer-core (transitive via micrometer-registry-
 # prometheus/-jmx); micrometer-jetty11/12 not present (HIGH).
 # Not exploitable here: pom.xml:118 vertx-micrometer-metrics + micrometer-registry-prometheus
-# 1.12.2; Main.java uses io.vertx.micrometer.MicrometerMetricsOptions/VertxPrometheusOptions
+# 1.12.13; Main.java uses io.vertx.micrometer.MicrometerMetricsOptions/VertxPrometheusOptions
 # for HTTP metrics and only io.micrometer core primitives; no Jetty dep, no micrometer HTTP-
 # server/servlet binder imports
 # See: UID2-7662
-CVE-2026-40984 exp:2026-11-11
+CVE-2026-40984 exp:2027-01-13
 
 # CVE-2026-102554 — guava (HIGH). Not vulnerable.
 # See: UID2-8213
