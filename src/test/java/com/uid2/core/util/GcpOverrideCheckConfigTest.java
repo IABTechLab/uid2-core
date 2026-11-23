@@ -59,7 +59,7 @@ class GcpOverrideCheckConfigTest {
         assertEquals(Environment.Integration, config.getCoreEnvironment());
         assertTrue(config.isEnforced());
         assertFalse(config.hasConfigIssue());
-        assertEquals("skipped (core environment=integ; checks apply to prod only)", config.describe());
+        assertEquals("skipped (core environment=integ, enforced=true; checks apply to prod only)", config.describe());
     }
 
     @Test
@@ -72,15 +72,16 @@ class GcpOverrideCheckConfigTest {
 
     @Test
     void testEnforcedWithoutEnvironment() {
-        GcpOverrideCheckConfig config = fromConfig(null, true);
-        assertNull(config.getCoreEnvironment());
-        assertTrue(config.hasConfigIssue());
+        assertThrows(IllegalArgumentException.class, () -> fromConfig(null, true));
+    }
+
+    @Test
+    void testEnforcedWithUnrecognisedEnvironment() {
+        assertThrows(IllegalArgumentException.class, () -> fromConfig("production", true));
     }
 
     @Test
     void testUnrecognisedEnforceValue() {
-        GcpOverrideCheckConfig config = fromConfig("prod", "yes");
-        assertFalse(config.isEnforced());
-        assertTrue(config.hasConfigIssue());
+        assertThrows(IllegalArgumentException.class, () -> fromConfig("prod", "yes"));
     }
 }

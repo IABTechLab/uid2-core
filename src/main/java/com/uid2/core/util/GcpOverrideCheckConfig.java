@@ -5,23 +5,41 @@ import com.uid2.shared.secure.gcpoidc.Environment;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 
+import java.util.Locale;
+
 public final class GcpOverrideCheckConfig {
     private final String configuredEnvironment;
     private final Environment coreEnvironment;
-    private final String configuredEnforce;
     private final boolean enforce;
 
     private GcpOverrideCheckConfig(String configuredEnvironment, String configuredEnforce) {
         this.configuredEnvironment = configuredEnvironment;
-        this.coreEnvironment = Environment.fromString(configuredEnvironment);
-        this.configuredEnforce = configuredEnforce;
-        this.enforce = "true".equalsIgnoreCase(configuredEnforce);
+        this.coreEnvironment = configuredEnvironment == null ? null : Environment.fromString(configuredEnvironment.toLowerCase(Locale.ROOT));
+        this.enforce = parseEnforce(configuredEnforce);
+        if (enforce && coreEnvironment == null) {
+            throw new IllegalArgumentException(String.format("%s=true requires %s to be prod or integ, given: %s",
+                    Const.Config.GcpEnforceEnvOverrideChecksProp, Const.Config.DeploymentEnvironmentProp, configuredEnvironment));
+        }
     }
 
+    /**
+     * @throws IllegalArgumentException if the enforce flag is not true/false, or enforcement is on without a recognised deployment environment
+     */
     public static GcpOverrideCheckConfig fromConfig(JsonObject config) {
         return new GcpOverrideCheckConfig(
                 getTrimmedString(config, Const.Config.DeploymentEnvironmentProp),
                 getTrimmedString(config, Const.Config.GcpEnforceEnvOverrideChecksProp));
+    }
+
+    private static boolean parseEnforce(String value) {
+        if (isNullOrEmpty(value) || "false".equalsIgnoreCase(value)) {
+            return false;
+        }
+        if ("true".equalsIgnoreCase(value)) {
+            return true;
+        }
+        throw new IllegalArgumentException(String.format("%s must be true or false, given: %s",
+                Const.Config.GcpEnforceEnvOverrideChecksProp, value));
     }
 
     private static String getTrimmedString(JsonObject config, String key) {
@@ -42,7 +60,7 @@ public final class GcpOverrideCheckConfig {
             return String.format("core environment=%s, enforced=%s", coreEnvironment.getName(), enforce);
         }
         if (coreEnvironment != null) {
-            return String.format("skipped (core environment=%s; checks apply to prod only)", coreEnvironment.getName());
+            return String.format("skipped (core environment=%s, enforced=%s; checks apply to prod only)", coreEnvironment.getName(), enforce);
         }
         if (isNullOrEmpty(configuredEnvironment)) {
             return String.format("skipped (%s not set)", Const.Config.DeploymentEnvironmentProp);
@@ -51,18 +69,12 @@ public final class GcpOverrideCheckConfig {
     }
 
     public boolean hasConfigIssue() {
-        boolean unrecognisedEnvironment = !isNullOrEmpty(configuredEnvironment) && coreEnvironment == null;
-        boolean unrecognisedEnforce = !isNullOrEmpty(configuredEnforce)
-                && !"true".equalsIgnoreCase(configuredEnforce) && !"false".equalsIgnoreCase(configuredEnforce);
-        boolean enforcedWithoutEnvironment = enforce && coreEnvironment == null;
-        return unrecognisedEnvironment || unrecognisedEnforce || enforcedWithoutEnvironment;
+        return !isNullOrEmpty(configuredEnvironment) && coreEnvironment == null;
     }
 
     public void logStartup(Logger logger) {
         if (hasConfigIssue()) {
-            logger.warn("GCP attestation override checks: {} ({}={}, {}={})", describe(),
-                    Const.Config.DeploymentEnvironmentProp, configuredEnvironment,
-                    Const.Config.GcpEnforceEnvOverrideChecksProp, configuredEnforce);
+            logger.warn("GCP attestation override checks: {}", describe());
         } else {
             logger.info("GCP attestation override checks: {}", describe());
         }
