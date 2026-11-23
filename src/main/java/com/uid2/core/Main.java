@@ -5,6 +5,7 @@ import com.uid2.core.model.Constants;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.AttestationService;
 import com.uid2.core.service.OperatorJWTTokenProvider;
+import com.uid2.core.util.GcpOverrideCheckConfig;
 import com.uid2.core.vertx.CoreVerticle;
 import com.uid2.core.vertx.Endpoints;
 import com.uid2.shared.Const;
@@ -134,7 +135,13 @@ public class Main {
                 var maaServerBaseUrl = ConfigStore.Global.getOrDefault(com.uid2.core.Const.Config.MaaServerBaseUrlProp, "https://sharedeus.eus.attest.azure.net");
                 attestationService.with("azure-cc", new AzureCCCoreAttestationService(maaServerBaseUrl, ConfigStore.Global.get(Const.Config.CorePublicUrlProp)));
 
-                attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(corePublicUrl));
+                GcpOverrideCheckConfig gcpOverrideCheckConfig = GcpOverrideCheckConfig.fromConfig(config);
+                LOGGER.info("GCP attestation override checks: {}", gcpOverrideCheckConfig.describe());
+                attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(
+                        corePublicUrl,
+                        ConfigStore.Global.get(Const.Config.OptOutUrlProp),
+                        gcpOverrideCheckConfig.getCoreEnvironment(),
+                        gcpOverrideCheckConfig.isEnforced()));
 
                 OperatorJWTTokenProvider operatorJWTTokenProvider = new OperatorJWTTokenProvider(config);
 

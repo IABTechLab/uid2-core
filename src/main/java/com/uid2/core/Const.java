@@ -19,6 +19,9 @@ public class Const extends com.uid2.shared.Const {
         public static final String KmsAccessKeyIdProp = "aws_kms_access_key_id";
         public static final String KmsSecretAccessKeyProp = "aws_kms_secret_access_key";
         public static final String KmsEndpointProp = "aws_kms_endpoint";
+
+        public static final String DeploymentEnvironmentProp = "deployment_environment";
+        public static final String GcpEnforceEnvOverrideChecksProp = "gcp_enforce_env_override_checks";
     }
 
     public static final String OPERATOR_CONFIG_PATH = "conf/operator/operator-config.json";
