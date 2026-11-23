@@ -5,7 +5,6 @@ import com.uid2.core.model.Constants;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.AttestationService;
 import com.uid2.core.service.OperatorJWTTokenProvider;
-import com.uid2.core.util.GcpOverrideCheckConfig;
 import com.uid2.core.vertx.CoreVerticle;
 import com.uid2.core.vertx.Endpoints;
 import com.uid2.shared.Const;
@@ -21,6 +20,7 @@ import com.uid2.shared.cloud.EmbeddedResourceStorage;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.jmx.AdminApi;
 import com.uid2.shared.secure.*;
+import com.uid2.shared.secure.gcpoidc.Environment;
 import com.uid2.shared.secure.nitro.InMemoryAWSCertificateStore;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.scope.GlobalScope;
@@ -135,13 +135,13 @@ public class Main {
                 var maaServerBaseUrl = ConfigStore.Global.getOrDefault(com.uid2.core.Const.Config.MaaServerBaseUrlProp, "https://sharedeus.eus.attest.azure.net");
                 attestationService.with("azure-cc", new AzureCCCoreAttestationService(maaServerBaseUrl, ConfigStore.Global.get(Const.Config.CorePublicUrlProp)));
 
-                GcpOverrideCheckConfig gcpOverrideCheckConfig = GcpOverrideCheckConfig.fromConfig(config);
-                gcpOverrideCheckConfig.logStartup(LOGGER);
-                attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(
-                        corePublicUrl,
-                        ConfigStore.Global.get(Const.Config.OptOutUrlProp),
-                        gcpOverrideCheckConfig.getCoreEnvironment(),
-                        gcpOverrideCheckConfig.isEnforced()));
+                String deploymentEnvironment = config.getString(com.uid2.core.Const.Config.DeploymentEnvironmentProp);
+                Environment coreEnvironment = Environment.fromString(deploymentEnvironment);
+                if (deploymentEnvironment != null && !deploymentEnvironment.isEmpty() && coreEnvironment == null) {
+                    throw new IllegalArgumentException("Unknown deployment_environment: " + deploymentEnvironment);
+                }
+                LOGGER.info("GCP environment and opt-out override checks {}", coreEnvironment == Environment.Production ? "enabled" : "skipped");
+                attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(corePublicUrl, ConfigStore.Global.get(Const.Config.OptOutUrlProp), coreEnvironment));
 
                 OperatorJWTTokenProvider operatorJWTTokenProvider = new OperatorJWTTokenProvider(config);
 
