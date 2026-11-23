@@ -1,5 +1,6 @@
 package com.uid2.core;
 
+import com.google.common.base.Strings;
 import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.Constants;
 import com.uid2.core.model.SecretStore;
@@ -137,7 +138,7 @@ public class Main {
 
                 String deploymentEnvironment = config.getString(com.uid2.core.Const.Config.DeploymentEnvironmentProp);
                 Environment coreEnvironment = Environment.fromString(deploymentEnvironment);
-                if (deploymentEnvironment != null && !deploymentEnvironment.isEmpty() && coreEnvironment == null) {
+                if (coreEnvironment == null && !Strings.isNullOrEmpty(deploymentEnvironment)) {
                     throw new IllegalArgumentException("Unknown deployment_environment: " + deploymentEnvironment);
                 }
                 LOGGER.info("GCP environment and opt-out override checks {}", coreEnvironment == Environment.Production ? "enabled" : "skipped");
