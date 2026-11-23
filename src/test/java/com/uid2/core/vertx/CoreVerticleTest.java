@@ -334,6 +334,35 @@ public class CoreVerticleTest {
         });
     }
 
+    @Test
+    void attestSuccessWithAttestationDetails(Vertx vertx, VertxTestContext testContext) {
+        fakeAuth(Role.OPERATOR);
+        addAttestationProvider(attestationProtocol);
+        onHandleAttestationRequest(() -> {
+            byte[] resultPublicKey = null;
+            return Future.succeededFuture(new AttestationResult(resultPublicKey, "test")
+                    .withDetails(Map.of("DEPLOYMENT_ENVIRONMENT", "prod", "OPTOUT_BASE_URL", "https://optout.example.com")));
+        });
+        EncryptedAttestationToken encryptedAttestationToken = new EncryptedAttestationToken("test-attestation-token", Instant.ofEpochMilli(111));
+        when(attestationTokenService.createToken(any())).thenReturn(encryptedAttestationToken);
+        post(vertx, "attest", makeAttestationRequestJson("xxx", "yyy"), ar -> {
+            try {
+                assertTrue(ar.succeeded());
+                assertEquals(200, ar.result().statusCode());
+                testContext.completeNow();
+            } catch (Throwable ex) {
+                testContext.failNow(ex);
+            }
+        });
+    }
+
+    @Test
+    void formatAttestationDetailsEscapesValues() {
+        assertEquals("", CoreVerticle.formatAttestationDetails(Map.of()));
+        assertEquals(", GCP attestation overrides: CORE_BASE_URL=\"a\\\"b\\nc\\\\d\"",
+                CoreVerticle.formatAttestationDetails(Map.of("CORE_BASE_URL", "a\"b\nc\\d")));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"public", "private", "PUBLIC", "PRIVATE", ""})
     void attestSuccessNoEncryption(String operatorType, Vertx vertx, VertxTestContext testContext) {
