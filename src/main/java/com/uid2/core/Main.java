@@ -136,7 +136,7 @@ public class Main {
                 attestationService.with("azure-cc", new AzureCCCoreAttestationService(maaServerBaseUrl, ConfigStore.Global.get(Const.Config.CorePublicUrlProp)));
 
                 GcpOverrideCheckConfig gcpOverrideCheckConfig = GcpOverrideCheckConfig.fromConfig(config);
-                LOGGER.info("GCP attestation override checks: {}", gcpOverrideCheckConfig.describe());
+                gcpOverrideCheckConfig.logStartup(LOGGER);
                 attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(
                         corePublicUrl,
                         ConfigStore.Global.get(Const.Config.OptOutUrlProp),

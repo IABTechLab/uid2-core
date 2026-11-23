@@ -7,51 +7,80 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GcpOverrideCheckConfigTest {
+    private static GcpOverrideCheckConfig fromConfig(Object environment, Object enforce) {
+        JsonObject config = new JsonObject();
+        if (environment != null) {
+            config.put("deployment_environment", environment);
+        }
+        if (enforce != null) {
+            config.put("gcp_enforce_env_override_checks", enforce);
+        }
+        return GcpOverrideCheckConfig.fromConfig(config);
+    }
+
     @Test
     void testNotSet() {
-        GcpOverrideCheckConfig config = GcpOverrideCheckConfig.fromConfig(new JsonObject());
+        GcpOverrideCheckConfig config = fromConfig(null, null);
         assertNull(config.getCoreEnvironment());
         assertFalse(config.isEnforced());
+        assertFalse(config.hasConfigIssue());
         assertEquals("skipped (deployment_environment not set)", config.describe());
     }
 
     @Test
     void testProdNotEnforced() {
-        GcpOverrideCheckConfig config = GcpOverrideCheckConfig.fromConfig(new JsonObject()
-                .put("deployment_environment", "prod")
-                .put("gcp_enforce_env_override_checks", false));
+        GcpOverrideCheckConfig config = fromConfig("prod", false);
         assertEquals(Environment.Production, config.getCoreEnvironment());
         assertFalse(config.isEnforced());
+        assertFalse(config.hasConfigIssue());
         assertEquals("core environment=prod, enforced=false", config.describe());
     }
 
     @Test
     void testProdEnforced() {
-        GcpOverrideCheckConfig config = GcpOverrideCheckConfig.fromConfig(new JsonObject()
-                .put("deployment_environment", "prod")
-                .put("gcp_enforce_env_override_checks", true));
+        GcpOverrideCheckConfig config = fromConfig("prod", true);
         assertEquals(Environment.Production, config.getCoreEnvironment());
         assertTrue(config.isEnforced());
+        assertFalse(config.hasConfigIssue());
         assertEquals("core environment=prod, enforced=true", config.describe());
     }
 
     @Test
-    void testIntegWithStringFlag() {
-        GcpOverrideCheckConfig config = GcpOverrideCheckConfig.fromConfig(new JsonObject()
-                .put("deployment_environment", "INTEG")
-                .put("gcp_enforce_env_override_checks", "true"));
+    void testProdEnforcedAsString() {
+        GcpOverrideCheckConfig config = fromConfig("PROD", "True");
+        assertEquals(Environment.Production, config.getCoreEnvironment());
+        assertTrue(config.isEnforced());
+        assertFalse(config.hasConfigIssue());
+    }
+
+    @Test
+    void testInteg() {
+        GcpOverrideCheckConfig config = fromConfig("integ", true);
         assertEquals(Environment.Integration, config.getCoreEnvironment());
         assertTrue(config.isEnforced());
-        assertEquals("core environment=integ, enforced=true", config.describe());
+        assertFalse(config.hasConfigIssue());
+        assertEquals("skipped (core environment=integ; checks apply to prod only)", config.describe());
     }
 
     @Test
     void testUnrecognisedEnvironment() {
-        GcpOverrideCheckConfig config = GcpOverrideCheckConfig.fromConfig(new JsonObject()
-                .put("deployment_environment", "staging")
-                .put("gcp_enforce_env_override_checks", true));
+        GcpOverrideCheckConfig config = fromConfig("staging", false);
         assertNull(config.getCoreEnvironment());
-        assertTrue(config.isEnforced());
+        assertTrue(config.hasConfigIssue());
         assertEquals("skipped (deployment_environment=\"staging\" not recognised)", config.describe());
+    }
+
+    @Test
+    void testEnforcedWithoutEnvironment() {
+        GcpOverrideCheckConfig config = fromConfig(null, true);
+        assertNull(config.getCoreEnvironment());
+        assertTrue(config.hasConfigIssue());
+    }
+
+    @Test
+    void testUnrecognisedEnforceValue() {
+        GcpOverrideCheckConfig config = fromConfig("prod", "yes");
+        assertFalse(config.isEnforced());
+        assertTrue(config.hasConfigIssue());
     }
 }
