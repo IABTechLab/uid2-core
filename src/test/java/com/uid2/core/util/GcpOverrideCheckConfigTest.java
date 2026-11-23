@@ -59,7 +59,7 @@ class GcpOverrideCheckConfigTest {
         assertEquals(Environment.Integration, config.getCoreEnvironment());
         assertTrue(config.isEnforced());
         assertFalse(config.hasConfigIssue());
-        assertEquals("skipped (core environment=integ, enforced=true; checks apply to prod only)", config.describe());
+        assertEquals("skipped (core environment=integ, enforced=true; these checks apply to prod only)", config.describe());
     }
 
     @Test

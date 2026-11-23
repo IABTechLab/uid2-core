@@ -60,7 +60,7 @@ public final class GcpOverrideCheckConfig {
             return String.format("core environment=%s, enforced=%s", coreEnvironment.getName(), enforce);
         }
         if (coreEnvironment != null) {
-            return String.format("skipped (core environment=%s, enforced=%s; checks apply to prod only)", coreEnvironment.getName(), enforce);
+            return String.format("skipped (core environment=%s, enforced=%s; these checks apply to prod only)", coreEnvironment.getName(), enforce);
         }
         if (isNullOrEmpty(configuredEnvironment)) {
             return String.format("skipped (%s not set)", Const.Config.DeploymentEnvironmentProp);
@@ -74,9 +74,9 @@ public final class GcpOverrideCheckConfig {
 
     public void logStartup(Logger logger) {
         if (hasConfigIssue()) {
-            logger.warn("GCP attestation override checks: {}", describe());
+            logger.warn("GCP environment and opt-out override checks: {}", describe());
         } else {
-            logger.info("GCP attestation override checks: {}", describe());
+            logger.info("GCP environment and opt-out override checks: {}", describe());
         }
     }
 

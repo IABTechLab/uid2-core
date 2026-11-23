@@ -18,6 +18,8 @@
     "att_token_enc_key": null,
     "att_token_enc_salt": null,
     "enforceJwt": false,
+    "deployment_environment": null,
+    "gcp_enforce_env_override_checks": false,
     "cloud_encryption_keys_metadata_path": null,
     "encryption_support_version": "5.45.0"
 }
