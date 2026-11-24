@@ -1,6 +1,5 @@
 package com.uid2.core;
 
-import com.google.common.base.Strings;
 import com.uid2.core.model.ConfigStore;
 import com.uid2.core.model.Constants;
 import com.uid2.core.model.SecretStore;
@@ -136,13 +135,13 @@ public class Main {
                 var maaServerBaseUrl = ConfigStore.Global.getOrDefault(com.uid2.core.Const.Config.MaaServerBaseUrlProp, "https://sharedeus.eus.attest.azure.net");
                 attestationService.with("azure-cc", new AzureCCCoreAttestationService(maaServerBaseUrl, ConfigStore.Global.get(Const.Config.CorePublicUrlProp)));
 
-                String deploymentEnvironment = config.getString(com.uid2.core.Const.Config.DeploymentEnvironmentProp);
+                String deploymentEnvironment = ConfigStore.Global.get(com.uid2.core.Const.Config.DeploymentEnvironmentProp);
                 Environment coreEnvironment = Environment.fromString(deploymentEnvironment);
-                if (coreEnvironment == null && !Strings.isNullOrEmpty(deploymentEnvironment)) {
-                    throw new IllegalArgumentException("Unknown deployment_environment: " + deploymentEnvironment);
+                if (coreEnvironment == null && deploymentEnvironment != null && !deploymentEnvironment.isEmpty()) {
+                    throw new IllegalArgumentException("Unknown deployment_environment: " + deploymentEnvironment + ". Expected prod, integ or unset.");
                 }
-                LOGGER.info("GCP DEPLOYMENT_ENVIRONMENT check {} (opt-out URL override check always applies)", coreEnvironment == Environment.Production ? "enabled" : "skipped");
                 attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(corePublicUrl, ConfigStore.Global.get(Const.Config.OptOutUrlProp), coreEnvironment));
+                LOGGER.info("GCP DEPLOYMENT_ENVIRONMENT check {} (opt-out URL override check always applies)", coreEnvironment == Environment.Production ? "enabled" : "skipped");
 
                 OperatorJWTTokenProvider operatorJWTTokenProvider = new OperatorJWTTokenProvider(config);
 
