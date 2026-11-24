@@ -141,7 +141,7 @@ public class Main {
                 if (coreEnvironment == null && !Strings.isNullOrEmpty(deploymentEnvironment)) {
                     throw new IllegalArgumentException("Unknown deployment_environment: " + deploymentEnvironment);
                 }
-                LOGGER.info("GCP environment override check {}", coreEnvironment == Environment.Production ? "enabled" : "skipped");
+                LOGGER.info("GCP DEPLOYMENT_ENVIRONMENT check {} (opt-out URL override check always applies)", coreEnvironment == Environment.Production ? "enabled" : "skipped");
                 attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(corePublicUrl, ConfigStore.Global.get(Const.Config.OptOutUrlProp), coreEnvironment));
 
                 OperatorJWTTokenProvider operatorJWTTokenProvider = new OperatorJWTTokenProvider(config);
