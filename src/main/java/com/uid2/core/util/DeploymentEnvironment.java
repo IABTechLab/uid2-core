@@ -7,17 +7,18 @@ public final class DeploymentEnvironment {
     }
 
     /**
-     * Maps Core's deployment_environment to the GCP attestation Environment; null means "not prod or integ".
+     * Maps Core's deployment_environment to the GCP attestation Environment; null means the declared environment check is not applied (test, or unset when not required).
      *
      * @param required true when Core runs in Kubernetes, so a deployed Core can't start without it.
      */
     public static Environment toGcpEnvironment(String value, boolean required) {
-        if (value == null || value.isEmpty()) {
+        if (value == null || value.isBlank()) {
             if (required) {
                 throw new IllegalArgumentException("deployment_environment must be set. Expected prod, integ or test.");
             }
             return null;
         }
+        value = value.trim();
         if ("test".equalsIgnoreCase(value)) {
             return null;
         }

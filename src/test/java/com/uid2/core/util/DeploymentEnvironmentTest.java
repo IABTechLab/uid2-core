@@ -19,6 +19,19 @@ public class DeploymentEnvironmentTest {
     }
 
     @ParameterizedTest
+    @CsvSource({"'prod\n',true", "' prod',false", "' Integ ',true", "'integ\t',false"})
+    void paddedKnownValuesMap(String value, boolean required) {
+        Environment expected = value.trim().equalsIgnoreCase("prod") ? Environment.Production : Environment.Integration;
+        assertEquals(expected, DeploymentEnvironment.toGcpEnvironment(value, required));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {" test", "test\n"})
+    void paddedTestMapsToNull(String value) {
+        assertNull(DeploymentEnvironment.toGcpEnvironment(value, true));
+    }
+
+    @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testMapsToNull(boolean required) {
         assertNull(DeploymentEnvironment.toGcpEnvironment("test", required));
@@ -26,12 +39,14 @@ public class DeploymentEnvironmentTest {
 
     @ParameterizedTest
     @NullAndEmptySource
+    @ValueSource(strings = {"   ", "\n"})
     void unsetAllowedWhenNotRequired(String value) {
         assertNull(DeploymentEnvironment.toGcpEnvironment(value, false));
     }
 
     @ParameterizedTest
     @NullAndEmptySource
+    @ValueSource(strings = {"   ", "\n"})
     void unsetRejectedWhenRequired(String value) {
         assertThrows(IllegalArgumentException.class, () -> DeploymentEnvironment.toGcpEnvironment(value, true));
     }
