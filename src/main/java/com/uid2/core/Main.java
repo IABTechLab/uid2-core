@@ -1,6 +1,7 @@
 package com.uid2.core;
 
 import com.uid2.core.model.ConfigStore;
+import com.uid2.core.util.DeploymentEnvironment;
 import com.uid2.core.model.Constants;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.AttestationService;
@@ -135,12 +136,9 @@ public class Main {
                 var maaServerBaseUrl = ConfigStore.Global.getOrDefault(com.uid2.core.Const.Config.MaaServerBaseUrlProp, "https://sharedeus.eus.attest.azure.net");
                 attestationService.with("azure-cc", new AzureCCCoreAttestationService(maaServerBaseUrl, ConfigStore.Global.get(Const.Config.CorePublicUrlProp)));
 
-                String deploymentEnvironment = ConfigStore.Global.get(com.uid2.core.Const.Config.DeploymentEnvironmentProp);
-                // "test" has no GCP Environment value; like unset, it skips the prod-only check.
-                Environment coreEnvironment = Environment.fromString(deploymentEnvironment);
-                if (coreEnvironment == null && deploymentEnvironment != null && !deploymentEnvironment.isEmpty() && !"test".equalsIgnoreCase(deploymentEnvironment)) {
-                    throw new IllegalArgumentException("Unknown deployment_environment: " + deploymentEnvironment + ". Expected prod, integ, test or unset.");
-                }
+                Environment coreEnvironment = DeploymentEnvironment.toGcpEnvironment(
+                        ConfigStore.Global.get(com.uid2.core.Const.Config.DeploymentEnvironmentProp),
+                        Utils.isProductionEnvironment());
                 attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(corePublicUrl, ConfigStore.Global.get(Const.Config.OptOutUrlProp), coreEnvironment));
                 LOGGER.info("GCP DEPLOYMENT_ENVIRONMENT check {} (opt-out URL override check always applies)", coreEnvironment == Environment.Production ? "enabled" : "skipped");
 
