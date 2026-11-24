@@ -139,14 +139,16 @@ public class Main {
                 Environment coreEnvironment = DeploymentEnvironment.toGcpEnvironment(
                         ConfigStore.Global.get(com.uid2.core.Const.Config.DeploymentEnvironmentProp),
                         Utils.isProductionEnvironment());
-                String deploymentEnvironment = ConfigStore.Global.get(com.uid2.core.Const.Config.DeploymentEnvironmentProp);
                 try {
                     attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(corePublicUrl, ConfigStore.Global.get(Const.Config.OptOutUrlProp), coreEnvironment));
                 } catch (IllegalArgumentException e) {
+                    if (coreEnvironment != Environment.Production) {
+                        throw e;
+                    }
                     throw new IllegalArgumentException("Invalid configuration: when deployment_environment is prod, optout_url must be a valid https URL. " + e.getMessage(), e);
                 }
-                LOGGER.info("GCP attestation: deployment_environment={}, declared environment check {} (opt-out URL override check always applies)",
-                        deploymentEnvironment, coreEnvironment == Environment.Production ? "enabled" : "disabled");
+                LOGGER.info("GCP attestation: resolved environment={}, declared environment check {} (opt-out URL override check always applies)",
+                        coreEnvironment == null ? "none" : coreEnvironment, coreEnvironment == Environment.Production ? "enabled" : "not applied");
 
                 OperatorJWTTokenProvider operatorJWTTokenProvider = new OperatorJWTTokenProvider(config);
 
