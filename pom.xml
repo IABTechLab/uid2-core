@@ -24,7 +24,7 @@
         <vertx.verticle>com.uid2.core.vertx.CoreVerticle</vertx.verticle>
         <launcher.class>io.vertx.core.Launcher</launcher.class>
 
-        <uid2-shared.version>11.7.16</uid2-shared.version>
+        <uid2-shared.version>11.7.19</uid2-shared.version>
         <netty.version>4.1.140.Final</netty.version>
         <jackson.version>2.21.7</jackson.version>
         <image.version>${project.version}</image.version>

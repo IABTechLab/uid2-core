@@ -20,6 +20,7 @@ import com.uid2.shared.cloud.EmbeddedResourceStorage;
 import com.uid2.shared.cloud.ICloudStorage;
 import com.uid2.shared.jmx.AdminApi;
 import com.uid2.shared.secure.*;
+import com.uid2.shared.secure.gcpoidc.Environment;
 import com.uid2.shared.secure.nitro.InMemoryAWSCertificateStore;
 import com.uid2.shared.store.CloudPath;
 import com.uid2.shared.store.scope.GlobalScope;
@@ -134,7 +135,15 @@ public class Main {
                 var maaServerBaseUrl = ConfigStore.Global.getOrDefault(com.uid2.core.Const.Config.MaaServerBaseUrlProp, "https://sharedeus.eus.attest.azure.net");
                 attestationService.with("azure-cc", new AzureCCCoreAttestationService(maaServerBaseUrl, ConfigStore.Global.get(Const.Config.CorePublicUrlProp)));
 
-                attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(corePublicUrl));
+                Environment coreEnvironment = switch (ConfigStore.Global.getOrDefault(com.uid2.core.Const.Config.DeploymentEnvironmentProp, "")) {
+                    case "prod" -> Environment.Production;
+                    case "integ" -> Environment.Integration;
+                    case "test" -> null;
+                    default -> throw new IllegalArgumentException("deployment_environment must be prod, integ or test");
+                };
+                attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(corePublicUrl, ConfigStore.Global.get(Const.Config.OptOutUrlProp), coreEnvironment));
+                LOGGER.info("GCP attestation: resolved environment={}, declared environment check {} (opt-out URL override check always applies)",
+                        coreEnvironment == null ? "none" : coreEnvironment, coreEnvironment == Environment.Production ? "enabled" : "not applied");
 
                 OperatorJWTTokenProvider operatorJWTTokenProvider = new OperatorJWTTokenProvider(config);
 
