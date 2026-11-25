@@ -7,24 +7,19 @@ public final class DeploymentEnvironment {
     }
 
     /**
-     * Maps Core's deployment_environment to the GCP attestation Environment; null means the declared environment check is not applied (test, or unset when not required).
-     *
-     * @param required true when Core runs in Kubernetes, so a deployed Core can't start without it.
+     * Maps Core's deployment_environment to the GCP attestation Environment; null (test) means the declared environment check is not applied.
      */
-    public static Environment toGcpEnvironment(String value, boolean required) {
+    public static Environment toGcpEnvironment(String value) {
         if (value == null || value.isBlank()) {
-            if (required) {
-                throw new IllegalArgumentException("deployment_environment must be set. Expected prod, integ or test.");
-            }
+            throw new IllegalArgumentException("deployment_environment must be set. Expected prod, integ or test.");
+        }
+        String trimmed = value.trim();
+        if ("test".equalsIgnoreCase(trimmed)) {
             return null;
         }
-        value = value.trim();
-        if ("test".equalsIgnoreCase(value)) {
-            return null;
-        }
-        Environment environment = Environment.fromString(value);
+        Environment environment = Environment.fromString(trimmed);
         if (environment == null) {
-            throw new IllegalArgumentException("Unknown deployment_environment: " + value + ". Expected prod, integ or test.");
+            throw new IllegalArgumentException("Unknown deployment_environment: " + trimmed + ". Expected prod, integ or test.");
         }
         return environment;
     }

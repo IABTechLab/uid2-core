@@ -137,8 +137,7 @@ public class Main {
                 attestationService.with("azure-cc", new AzureCCCoreAttestationService(maaServerBaseUrl, ConfigStore.Global.get(Const.Config.CorePublicUrlProp)));
 
                 Environment coreEnvironment = DeploymentEnvironment.toGcpEnvironment(
-                        ConfigStore.Global.get(com.uid2.core.Const.Config.DeploymentEnvironmentProp),
-                        Utils.isProductionEnvironment());
+                        ConfigStore.Global.get(com.uid2.core.Const.Config.DeploymentEnvironmentProp));
                 try {
                     attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(corePublicUrl, ConfigStore.Global.get(Const.Config.OptOutUrlProp), coreEnvironment));
                 } catch (IllegalArgumentException e) {

@@ -34,5 +34,6 @@
   "core_public_url": "http://core:8088",
   "optout_url": "http://optout:8081",
   "cloud_encryption_keys_metadata_path": "cloud_encryption_keys/metadata.json",
+  "deployment_environment": "test",
   "encryption_support_version": "6.0.0"
 }
