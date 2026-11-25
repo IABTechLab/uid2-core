@@ -1,7 +1,6 @@
 package com.uid2.core;
 
 import com.uid2.core.model.ConfigStore;
-import com.uid2.core.util.DeploymentEnvironment;
 import com.uid2.core.model.Constants;
 import com.uid2.core.model.SecretStore;
 import com.uid2.core.service.AttestationService;
@@ -136,16 +135,13 @@ public class Main {
                 var maaServerBaseUrl = ConfigStore.Global.getOrDefault(com.uid2.core.Const.Config.MaaServerBaseUrlProp, "https://sharedeus.eus.attest.azure.net");
                 attestationService.with("azure-cc", new AzureCCCoreAttestationService(maaServerBaseUrl, ConfigStore.Global.get(Const.Config.CorePublicUrlProp)));
 
-                Environment coreEnvironment = DeploymentEnvironment.toGcpEnvironment(
-                        ConfigStore.Global.get(com.uid2.core.Const.Config.DeploymentEnvironmentProp));
-                try {
-                    attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(corePublicUrl, ConfigStore.Global.get(Const.Config.OptOutUrlProp), coreEnvironment));
-                } catch (IllegalArgumentException e) {
-                    if (coreEnvironment != Environment.Production) {
-                        throw e;
-                    }
-                    throw new IllegalArgumentException("Invalid configuration: when deployment_environment is prod, optout_url must be a valid https URL. " + e.getMessage(), e);
-                }
+                Environment coreEnvironment = switch (ConfigStore.Global.getOrDefault(com.uid2.core.Const.Config.DeploymentEnvironmentProp, "")) {
+                    case "prod" -> Environment.Production;
+                    case "integ" -> Environment.Integration;
+                    case "test" -> null;
+                    default -> throw new IllegalArgumentException("deployment_environment must be prod, integ or test");
+                };
+                attestationService.with("gcp-oidc", new GcpOidcCoreAttestationService(corePublicUrl, ConfigStore.Global.get(Const.Config.OptOutUrlProp), coreEnvironment));
                 LOGGER.info("GCP attestation: resolved environment={}, declared environment check {} (opt-out URL override check always applies)",
                         coreEnvironment == null ? "none" : coreEnvironment, coreEnvironment == Environment.Production ? "enabled" : "not applied");
 
